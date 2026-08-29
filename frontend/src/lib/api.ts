@@ -38,3 +38,20 @@ export async function exportPDF(data: any): Promise<Blob> {
 
   return response.blob();
 }
+
+export async function askGemini(message: string, context: any): Promise<{response: string}> {
+  const response = await fetch(`${API_URL}/api/chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ message, context }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.detail || 'Error al comunicarse con el asistente IA.');
+  }
+
+  return response.json();
+}

@@ -1,14 +1,13 @@
 """
 models/forecaster.py
 Forecasting de series temporales usando Prophet o fallback ARIMA/Regresión.
-Retorna fig_json y metricas.
+Retorna raw data para renderizar con Chart.js en el frontend.
 """
 
 from __future__ import annotations
 from typing import Optional, Tuple, Dict, Any
 import pandas as pd
 import numpy as np
-import plotly.graph_objects as go
 
 try:
     from prophet import Prophet
@@ -23,10 +22,10 @@ def run_forecast(
     value_col: str,
     periods: int = 60,
     freq: str = "D",
-) -> Tuple[Optional[pd.DataFrame], Optional[str], dict]:
+) -> Tuple[Optional[pd.DataFrame], Optional[dict], dict]:
     """
     Ejecuta forecast de serie temporal.
-    Retorna (df_forecast, fig_json_string, metrics)
+    Retorna (df_forecast, data_dict, metrics)
     """
     if not PROPHET_AVAILABLE:
         # Fallback simple con extrapolación de tendencia lineal para no romper la app si no está Prophet
@@ -48,16 +47,6 @@ def run_forecast(
             x_future = np.arange(len(df_agg), len(df_agg) + periods)
             y_future = p(x_future)
 
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=df_agg[date_col], y=df_agg[value_col], mode="lines+markers", name="Datos reales", line=dict(color="#764ba2", width=2)))
-            fig.add_trace(go.Scatter(x=future_dates, y=y_future, mode="lines", name=f"Proyección ({periods} días)", line=dict(color="#667eea", dash="dot", width=2)))
-            fig.update_layout(
-                title=f"Proyección Lineal de {value_col} ({periods} períodos)",
-                font_family="Inter, sans-serif",
-                plot_bgcolor="white", paper_bgcolor="white",
-                margin=dict(l=20, r=20, t=50, b=20)
-            )
-
             last_val = float(y[-1])
             proj_val = float(y_future[-1])
             trend_pct = round(((proj_val - last_val) / max(abs(last_val), 1)) * 100, 1)
@@ -69,7 +58,14 @@ def run_forecast(
                 "periodos": periods,
                 "motor": "Regresión de Tendencia (Fast)",
             }
-            return None, fig.to_json(), metrics
+            
+            chart_data = {
+                "labels": df_agg[date_col].dt.strftime('%Y-%m-%d').tolist() + future_dates.strftime('%Y-%m-%d').tolist(),
+                "real_values": [x if not pd.isna(x) else None for x in y] + [None] * len(future_dates),
+                "forecast_values": [None] * (len(df_agg) - 1) + [y[-1]] + y_future.tolist(),
+            }
+            
+            return None, chart_data, metrics
         except Exception as ex:
             return None, None, {"error": f"Error en cálculo de proyección: {str(ex)}"}
 
@@ -109,34 +105,21 @@ def run_forecast(
             "motor": "Prophet (Meta AI)",
         }
 
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(
-            x=pd.concat([forecast["ds"], forecast["ds"].iloc[::-1]]),
-            y=pd.concat([forecast["yhat_upper"], forecast["yhat_lower"].iloc[::-1]]),
-            fill="toself",
-            fillcolor="rgba(102, 126, 234, 0.15)",
-            line=dict(color="rgba(255,255,255,0)"),
-            name="Confianza 80%",
-        ))
-        fig.add_trace(go.Scatter(
-            x=forecast["ds"], y=forecast["yhat"],
-            line=dict(color="#667eea", width=2, dash="dot"),
-            name="Predicción",
-        ))
-        fig.add_trace(go.Scatter(
-            x=df_agg["ds"], y=df_agg["y"],
-            line=dict(color="#764ba2", width=2.5),
-            mode="lines+markers",
-            name="Datos reales",
-        ))
-        fig.update_layout(
-            title=f"Predicción de {value_col} (Próximos {periods} días)",
-            font_family="Inter, sans-serif",
-            plot_bgcolor="white", paper_bgcolor="white",
-            margin=dict(l=20, r=20, t=50, b=20),
-        )
+        merged = pd.merge(forecast, df_agg, on='ds', how='left')
+        
+        # Helper function to convert NaNs to None for JSON serialization
+        def to_list_clean(series):
+            return [x if not pd.isna(x) else None for x in series]
 
-        return forecast, fig.to_json(), metrics
+        chart_data = {
+            "labels": merged['ds'].dt.strftime('%Y-%m-%d').tolist(),
+            "real_values": to_list_clean(merged['y']),
+            "forecast_values": to_list_clean(merged['yhat']),
+            "upper_band": to_list_clean(merged['yhat_upper']),
+            "lower_band": to_list_clean(merged['yhat_lower']),
+        }
+
+        return forecast, chart_data, metrics
 
     except Exception as e:
         return None, None, {"error": str(e)}

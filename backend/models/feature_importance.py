@@ -1,14 +1,13 @@
 """
 models/feature_importance.py
 Importancia de variables con LightGBM + SHAP.
-Retorna fig_json, shap_json y metricas.
+Retorna raw data para renderizar con Chart.js en el frontend.
 """
 
 from __future__ import annotations
 from typing import List, Tuple, Optional, Dict, Any
 import pandas as pd
 import numpy as np
-import plotly.express as px
 
 try:
     import lightgbm as lgb
@@ -28,10 +27,10 @@ def run_feature_importance(
     target_col: str,
     feature_cols: List[str],
     categorical_cols: Optional[List[str]] = None,
-) -> Tuple[Optional[str], Optional[str], dict]:
+) -> Tuple[Optional[dict], Optional[dict], dict]:
     """
     Calcula importancia de variables.
-    Retorna (fig_importance_json, fig_shap_json, metrics)
+    Retorna (chart_importance, chart_shap, metrics)
     """
     if not LGBM_AVAILABLE:
         return None, None, {"error": "LightGBM no está disponible en este entorno."}
@@ -71,23 +70,17 @@ def run_feature_importance(
             "importance": model.feature_importances_,
         }).sort_values("importance", ascending=True).tail(15)
 
-        fig_importance = px.bar(
-            importance_df,
-            x="importance",
-            y="feature",
-            orientation="h",
-            title=f"Impacto de Variables en {target_col}",
-            color="importance",
-            color_continuous_scale=[[0, "#c3dafe"], [1, "#667eea"]],
-        )
-        fig_importance.update_layout(
-            font_family="Inter, sans-serif",
-            plot_bgcolor="white", paper_bgcolor="white",
-            margin=dict(l=20, r=20, t=50, b=20),
-            coloraxis_showscale=False,
-        )
+        chart_importance = {
+            "type": "bar_horizontal",
+            "labels": importance_df["feature"].tolist(),
+            "datasets": [{
+                "label": "Importancia",
+                "data": importance_df["importance"].tolist()
+            }],
+            "title": f"Impacto de Variables en {target_col}"
+        }
 
-        fig_shap = None
+        chart_shap = None
         shap_summary = {}
 
         if SHAP_AVAILABLE:
@@ -100,24 +93,17 @@ def run_feature_importance(
                 shap_df = pd.DataFrame({
                     "feature": available,
                     "shap_importance": mean_shap,
-                }).sort_values("shap_importance", ascending=True)
+                }).sort_values("shap_importance", ascending=True).tail(15)
 
-                fig_shap_obj = px.bar(
-                    shap_df,
-                    x="shap_importance",
-                    y="feature",
-                    orientation="h",
-                    title=f"Impacto Real SHAP en {target_col}",
-                    color="shap_importance",
-                    color_continuous_scale=[[0, "#fefcbf"], [1, "#764ba2"]],
-                )
-                fig_shap_obj.update_layout(
-                    font_family="Inter, sans-serif",
-                    plot_bgcolor="white", paper_bgcolor="white",
-                    margin=dict(l=20, r=20, t=50, b=20),
-                    coloraxis_showscale=False,
-                )
-                fig_shap = fig_shap_obj.to_json()
+                chart_shap = {
+                    "type": "bar_horizontal",
+                    "labels": shap_df["feature"].tolist(),
+                    "datasets": [{
+                        "label": "Impacto SHAP",
+                        "data": shap_df["shap_importance"].tolist()
+                    }],
+                    "title": f"Impacto Real SHAP en {target_col}"
+                }
                 shap_summary = {feat: round(float(val), 4) for feat, val in zip(available, mean_shap)}
             except Exception:
                 pass
@@ -131,7 +117,7 @@ def run_feature_importance(
             "shap_disponible": bool(shap_summary),
         }
 
-        return fig_importance.to_json(), fig_shap, metrics
+        return chart_importance, chart_shap, metrics
 
     except Exception as e:
         return None, None, {"error": str(e)}

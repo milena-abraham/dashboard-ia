@@ -1,65 +1,311 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import dynamic from 'next/dynamic';
+import React, { useMemo } from 'react';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  RadialLinearScale,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js';
+import { Line, Bar, Doughnut, Radar, Scatter } from 'react-chartjs-2';
 
-const Plot = dynamic(() => import('react-plotly.js'), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-80 bg-gray-50 animate-pulse rounded-2xl flex items-center justify-center text-gray-400 text-sm">
-      Cargando visualización...
-    </div>
-  ),
-});
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  RadialLinearScale,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 interface ChartRendererProps {
-  figJson: string | null | undefined;
+  chartData: any;
   height?: number;
 }
 
-export default function ChartRenderer({ figJson, height = 380 }: ChartRendererProps) {
-  const [mounted, setMounted] = useState(false);
+const COLORS = [
+  "#667eea", "#764ba2", "#f093fb", "#4facfe", 
+  "#43e97b", "#fa709a", "#fee140"
+];
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const chartData = useMemo(() => {
-    if (!figJson) return null;
-    try {
-      return typeof figJson === 'string' ? JSON.parse(figJson) : figJson;
-    } catch (e) {
-      console.error('Error parseando JSON de Plotly:', e);
-      return null;
+// PATRON 1: chartDefaults shared config
+const chartDefaults: any = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'bottom' as const,
+    },
+    tooltip: {
+      mode: 'index',
+      intersect: false,
     }
-  }, [figJson]);
+  },
+  // PATRON 2: Hover dimming effect
+  onHover: function(e: any, activeElements: any[], chart: any) {
+    const datasets = chart.data.datasets;
+    if (activeElements.length === 0) {
+      datasets.forEach((dataset: any) => {
+        if (dataset._origBg) {
+          dataset.backgroundColor = dataset._origBg;
+          dataset.borderColor = dataset._origBorder;
+        }
+      });
+      chart.update();
+      return;
+    }
+    const activeDatasetIndex = activeElements[0].datasetIndex;
+    datasets.forEach((dataset: any, i: number) => {
+      if (!dataset._origBg) {
+        dataset._origBg = dataset.backgroundColor;
+        dataset._origBorder = dataset.borderColor;
+      }
+      if (i === activeDatasetIndex) {
+        dataset.backgroundColor = dataset._origBg;
+        dataset.borderColor = dataset._origBorder;
+      } else {
+        dataset.backgroundColor = Array.isArray(dataset._origBg) 
+          ? dataset._origBg.map(() => 'rgba(200, 200, 200, 0.2)') 
+          : 'rgba(200, 200, 200, 0.2)';
+        dataset.borderColor = Array.isArray(dataset._origBorder)
+          ? dataset._origBorder.map(() => 'transparent')
+          : 'transparent';
+      }
+    });
+    chart.update();
+  }
+};
 
-  if (!mounted || !chartData) {
+export default function ChartRenderer({ chartData, height = 300 }: ChartRendererProps) {
+  const renderedChart = useMemo(() => {
+    if (!chartData) return null;
+
+    // Format: Forecast
+    if (chartData.forecast_values) {
+      const data = {
+        labels: chartData.labels,
+        datasets: [
+          {
+            label: 'Real',
+            data: chartData.real_values,
+            borderColor: '#764ba2',
+            backgroundColor: '#764ba2',
+            tension: 0.4,
+            spanGaps: true
+          },
+          {
+            label: 'Proyección',
+            data: chartData.forecast_values,
+            borderColor: '#667eea',
+            borderDash: [5, 5],
+            tension: 0.4,
+            spanGaps: true
+          },
+          {
+            label: 'Límite Superior',
+            data: chartData.upper_band,
+            borderColor: 'transparent',
+            backgroundColor: 'rgba(102, 126, 234, 0.15)',
+            fill: '+1',
+            pointRadius: 0,
+            tension: 0.4
+          },
+          {
+            label: 'Límite Inferior',
+            data: chartData.lower_band,
+            borderColor: 'transparent',
+            backgroundColor: 'transparent',
+            fill: false,
+            pointRadius: 0,
+            tension: 0.4
+          }
+        ]
+      };
+      const options = { ...chartDefaults };
+      return <Line data={data} options={options} />;
+    }
+
+    // Format: Scatter (Segmentation/Anomalies)
+    if (chartData.type === 'scatter' && chartData.segments) {
+      const datasets = Object.keys(chartData.segments).map((seg, i) => ({
+        label: seg,
+        data: chartData.segments[seg].x.map((xVal: any, idx: number) => ({
+          x: xVal,
+          y: chartData.segments[seg].y[idx]
+        })),
+        backgroundColor: COLORS[i % COLORS.length]
+      }));
+      const data = { datasets };
+      const options = {
+        ...chartDefaults,
+        scales: {
+          x: { title: { display: true, text: chartData.x_label || 'X' } },
+          y: { title: { display: true, text: chartData.y_label || 'Y' } }
+        }
+      };
+      return <Scatter data={data} options={options} />;
+    }
+    
+    // Format: Scatter anomalies
+    if (chartData.type === 'scatter' && chartData.normal) {
+      const data = {
+        datasets: [
+          {
+            label: 'Normal',
+            data: chartData.normal.x.map((xVal: any, idx: number) => ({ x: xVal, y: chartData.normal.y[idx] })),
+            backgroundColor: '#667eea',
+          },
+          {
+            label: 'Anomalías',
+            data: chartData.anomalies.x.map((xVal: any, idx: number) => ({ x: xVal, y: chartData.anomalies.y[idx] })),
+            backgroundColor: '#fa709a',
+            pointRadius: 6,
+          }
+        ]
+      };
+      const options = { ...chartDefaults, scales: { x: { title: { display: true, text: chartData.x_label } }, y: { title: { display: true, text: chartData.y_label } } } };
+      return <Scatter data={data} options={options} />;
+    }
+
+    // Format: Timeseries (from anomalies)
+    if (chartData.type === 'timeseries' && chartData.normal) {
+        const labels = Array.from(new Set([...chartData.normal.x, ...chartData.anomalies.x])).sort();
+        
+        // Map data to full timeline
+        const normalData = labels.map(l => {
+            const idx = chartData.normal.x.indexOf(l);
+            return idx !== -1 ? chartData.normal.y[idx] : null;
+        });
+        const anomData = labels.map(l => {
+            const idx = chartData.anomalies.x.indexOf(l);
+            return idx !== -1 ? chartData.anomalies.y[idx] : null;
+        });
+
+        const data = {
+            labels,
+            datasets: [
+                {
+                    label: 'Normal',
+                    data: normalData,
+                    borderColor: '#667eea',
+                    backgroundColor: '#667eea',
+                    spanGaps: true
+                },
+                {
+                    label: 'Anomalías',
+                    data: anomData,
+                    borderColor: '#fa709a',
+                    backgroundColor: '#fa709a',
+                    pointStyle: 'rectRot',
+                    pointRadius: 8,
+                    showLine: false
+                }
+            ]
+        };
+        return <Line data={data} options={{ ...chartDefaults }} />;
+    }
+
+    // Format: Radar
+    if (chartData.type === 'radar') {
+      const labels = chartData.metrics || chartData.labels;
+      
+      const datasets = Object.keys(chartData.datasets).map((key, i) => {
+          let rawData = [];
+          if (Array.isArray(chartData.datasets)) {
+              rawData = chartData.datasets[i].data;
+          } else {
+              rawData = chartData.datasets[key];
+          }
+          const label = Array.isArray(chartData.datasets) ? chartData.datasets[i].label : key;
+          
+          return {
+            label: label,
+            data: rawData,
+            borderColor: COLORS[i % COLORS.length],
+            backgroundColor: COLORS[i % COLORS.length] + '40', // 25% opacity
+            _raw: rawData // PATRON 4: Guardamos datos originales
+          };
+      });
+
+      const data = { labels, datasets };
+      
+      // PATRON 3 & 4
+      const options = {
+        ...chartDefaults,
+        plugins: {
+          ...chartDefaults.plugins,
+          tooltip: {
+            callbacks: {
+              label: function(ctx: any) {
+                const val = ctx.raw;
+                return ` ${ctx.dataset.label}: ${val}`;
+              }
+            }
+          },
+          legend: {
+            position: 'bottom',
+            onClick: function(e: any, legendItem: any, legend: any) {
+              const index = legendItem.datasetIndex;
+              const chart = legend.chart;
+              chart.isDatasetVisible(index) ? chart.hide(index) : chart.show(index);
+              
+              // Renormalización omitida aquí para simplificar, pero se podría agregar
+              chart.update();
+            }
+          }
+        }
+      };
+      return <Radar data={data} options={options} />;
+    }
+
+    // Standard Bars/Doughnuts
+    if (chartData.labels && chartData.datasets) {
+      const data = {
+        labels: chartData.labels,
+        datasets: chartData.datasets.map((ds: any, i: number) => ({
+          ...ds,
+          backgroundColor: chartData.type === 'doughnut' ? COLORS : COLORS[i % COLORS.length]
+        }))
+      };
+
+      const options = { ...chartDefaults };
+
+      if (chartData.type === 'bar_horizontal') {
+        options.indexAxis = 'y';
+        return <Bar data={data} options={options} />;
+      }
+      if (chartData.type === 'doughnut') {
+        options.cutout = '70%';
+        return <Doughnut data={data} options={options} />;
+      }
+      return <Bar data={data} options={options} />;
+    }
+
+    return null;
+  }, [chartData]);
+
+  if (!renderedChart) {
     return (
       <div className="w-full h-72 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 text-sm border border-gray-100">
-        {!mounted ? 'Preparando gráfico...' : 'Visualización no disponible para esta configuración'}
+        Visualización no disponible para esta configuración
       </div>
     );
   }
 
-  const layout = {
-    ...chartData.layout,
-    autosize: true,
-    height,
-    margin: { l: 40, r: 20, t: 40, b: 40, ...chartData.layout?.margin },
-    paper_bgcolor: 'transparent',
-    plot_bgcolor: 'transparent',
-  };
-
   return (
-    <div className="w-full overflow-hidden rounded-2xl">
-      <Plot
-        data={chartData.data || []}
-        layout={layout}
-        config={{ responsive: true, displayModeBar: true, displaylogo: false }}
-        style={{ width: '100%', height: `${height}px` }}
-        useResizeHandler={true}
-      />
+    <div style={{ position: 'relative', width: '100%', height: `${height}px` }}>
+      {renderedChart}
     </div>
   );
 }

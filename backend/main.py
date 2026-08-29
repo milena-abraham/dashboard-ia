@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from routers import analysis, export
+from routers import analysis, export, chat
 import os
 from dotenv import load_dotenv
 
@@ -36,6 +36,7 @@ app.add_middleware(
 
 app.include_router(analysis.router, prefix="/api")
 app.include_router(export.router, prefix="/api")
+app.include_router(chat.router, prefix="/api")
 
 
 @app.get("/api/health")

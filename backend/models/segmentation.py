@@ -1,21 +1,17 @@
 """
 models/segmentation.py
 Segmentación de registros usando K-Means + PCA.
-Retorna scatter_json, profile_json y métricas.
+Retorna raw data para renderizar con Chart.js en el frontend.
 """
 
 from __future__ import annotations
 from typing import Optional, Tuple, List, Dict, Any
 import pandas as pd
 import numpy as np
-import plotly.express as px
-import plotly.graph_objects as go
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_score
-
-PALETTE = ["#667eea", "#764ba2", "#f093fb", "#4facfe", "#43e97b", "#fa709a", "#fee140"]
 
 SEGMENT_LABELS = [
     "Segmento Estrella ⭐",
@@ -53,9 +49,9 @@ def run_clustering(
     numeric_cols: List[str],
     n_clusters: Optional[int] = None,
     label_col: Optional[str] = None,
-) -> Tuple[pd.DataFrame, Optional[str], Optional[str], dict]:
+) -> Tuple[pd.DataFrame, Optional[dict], Optional[dict], dict]:
     """
-    Ejecuta K-Means y retorna (df_out, scatter_json, profile_json, metrics).
+    Ejecuta K-Means y retorna (df_out, scatter_data, profile_data, metrics).
     """
     if len(numeric_cols) < 2:
         return df, None, None, {"error": "Se requieren al menos 2 columnas numéricas para clustering."}
@@ -84,34 +80,27 @@ def run_clustering(
         df_out["_pca1"] = components[:, 0]
         df_out["_pca2"] = components[:, 1]
 
-        hover_data = [label_col] if label_col and label_col in df_out.columns else None
-
         if len(df_out) > 3000:
-            # Proporcional por segmento para no perder grupos minoritarios
             df_plot = df_out.groupby("_segment").sample(frac=3000/len(df_out), random_state=42)
         else:
             df_plot = df_out
 
-        # Si hay muchos puntos, hacerlos más transparentes para ver la densidad
-        dynamic_opacity = max(0.3, min(0.9, 1500 / max(len(df_plot), 1)))
+        # Preparar data de scatter para Chart.js
+        scatter_data = {
+            "type": "scatter",
+            "segments": {}
+        }
+        
+        for segment in df_plot["_segment"].unique():
+            seg_df = df_plot[df_plot["_segment"] == segment]
+            scatter_data["segments"][segment] = {
+                "x": seg_df["_pca1"].tolist(),
+                "y": seg_df["_pca2"].tolist(),
+            }
+            if label_col and label_col in seg_df.columns:
+                scatter_data["segments"][segment]["labels"] = seg_df[label_col].tolist()
 
-        fig_scatter = px.scatter(
-            df_plot, x="_pca1", y="_pca2", color="_segment",
-            hover_data=hover_data,
-            opacity=dynamic_opacity,
-            marginal_x="box", marginal_y="box",
-            title=f"Mapa de Segmentos ({k} grupos)",
-            color_discrete_sequence=PALETTE,
-        )
-        fig_scatter.update_traces(marker=dict(size=7))
-        fig_scatter.update_layout(
-            xaxis_title="Componente Principal 1",
-            yaxis_title="Componente Principal 2",
-            font_family="Inter, sans-serif",
-            plot_bgcolor="white", paper_bgcolor="white",
-            margin=dict(l=20, r=20, t=50, b=20),
-        )
-
+        # Preparar data de perfil para Radar/Bar Chart.js
         profile_data = []
         for cluster_id in range(k):
             mask = df_out["_cluster"] == cluster_id
@@ -122,21 +111,15 @@ def run_clustering(
             profile_data.append(row)
 
         df_profile = pd.DataFrame(profile_data)
-
-        fig_profile = px.bar(
-            df_profile.melt(id_vars=["Segmento", "Cantidad"], value_vars=numeric_cols),
-            x="variable", y="value", color="Segmento",
-            barmode="group",
-            title="Perfil Promedio por Segmento",
-            color_discrete_sequence=PALETTE,
-        )
-        fig_profile.update_layout(
-            xaxis_title="Variable",
-            yaxis_title="Promedio",
-            font_family="Inter, sans-serif",
-            plot_bgcolor="white", paper_bgcolor="white",
-            margin=dict(l=20, r=20, t=50, b=20),
-        )
+        
+        radar_data = {
+            "type": "radar",
+            "metrics": numeric_cols,
+            "datasets": {}
+        }
+        for _, row in df_profile.iterrows():
+            seg = row["Segmento"]
+            radar_data["datasets"][seg] = [row[c] for c in numeric_cols]
 
         metrics = {
             "k": k,
@@ -148,7 +131,7 @@ def run_clustering(
             "perfil": df_profile.to_dict(orient="records"),
         }
 
-        return df_out, fig_scatter.to_json(), fig_profile.to_json(), metrics
+        return df_out, scatter_data, radar_data, metrics
 
     except Exception as e:
         return df, None, None, {"error": str(e)}

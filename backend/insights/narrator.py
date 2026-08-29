@@ -25,7 +25,7 @@ def _init_gemini() -> Optional[object]:
 
     try:
         genai.configure(api_key=api_key)
-        return genai.GenerativeModel("gemini-1.5-flash")
+        return genai.GenerativeModel("gemini-3.6-flash")
     except Exception:
         return None
 

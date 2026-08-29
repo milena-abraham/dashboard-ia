@@ -120,28 +120,28 @@ async def analyze(
 
         # 7. Forecast
         print("--> Iniciando Forecast...")
-        forecast_res: Dict[str, Any] = {"fig_json": None, "metrics": {}}
+        forecast_res: Dict[str, Any] = {"chart_data": None, "metrics": {}}
         if profile.date_columns and active_target in profile.numeric_columns:
             try:
                 _, f_fig, f_metrics = run_forecast(df_clean, date_col=profile.date_columns[0], value_col=active_target, periods=60)
-                forecast_res = {"fig_json": f_fig, "metrics": f_metrics}
+                forecast_res = {"chart_data": f_fig, "metrics": f_metrics}
             except Exception as e:
                 forecast_res["metrics"] = {"error": str(e)}
 
         # 8. Importancia de Variables
         print("--> Iniciando Importancia de Variables...")
-        feature_res: Dict[str, Any] = {"fig_json": None, "shap_json": None, "metrics": {}}
+        feature_res: Dict[str, Any] = {"chart_importance": None, "chart_shap": None, "metrics": {}}
         if active_target in profile.numeric_columns:
             try:
                 feats = [c for c in profile.numeric_columns if c != active_target]
                 fi_fig, shap_fig, fi_metrics = run_feature_importance(df_clean, active_target, feats, categorical_cols=profile.categorical_columns)
-                feature_res = {"fig_json": fi_fig, "shap_json": shap_fig, "metrics": fi_metrics}
+                feature_res = {"chart_importance": fi_fig, "chart_shap": shap_fig, "metrics": fi_metrics}
             except Exception as e:
                 feature_res["metrics"] = {"error": str(e)}
 
         # 9. Detección de Anomalías
         print("--> Iniciando Detección de Anomalías...")
-        anomaly_res: Dict[str, Any] = {"fig_json": None, "metrics": {}}
+        anomaly_res: Dict[str, Any] = {"chart_data": None, "metrics": {}}
         try:
             _, a_fig, a_metrics = run_anomaly_detection(
                 df_clean,
@@ -149,18 +149,18 @@ async def analyze(
                 target_col=active_target if active_target in profile.numeric_columns else None,
                 date_col=profile.date_columns[0] if profile.date_columns else None,
             )
-            anomaly_res = {"fig_json": a_fig, "metrics": a_metrics}
+            anomaly_res = {"chart_data": a_fig, "metrics": a_metrics}
         except Exception as e:
             anomaly_res["metrics"] = {"error": str(e)}
 
         # 10. Segmentación
         print("--> Iniciando Segmentación...")
-        seg_res: Dict[str, Any] = {"scatter_json": None, "profile_json": None, "metrics": {}}
+        seg_res: Dict[str, Any] = {"scatter_data": None, "radar_data": None, "metrics": {}}
         if len(profile.numeric_columns) >= 2:
             try:
                 label_c = profile.categorical_columns[0] if profile.categorical_columns else None
                 _, s_scatter, s_prof, s_metrics = run_clustering(df_clean, numeric_cols=profile.numeric_columns[:6], label_col=label_c)
-                seg_res = {"scatter_json": s_scatter, "profile_json": s_prof, "metrics": s_metrics}
+                seg_res = {"scatter_data": s_scatter, "radar_data": s_prof, "metrics": s_metrics}
             except Exception as e:
                 seg_res["metrics"] = {"error": str(e)}
 

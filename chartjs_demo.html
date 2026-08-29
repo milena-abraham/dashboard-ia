@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patrones Interactivos - Chart.js</title>
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+  <style>
+    /* VARIABLES CSS - PALETA DEFINIDA POR EL USUARIO */
+    :root {
+      --bg-color: #1e1e2f;
+      --text-color: #e0e0e0;
+      --grid-color: rgba(255, 255, 255, 0.1);
+      --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      
+      /* Colores para las series */
+      --color-primary: #3b82f6;
+      --color-primary-alpha: rgba(59, 130, 246, 0.2);
+      
+      --color-secondary: #10b981;
+      --color-secondary-alpha: rgba(16, 185, 129, 0.2);
+      
+      --color-tertiary: #f59e0b;
+      --color-tertiary-alpha: rgba(245, 158, 11, 0.2);
+      
+      --color-dimmed: rgba(255, 255, 255, 0.05); /* Para el patrón 2 (Hover) */
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: var(--font-family);
+      margin: 0;
+      padding: 20px;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .chart-card {
+      background-color: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--grid-color);
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 300px; /* Altura fija en px como se solicitó */
+      width: 100%;
+      flex-grow: 1;
+    }
+    
+    .full-width {
+      grid-column: 1 / -1;
+    }
+
+    .controls {
+      margin-bottom: 15px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    input[type="date"], button {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      border: 1px solid var(--color-primary);
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    h2 {
+      margin-top: 0;
+      font-size: 1.2rem;
+      font-weight: normal;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Dashboard de Patrones - Chart.js</h1>
+
+  <div class="dashboard">
+    <!-- PATRÓN 5: Filtro temporal -->
+    <div class="chart-card full-width">
+      <h2>Evolución Temporal (Filtro y Line Chart)</h2>
+      <div class="controls">
+        <label>Desde: <input type="date" id="dateStart" value="2023-01-01"></label>
+        <label>Hasta: <input type="date" id="dateEnd" value="2023-12-31"></label>
+        <button id="btnFilter">Filtrar (Destruir y recrear)</button>
+      </div>
+      <div class="chart-container">
+        <canvas id="lineChart"></canvas>
+      </div>
+    </div>
+
+    <!-- PATRÓN 6: Click para Drill-down -->
+    <div class="chart-card">
+      <h2>Ventas por Categoría (Click para Drill-down)</h2>
+      <p style="font-size: 12px; margin-top:-10px; color:#aaa;">(Haz click en una barra para filtrar el gráfico secundario)</p>
+      <div class="chart-container">
+        <canvas id="barVerticalChart"></canvas>
+      </div>
+    </div>
+
+    <!-- DRILL-DOWN DESTINO -->
+    <div class="chart-card">
+      <h2 id="drillDownTitle">Subcategorías (Doughnut)</h2>
+      <div class="chart-container">
+        <canvas id="doughnutChart"></canvas>
+      </div>
+    </div>
+
+    <!-- PATRÓN 3 y 4: Radar con normalización y valores reales -->
+    <div class="chart-card">
+      <h2>Análisis de Competencia (Radar normalizado dinámicamente)</h2>
+      <div class="chart-container" style="height: 400px;">
+        <canvas id="radarChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Bar Horizontal -->
+    <div class="chart-card">
+      <h2>Top Rendimiento (Bar Horizontal)</h2>
+      <div class="chart-container" style="height: 400px;">
+        <canvas id="barHorizontalChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // CONSTANTES Y COLORES (Extraídos de CSS)
+    // ==========================================
+    const rootStyle = getComputedStyle(document.documentElement);
+    const COLORS = {
+      primary: rootStyle.getPropertyValue('--color-primary').trim(),
+      primaryAlpha: rootStyle.getPropertyValue('--color-primary-alpha').trim(),
+      secondary: rootStyle.getPropertyValue('--color-secondary').trim(),
+      secondaryAlpha: rootStyle.getPropertyValue('--color-secondary-alpha').trim(),
+      tertiary: rootStyle.getPropertyValue('--color-tertiary').trim(),
+      tertiaryAlpha: rootStyle.getPropertyValue('--color-tertiary-alpha').trim(),
+      text: rootStyle.getPropertyValue('--text-color').trim(),
+      grid: rootStyle.getPropertyValue('--grid-color').trim(),
+      dimmed: rootStyle.getPropertyValue('--color-dimmed').trim(),
+    };
+
+    // ==========================================
+    // PATRÓN 1: Objeto de Configuración Base
+    // ==========================================
+    const chartDefaults = {
+      responsive: true,
+      maintainAspectRatio: false,
+      color: COLORS.text,
+      plugins: {
+        legend: {
+          labels: { color: COLORS.text }
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+        }
+      },
+      // Escalas base (se sobrescriben en Doughnut/Radar)
+      scales: {
+        x: {
+          grid: { color: COLORS.grid },
+          ticks: { color: COLORS.text }
+        },
+        y: {
+          grid: { color: COLORS.grid },
+          ticks: { color: COLORS.text }
+        }
+      },
+      // PATRÓN 2: Efecto hover de foco (dimming)
+      onHover: function(e, activeElements, chart) {
+        const datasets = chart.data.datasets;
+        
+        // Si no hay elementos activos, restauramos todo
+        if (activeElements.length === 0) {
+          datasets.forEach((dataset) => {
+            if (dataset._origBg) {
+              dataset.backgroundColor = dataset._origBg;
+              dataset.borderColor = dataset._origBorder;
+            }
+          });
+          chart.update();
+          return;
+        }
+
+        const activeDatasetIndex = activeElements[0].datasetIndex;
+
+        datasets.forEach((dataset, i) => {
+          // Guardar estado original la primera vez
+          if (!dataset._origBg) {
+            dataset._origBg = dataset.backgroundColor;
+            dataset._origBorder = dataset.borderColor;
+          }
+
+          if (i === activeDatasetIndex) {
+            // Activo: color original
+            dataset.backgroundColor = dataset._origBg;
+            dataset.borderColor = dataset._origBorder;
+          } else {
+            // Inactivo: color dim
+            // Manejamos si el backgroundColor es un array (ej. doughnut) o string
+            dataset.backgroundColor = Array.isArray(dataset._origBg) 
+              ? dataset._origBg.map(() => COLORS.dimmed) 
+              : COLORS.dimmed;
+            
+            dataset.borderColor = Array.isArray(dataset._origBorder)
+              ? dataset._origBorder.map(() => 'transparent')
+              : 'transparent';
+          }
+        });
+        chart.update();
+      }
+    };
+
+    // ==========================================
+    // PATRÓN 5: Filtro temporal y redibujado
+    // ==========================================
+    let lineChartInstance = null;
+    
+    // Datos crudos
+    const rawTimeData = [
+      { date: '2023-01', val1: 10, val2: 15 },
+      { date: '2023-02', val1: null, val2: 18 }, // Dato hueco para spanGaps
+      { date: '2023-03', val1: 14, val2: 12 },
+      { date: '2023-04', val1: 20, val2: 25 },
+      { date: '2023-05', val1: 25, val2: 22 },
+      { date: '2023-06', val1: 30, val2: null }, // Dato hueco
+      { date: '2023-07', val1: 35, val2: 30 },
+    ];
+
+    function renderLineChart(data) {
+      if (lineChartInstance) lineChartInstance.destroy();
+
+      const ctx = document.getElementById('lineChart').getContext('2d');
+      lineChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.map(d => d.date),
+          datasets: [
+            {
+              label: 'Serie A (con huecos)',
+              data: data.map(d => d.val1),
+              borderColor: COLORS.primary,
+              backgroundColor: COLORS.primaryAlpha,
+              tension: 0.4,
+              fill: true,
+              spanGaps: true // REGLA: spanGaps para datos con huecos
+            },
+            {
+              label: 'Serie B (con huecos)',
+              data: data.map(d => d.val2),
+              borderColor: COLORS.secondary,
+              backgroundColor: COLORS.secondaryAlpha,
+              tension: 0.4,
+              fill: true,
+              spanGaps: true
+            }
+          ]
+        },
+        options: {
+          ...chartDefaults
+        }
+      });
+    }
+
+    // Inicializar y vincular botón
+    renderLineChart(rawTimeData);
+    document.getElementById('btnFilter').addEventListener('click', () => {
+      // Simulación simple de filtro
+      const filtered = rawTimeData.slice(1, 5); 
+      renderLineChart(filtered);
+    });
+
+    // ==========================================
+    // PATRÓN 6: Click para drill-down (Barras)
+    // ==========================================
+    let drillDownChartInstance = null;
+    
+    const drillDownData = {
+      'Electrónica': [40, 20, 10], // Laptops, Celulares, Audio
+      'Muebles': [15, 30, 25],     // Sillas, Mesas, Sofás
+      'Ropa': [50, 40, 30]         // Remeras, Pantalones, Calzado
+    };
+    const subLabels = {
+      'Electrónica': ['Laptops', 'Celulares', 'Audio'],
+      'Muebles': ['Sillas', 'Mesas', 'Sofás'],
+      'Ropa': ['Remeras', 'Pantalones', 'Calzado']
+    };
+
+    function renderDrillDown(category) {
+      if (drillDownChartInstance) drillDownChartInstance.destroy();
+      document.getElementById('drillDownTitle').innerText = `Subcategorías: ${category}`;
+      
+      const ctx = document.getElementById('doughnutChart').getContext('2d');
+      drillDownChartInstance = new Chart(ctx, {
+        type: 'doughnut', // REGLA: doughnut
+        data: {
+          labels: subLabels[category],
+          datasets: [{
+            data: drillDownData[category],
+            backgroundColor: [COLORS.primary, COLORS.secondary, COLORS.tertiary],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          ...chartDefaults,
+          cutout: '70%', // REGLA: cutout configurable
+          scales: { x: {display: false}, y: {display: false} }, // Ocultar ejes
+          onHover: undefined // Desactivar dimming complejo en doughnut para simplificar
+        }
+      });
+    }
+
+    const ctxBar = document.getElementById('barVerticalChart').getContext('2d');
+    new Chart(ctxBar, {
+      type: 'bar',
+      data: {
+        labels: ['Electrónica', 'Muebles', 'Ropa'],
+        datasets: [
+          {
+            label: 'Ingresos (Miles)',
+            data: [120, 80, 150],
+            backgroundColor: COLORS.primary,
+            yAxisID: 'y'
+          },
+          {
+            label: 'Unidades (Cientos)',
+            data: [45, 120, 300],
+            backgroundColor: COLORS.secondary,
+            yAxisID: 'y1' // REGLA: Eje secundario
+          }
+        ]
+      },
+      options: {
+        ...chartDefaults,
+        // PATRÓN 6: onClick
+        onClick: (event, activeElements, chart) => {
+          if (activeElements.length > 0) {
+            const index = activeElements[0].index;
+            const categoria = chart.data.labels[index];
+            renderDrillDown(categoria);
+          }
+        },
+        scales: {
+          x: chartDefaults.scales.x,
+          y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            grid: { color: COLORS.grid },
+            ticks: { color: COLORS.text }
+          },
+          y1: {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            grid: { drawOnChartArea: false }, // No superponer grillas
+            ticks: { color: COLORS.text }
+          }
+        }
+      }
+    });
+
+    // Renderizar drilldown inicial
+    renderDrillDown('Electrónica');
+
+    // ==========================================
+    // PATRÓN 3 y 4: Radar con Renormalización
+    // ==========================================
+    // Datos absolutos originales
+    const rawRadarData = {
+      'Empresa A': [5000, 200, 45, 12],
+      'Empresa B': [12000, 150, 80, 8],
+      'Empresa C': [3000, 400, 20, 25]
+    };
+    const radarMetrics = ['Ingresos', 'Empleados', 'Clientes', 'Sucursales'];
+    const radarColors = [COLORS.primary, COLORS.secondary, COLORS.tertiary];
+
+    // Función para normalizar entre 0 y 100 basada SOLO en las visibles
+    function recalcularConVisibles(chart) {
+      // 1. Encontrar máximos por métrica entre las empresas visibles
+      const maximos = [0, 0, 0, 0];
+      const visibles = [];
+      
+      chart.data.datasets.forEach((ds, i) => {
+        const isVisible = chart.isDatasetVisible(i);
+        visibles.push(isVisible);
+        if (isVisible) {
+          const raw = rawRadarData[ds.label];
+          raw.forEach((val, j) => {
+            if (val > maximos[j]) maximos[j] = val;
+          });
+        }
+      });
+
+      // 2. Renormalizar datasets
+      return chart.data.datasets.map((ds, i) => {
+        if (!visibles[i]) return ds; // Si está oculto, no importa
+        
+        const raw = rawRadarData[ds.label];
+        const normalized = raw.map((val, j) => {
+          return maximos[j] === 0 ? 0 : (val / maximos[j]) * 100;
+        });
+        
+        return { ...ds, data: normalized };
+      });
+    }
+
+    const ctxRadar = document.getElementById('radarChart').getContext('2d');
+    
+    // Dataset inicial (todos 100% normalizados al máximo global de inicio)
+    const initialDatasets = Object.keys(rawRadarData).map((label, i) => ({
+      label: label,
+      data: [0, 0, 0, 0], // Se llenará en el primer recalculate
+      borderColor: radarColors[i],
+      backgroundColor: radarColors[i].replace(')', ', 0.2)').replace('rgb', 'rgba'),
+    }));
+
+    const radarChart = new Chart(ctxRadar, {
+      type: 'radar',
+      data: {
+        labels: radarMetrics,
+        datasets: initialDatasets
+      },
+      options: {
+        ...chartDefaults,
+        scales: {
+          r: {
+            min: 0,
+            max: 100,
+            grid: { color: COLORS.grid },
+            pointLabels: { color: COLORS.text },
+            ticks: { display: false } // Ocultar ticks de 0 a 100
+          },
+          x: {display: false}, y: {display: false}
+        },
+        plugins: {
+          legend: {
+            labels: { color: COLORS.text },
+            // PATRÓN 3: onClick en leyenda para renormalizar
+            onClick: function(e, legendItem, legend) {
+              const index = legendItem.datasetIndex;
+              const chart = legend.chart;
+              
+              // Toggle nativo de Chart.js
+              chart.isDatasetVisible(index) ? chart.hide(index) : chart.show(index);
+              
+              // Renormalizar y actualizar
+              chart.data.datasets = recalcularConVisibles(chart);
+              chart.update();
+            }
+          },
+          tooltip: {
+            callbacks: {
+              // PATRÓN 4: Tooltip con valores reales
+              label: function(ctx) {
+                const datasetLabel = ctx.dataset.label;
+                const index = ctx.dataIndex;
+                const metricName = chart.data.labels[index];
+                const valorReal = rawRadarData[datasetLabel][index];
+                
+                // Formateo simple
+                const fmt = new Intl.NumberFormat('es-AR').format(valorReal);
+                return ` ${datasetLabel}: ${fmt} ${metricName}`;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Inicializar normalización
+    radarChart.data.datasets = recalcularConVisibles(radarChart);
+    radarChart.update();
+
+    // ==========================================
+    // Bar Horizontal (Requisito)
+    // ==========================================
+    const ctxHBar = document.getElementById('barHorizontalChart').getContext('2d');
+    new Chart(ctxHBar, {
+      type: 'bar',
+      data: {
+        labels: ['Producto X', 'Producto Y', 'Producto Z'],
+        datasets: [{
+          label: 'Ventas',
+          data: [85, 45, 60],
+          backgroundColor: COLORS.tertiary
+        }]
+      },
+      options: {
+        ...chartDefaults,
+        indexAxis: 'y', // REGLA: Horizontal
+      }
+    });
+
+  </script>
+</body>
+</html>

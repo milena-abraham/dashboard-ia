@@ -7,6 +7,7 @@ import FileUploader from '@/components/FileUploader';
 import KPICards from '@/components/KPICards';
 import ChartRenderer from '@/components/ChartRenderer';
 import InsightPanel from '@/components/InsightPanel';
+import DataChatbot from '@/components/DataChatbot';
 import LoadingAnalysis from '@/components/LoadingAnalysis';
 import DataQualityBadge from '@/components/DataQualityBadge';
 import { analyzeFile, exportPDF } from '@/lib/api';
@@ -16,6 +17,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import {
   BarChart3,
+  Bot,
   TrendingUp,
   Users,
   AlertTriangle,
@@ -129,7 +131,8 @@ export default function DashboardPage() {
     { label: 'Anomalías', icon: AlertTriangle },
     { label: 'Factores Clave', icon: Target },
     { label: 'Informe IA', icon: FileText },
-  ];
+    { id: 'chat', label: 'Asistente IA', icon: Bot },
+];
 
   return (
     <div className="min-h-screen bg-[#fafafc] flex flex-col">
@@ -286,7 +289,7 @@ export default function DashboardPage() {
                       <div key={i} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
                         <h4 className="text-base font-bold text-gray-900 mb-1">{c.title}</h4>
                         <p className="text-xs text-gray-400 mb-4">{c.description}</p>
-                        <ChartRenderer figJson={c.fig_json} />
+                        <ChartRenderer chartData={c.chart_data} />
                       </div>
                     ))
                   ) : (
@@ -315,7 +318,7 @@ export default function DashboardPage() {
                       </span>
                     )}
                   </div>
-                  <ChartRenderer figJson={result.forecast?.fig_json} height={420} />
+                  <ChartRenderer chartData={result.forecast?.chart_data} height={420} />
                 </div>
               )}
 
@@ -324,11 +327,11 @@ export default function DashboardPage() {
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
                     <h4 className="text-base font-bold text-gray-900 mb-2">Mapa de Segmentación 2D (PCA)</h4>
-                    <ChartRenderer figJson={result.segmentation?.scatter_json} />
+                    <ChartRenderer chartData={result.segmentation?.scatter_data} />
                   </div>
                   <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
                     <h4 className="text-base font-bold text-gray-900 mb-2">Perfil Promedio por Segmento</h4>
-                    <ChartRenderer figJson={result.segmentation?.profile_json} />
+                    <ChartRenderer chartData={result.segmentation?.radar_data} />
                   </div>
                 </div>
               )}
@@ -340,7 +343,7 @@ export default function DashboardPage() {
                     <h3 className="text-lg font-bold text-gray-900">Detección de Anomalías (Isolation Forest)</h3>
                     <p className="text-xs text-gray-500">Registros atípicos marcados para auditoría</p>
                   </div>
-                  <ChartRenderer figJson={result.anomalies?.fig_json} height={400} />
+                  <ChartRenderer chartData={result.anomalies?.chart_data} height={400} />
                   {result.anomalies?.metrics?.anomalias_detalle && (
                     <div className="pt-4 border-t border-gray-100">
                       <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-3">
@@ -363,11 +366,11 @@ export default function DashboardPage() {
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
                     <h4 className="text-base font-bold text-gray-900 mb-2">Impacto de Variables (LightGBM)</h4>
-                    <ChartRenderer figJson={result.feature_importance?.fig_json} />
+                    <ChartRenderer chartData={result.feature_importance?.chart_importance} />
                   </div>
                   <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
                     <h4 className="text-base font-bold text-gray-900 mb-2">Explicabilidad SHAP</h4>
-                    <ChartRenderer figJson={result.feature_importance?.shap_json} />
+                    <ChartRenderer chartData={result.feature_importance?.chart_shap} />
                   </div>
                 </div>
               )}
@@ -378,6 +381,13 @@ export default function DashboardPage() {
                   text={result.narrative?.text || 'Generando informe...'}
                   source={result.narrative?.source}
                 />
+              )}
+
+              {/* Tab 6: Asistente IA */}
+              {activeTab === 6 && (
+                <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                  <DataChatbot context={result} />
+                </div>
               )}
             </div>
           </div>

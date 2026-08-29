@@ -1,15 +1,13 @@
 """
 models/anomaly_detector.py
 Deteccion de anomalias con Isolation Forest para Web API.
-Retorna fig_json y metricas.
+Retorna raw data y metricas.
 """
 
 from __future__ import annotations
 from typing import List, Tuple, Optional, Dict, Any
 import pandas as pd
 import numpy as np
-import plotly.graph_objects as go
-import plotly.express as px
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 
@@ -20,10 +18,10 @@ def run_anomaly_detection(
     target_col: Optional[str] = None,
     date_col: Optional[str] = None,
     contamination: float = 0.05,
-) -> Tuple[pd.DataFrame, Optional[str], dict]:
+) -> Tuple[pd.DataFrame, Optional[dict], dict]:
     """
     Detecta anomalias usando Isolation Forest.
-    Retorna (df_out, fig_json, metrics)
+    Retorna (df_out, chart_data, metrics)
     """
     if not numeric_cols:
         return df, None, {"error": "No hay columnas numéricas para analizar."}
@@ -45,7 +43,7 @@ def run_anomaly_detection(
         n_anomalies = int((labels == -1).sum())
         anomaly_rows = df_out[df_out["_is_anomaly"]].copy()
 
-        fig = None
+        chart_data = None
         if target_col and target_col in df_out.columns and date_col and date_col in df_out.columns:
             df_plot = df_out.copy()
             df_plot[date_col] = pd.to_datetime(df_plot[date_col], errors="coerce")
@@ -54,53 +52,48 @@ def run_anomaly_detection(
             normal_df = df_agg[~df_agg["_is_anomaly"]]
             anomaly_df = df_agg[df_agg["_is_anomaly"]]
 
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(
-                x=normal_df[date_col], y=normal_df[target_col],
-                mode="lines+markers", name="Normal",
-                line=dict(color="#667eea", width=2),
-                marker=dict(size=5),
-            ))
-            fig.add_trace(go.Scatter(
-                x=anomaly_df[date_col], y=anomaly_df[target_col],
-                mode="markers", name="⚠️ Anomalía",
-                marker=dict(color="#e53e3e", size=12, symbol="x"),
-            ))
-            fig.update_layout(
-                title=f"Anomalías Detectadas en {target_col}",
-                xaxis_title="Fecha", yaxis_title=target_col,
-                font_family="Inter, sans-serif",
-                plot_bgcolor="white", paper_bgcolor="white",
-                margin=dict(l=20, r=20, t=50, b=20),
-            )
-        elif target_col and target_col in df_out.columns:
-            # Para anomalías, es CRÍTICO mantener TODAS las anomalías. Solo hacemos downsample de los puntos "Normales"
-            normal_df = df_out[~df_out["_is_anomaly"]]
-            anomalies_df = df_out[df_out["_is_anomaly"]]
-            
-            if len(normal_df) > 3000:
-                normal_df = normal_df.sample(3000, random_state=42)
-            
-            df_plot = pd.concat([normal_df, anomalies_df])
-            dynamic_opacity = max(0.4, min(0.9, 1500 / max(len(df_plot), 1)))
+            chart_data = {
+                "type": "timeseries",
+                "normal": {
+                    "x": normal_df[date_col].dt.strftime('%Y-%m-%d').tolist(),
+                    "y": normal_df[target_col].tolist(),
+                },
+                "anomalies": {
+                    "x": anomaly_df[date_col].dt.strftime('%Y-%m-%d').tolist(),
+                    "y": anomaly_df[target_col].tolist(),
+                },
+                "x_label": date_col,
+                "y_label": target_col,
+            }
 
-            fig = px.scatter(
-                df_plot, x=df_plot.index, y=target_col,
-                color="_is_anomaly",
-                opacity=dynamic_opacity,
-                marginal_y="violin",
-                color_discrete_map={True: "#e53e3e", False: "#667eea"},
-                title=f"Anomalías detectadas en {target_col}",
-                labels={"_is_anomaly": "¿Anomalía?"},
-            )
-            # Aumentar tamaño de las anomalías para que resalten más
-            fig.update_traces(selector=dict(name="True"), marker=dict(size=10, symbol="x"))
-            fig.update_traces(selector=dict(name="False"), marker=dict(size=6))
-            fig.update_layout(
-                font_family="Inter, sans-serif",
-                plot_bgcolor="white", paper_bgcolor="white",
-                margin=dict(l=20, r=20, t=50, b=20),
-            )
+        elif len(numeric_cols) >= 2:
+            x_col = numeric_cols[0]
+            y_col = numeric_cols[1]
+            
+            # Split anomalies and normal
+            df_anomalies = df_out[df_out["_is_anomaly"]]
+            df_normal = df_out[~df_out["_is_anomaly"]]
+            
+            # Downsample only normal points if needed
+            if len(df_normal) > 3000:
+                df_normal = df_normal.sample(3000, random_state=42)
+
+            def to_list_clean(series):
+                return [x if not pd.isna(x) else None for x in series]
+
+            chart_data = {
+                "type": "scatter",
+                "normal": {
+                    "x": to_list_clean(df_normal[x_col]),
+                    "y": to_list_clean(df_normal[y_col]),
+                },
+                "anomalies": {
+                    "x": to_list_clean(df_anomalies[x_col]),
+                    "y": to_list_clean(df_anomalies[y_col]),
+                },
+                "x_label": x_col,
+                "y_label": y_col,
+            }
 
         anomaly_descriptions = []
         if not anomaly_rows.empty:
@@ -119,7 +112,7 @@ def run_anomaly_detection(
             "anomalias_detalle": anomaly_descriptions,
         }
 
-        return df_out, fig.to_json() if fig else None, metrics
+        return df_out, chart_data, metrics
 
     except Exception as e:
         return df, None, {"error": str(e)}
