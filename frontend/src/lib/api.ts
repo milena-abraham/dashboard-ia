@@ -1,6 +1,6 @@
 import { AnalysisResult } from '@/types/analysis';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://dashboard-ia-1.onrender.com';
 
 export async function analyzeFile(
   file: File,

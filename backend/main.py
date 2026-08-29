@@ -8,12 +8,10 @@ load_dotenv()
 
 app = FastAPI(title="Dashboard IA API", version="1.0.0")
 
-origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
