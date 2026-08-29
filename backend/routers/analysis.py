@@ -83,6 +83,10 @@ async def analyze(
         if df_raw.empty:
             raise HTTPException(status_code=400, detail="El archivo subido está vacío.")
 
+        print(f"--> Archivo leído. Filas originales: {len(df_raw)}")
+        print("--> Iniciando limpieza...")
+
+
         # 2. Limpieza
         df_clean, cleaning_report = clean_dataframe(df_raw)
 
@@ -115,6 +119,7 @@ async def analyze(
         charts = auto_charts(df_clean, profile, active_target)
 
         # 7. Forecast
+        print("--> Iniciando Forecast...")
         forecast_res: Dict[str, Any] = {"fig_json": None, "metrics": {}}
         if profile.date_columns and active_target in profile.numeric_columns:
             try:
@@ -124,6 +129,7 @@ async def analyze(
                 forecast_res["metrics"] = {"error": str(e)}
 
         # 8. Importancia de Variables
+        print("--> Iniciando Importancia de Variables...")
         feature_res: Dict[str, Any] = {"fig_json": None, "shap_json": None, "metrics": {}}
         if active_target in profile.numeric_columns:
             try:
@@ -134,6 +140,7 @@ async def analyze(
                 feature_res["metrics"] = {"error": str(e)}
 
         # 9. Detección de Anomalías
+        print("--> Iniciando Detección de Anomalías...")
         anomaly_res: Dict[str, Any] = {"fig_json": None, "metrics": {}}
         try:
             _, a_fig, a_metrics = run_anomaly_detection(
@@ -147,6 +154,7 @@ async def analyze(
             anomaly_res["metrics"] = {"error": str(e)}
 
         # 10. Segmentación
+        print("--> Iniciando Segmentación...")
         seg_res: Dict[str, Any] = {"scatter_json": None, "profile_json": None, "metrics": {}}
         if len(profile.numeric_columns) >= 2:
             try:
@@ -157,6 +165,7 @@ async def analyze(
                 seg_res["metrics"] = {"error": str(e)}
 
         # 11. Narrativa IA
+        print("--> Iniciando Generación de Narrativa IA...")
         narrative_res = generate_narrative(
             df=df_clean,
             profile=profile,

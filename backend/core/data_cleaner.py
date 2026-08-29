@@ -165,7 +165,13 @@ def clean_dataframe(df: pd.DataFrame) -> Tuple[pd.DataFrame, CleaningReport]:
     for col in df.columns:
         if type_map.get(col) == COLUMN_TYPE_DATE and df[col].dtype == object:
             try:
-                df[col] = pd.to_datetime(df[col], infer_datetime_format=True, errors="coerce")
+                # Use cache=True to speed up parsing of repeated dates, drop infer_datetime_format as it's deprecated
+                df[col] = pd.to_datetime(df[col], errors="coerce", format="mixed")
+                report.dates_parsed.append(col)
+                report.actions.append(f"Columna '{col}': parseada como fecha/hora.")
+            except ValueError:
+                # If format='mixed' is not supported (pandas < 2.0), fallback
+                df[col] = pd.to_datetime(df[col], errors="coerce")
                 report.dates_parsed.append(col)
                 report.actions.append(f"Columna '{col}': parseada como fecha/hora.")
             except Exception:

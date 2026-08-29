@@ -56,7 +56,7 @@ export default function ChartRenderer({ figJson, height = 380 }: ChartRendererPr
       <Plot
         data={chartData.data || []}
         layout={layout}
-        config={{ responsive: true, displayModeBar: false }}
+        config={{ responsive: true, displayModeBar: true, displaylogo: false }}
         style={{ width: '100%', height: `${height}px` }}
         useResizeHandler={true}
       />

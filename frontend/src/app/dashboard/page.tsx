@@ -60,10 +60,10 @@ export default function DashboardPage() {
       setResult(data);
       toast.success('¡Análisis completado con éxito!');
 
-      // Guardar en Firestore si hay usuario
       if (user) {
         try {
-          await addDoc(collection(db, 'users', user.uid, 'analyses'), {
+          // Fire and forget so we don't block the UI if Firebase is not configured properly
+          addDoc(collection(db, 'users', user.uid, 'analyses'), {
             filename: data.filename || 'dataset',
             target_col: data.target_col || data.target_column || '',
             kpis: data.kpis || {},

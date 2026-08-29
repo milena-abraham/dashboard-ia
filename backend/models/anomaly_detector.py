@@ -74,13 +74,28 @@ def run_anomaly_detection(
                 margin=dict(l=20, r=20, t=50, b=20),
             )
         elif target_col and target_col in df_out.columns:
+            # Para anomalías, es CRÍTICO mantener TODAS las anomalías. Solo hacemos downsample de los puntos "Normales"
+            normal_df = df_out[~df_out["_is_anomaly"]]
+            anomalies_df = df_out[df_out["_is_anomaly"]]
+            
+            if len(normal_df) > 3000:
+                normal_df = normal_df.sample(3000, random_state=42)
+            
+            df_plot = pd.concat([normal_df, anomalies_df])
+            dynamic_opacity = max(0.4, min(0.9, 1500 / max(len(df_plot), 1)))
+
             fig = px.scatter(
-                df_out, x=df_out.index, y=target_col,
+                df_plot, x=df_plot.index, y=target_col,
                 color="_is_anomaly",
+                opacity=dynamic_opacity,
+                marginal_y="violin",
                 color_discrete_map={True: "#e53e3e", False: "#667eea"},
                 title=f"Anomalías detectadas en {target_col}",
                 labels={"_is_anomaly": "¿Anomalía?"},
             )
+            # Aumentar tamaño de las anomalías para que resalten más
+            fig.update_traces(selector=dict(name="True"), marker=dict(size=10, symbol="x"))
+            fig.update_traces(selector=dict(name="False"), marker=dict(size=6))
             fig.update_layout(
                 font_family="Inter, sans-serif",
                 plot_bgcolor="white", paper_bgcolor="white",

@@ -69,7 +69,10 @@ def _infer_column_type(series: pd.Series) -> str:
     if series.dtype == object:
         sample = series.dropna().head(20)
         try:
-            parsed = pd.to_datetime(sample, infer_datetime_format=True, errors="coerce")
+            try:
+                parsed = pd.to_datetime(sample, errors="coerce", format="mixed")
+            except ValueError:
+                parsed = pd.to_datetime(sample, errors="coerce")
             if parsed.notna().sum() / max(len(sample), 1) > 0.8:
                 return COLUMN_TYPE_DATE
         except Exception:

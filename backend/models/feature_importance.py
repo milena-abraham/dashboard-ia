@@ -93,7 +93,8 @@ def run_feature_importance(
         if SHAP_AVAILABLE:
             try:
                 explainer = shap.TreeExplainer(model)
-                shap_values = explainer.shap_values(X)
+                X_sample = X.sample(min(2000, len(X)), random_state=42)
+                shap_values = explainer.shap_values(X_sample)
                 mean_shap = np.abs(shap_values).mean(axis=0)
 
                 shap_df = pd.DataFrame({

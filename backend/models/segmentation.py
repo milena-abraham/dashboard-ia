@@ -32,12 +32,14 @@ def _find_optimal_k(X_scaled: np.ndarray, max_k: int = 6) -> int:
     if len(X_scaled) < max_k * 2:
         return min(3, max(2, len(X_scaled) // 2))
 
+    X_sample = X_scaled[np.random.choice(X_scaled.shape[0], min(10000, len(X_scaled)), replace=False)]
+
     best_k, best_score = 2, -1
-    for k in range(2, min(max_k + 1, len(X_scaled))):
+    for k in range(2, min(max_k + 1, len(X_sample))):
         try:
-            km = KMeans(n_clusters=k, random_state=42, n_init=10)
-            labels = km.fit_predict(X_scaled)
-            score = silhouette_score(X_scaled, labels)
+            km = KMeans(n_clusters=k, random_state=42, n_init="auto")
+            labels = km.fit_predict(X_sample)
+            score = silhouette_score(X_sample, labels, sample_size=min(3000, len(X_sample)), random_state=42)
             if score > best_score:
                 best_score = score
                 best_k = k
@@ -68,7 +70,7 @@ def run_clustering(
         k = n_clusters if n_clusters else _find_optimal_k(X_scaled)
         k = max(2, min(k, min(7, len(df) - 1)))
 
-        km = KMeans(n_clusters=k, random_state=42, n_init=10)
+        km = KMeans(n_clusters=k, random_state=42, n_init="auto")
         labels = km.fit_predict(X_scaled)
 
         df_out = df.copy()
@@ -84,13 +86,24 @@ def run_clustering(
 
         hover_data = [label_col] if label_col and label_col in df_out.columns else None
 
+        if len(df_out) > 3000:
+            # Proporcional por segmento para no perder grupos minoritarios
+            df_plot = df_out.groupby("_segment").sample(frac=3000/len(df_out), random_state=42)
+        else:
+            df_plot = df_out
+
+        # Si hay muchos puntos, hacerlos más transparentes para ver la densidad
+        dynamic_opacity = max(0.3, min(0.9, 1500 / max(len(df_plot), 1)))
+
         fig_scatter = px.scatter(
-            df_out, x="_pca1", y="_pca2", color="_segment",
+            df_plot, x="_pca1", y="_pca2", color="_segment",
             hover_data=hover_data,
+            opacity=dynamic_opacity,
+            marginal_x="box", marginal_y="box",
             title=f"Mapa de Segmentos ({k} grupos)",
             color_discrete_sequence=PALETTE,
         )
-        fig_scatter.update_traces(marker=dict(size=9, opacity=0.85))
+        fig_scatter.update_traces(marker=dict(size=7))
         fig_scatter.update_layout(
             xaxis_title="Componente Principal 1",
             yaxis_title="Componente Principal 2",
