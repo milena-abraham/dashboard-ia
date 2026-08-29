@@ -24,21 +24,21 @@ export default function LoadingAnalysis() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center p-12 bg-white rounded-3xl border border-gray-100 shadow-sm max-w-lg mx-auto text-center my-8">
+    <div className="flex flex-col items-center justify-center p-12 bg-white rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] max-w-lg mx-auto text-center my-8">
       <div className="relative mb-6">
-        <div className="w-20 h-20 rounded-full border-4 border-indigo-100 border-t-indigo-600 animate-spin flex items-center justify-center" />
-        <div className="absolute inset-0 flex items-center justify-center text-indigo-600">
+        <div className="w-20 h-20 rounded-none border-4 border-mio-violet/20 border-t-mio-violet animate-spin flex items-center justify-center" />
+        <div className="absolute inset-0 flex items-center justify-center text-mio-violet">
           <Sparkles className="w-7 h-7 animate-pulse" />
         </div>
       </div>
 
       <h3 className="text-xl font-bold text-gray-900 mb-2">Procesando tus datos</h3>
-      <p className="text-sm text-indigo-600 font-medium h-6 transition-all duration-300">
+      <p className="text-sm text-mio-violet font-medium h-6 transition-all duration-300">
         {MESSAGES[msgIndex]}
       </p>
 
-      <div className="w-full bg-gray-100 h-2 rounded-full mt-6 overflow-hidden">
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 h-full w-2/3 animate-pulse rounded-full" />
+      <div className="w-full bg-gray-100 h-2 rounded-none mt-6 overflow-hidden">
+        <div className="bg-gradient-to-r from-mio-lime to-[#c8ff6a] h-full w-2/3 animate-pulse rounded-none" />
       </div>
     </div>
   );

@@ -39,13 +39,13 @@ export async function exportPDF(data: any): Promise<Blob> {
   return response.blob();
 }
 
-export async function askGemini(message: string, context: any): Promise<{response: string}> {
+export async function askGemini(message: string, context: any, charts?: any[]): Promise<{response: string, chart_override?: {index: number, chart_data: any} | null}> {
   const response = await fetch(`${API_URL}/api/chat`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ message, context }),
+    body: JSON.stringify({ message, context, charts: charts || [] }),
   });
 
   if (!response.ok) {

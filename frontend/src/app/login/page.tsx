@@ -72,10 +72,10 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#fafafc] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <Link href="/" className="inline-flex items-center gap-2 text-2xl font-bold text-gray-900 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+          <div className="w-10 h-10 rounded-none bg-gradient-to-tr from-mio-lime to-[#c8ff6a] flex items-center justify-center text-gray-900 shadow-[6px_6px_0px_#111] shadow-mio-lime/40">
             <BarChart3 className="w-5 h-5" />
           </div>
-          <span>Dashboard<span className="text-indigo-600">.IA</span></span>
+          <span>Dashboard<span className="text-mio-violet">.IA</span></span>
         </Link>
         <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
           {isRegister ? 'Creá tu cuenta gratis' : 'Ingresá a tu cuenta'}
@@ -84,7 +84,7 @@ export default function LoginPage() {
           {isRegister ? '¿Ya tenés cuenta?' : '¿No tenés una cuenta?'}{' '}
           <button
             onClick={() => setIsRegister(!isRegister)}
-            className="font-semibold text-indigo-600 hover:text-indigo-500 transition-colors"
+            className="font-semibold text-mio-violet hover:text-indigo-500 transition-colors"
           >
             {isRegister ? 'Iniciá sesión acá' : 'Registrate gratis'}
           </button>
@@ -92,13 +92,13 @@ export default function LoginPage() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-6 sm:px-10 shadow-sm border border-gray-100 rounded-3xl">
+        <div className="bg-white py-8 px-6 sm:px-10 shadow-[4px_4px_0px_#111] border border-[#111] border-2 rounded-none">
           <form className="space-y-4" onSubmit={handleAuth}>
             <div>
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
                 Email
               </label>
-              <div className="relative rounded-xl shadow-sm">
+              <div className="relative rounded-none shadow-[4px_4px_0px_#111]">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
                   <Mail className="w-4 h-4" />
                 </div>
@@ -107,7 +107,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@empresa.com"
-                  className="block w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
+                  className="block w-full pl-10 pr-4 py-3 border border-[#111] border-2 rounded-none text-sm focus:outline-none focus:ring-2 focus:ring-mio-violet focus:border-transparent text-gray-900"
                   required
                 />
               </div>
@@ -117,7 +117,7 @@ export default function LoginPage() {
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
                 Contraseña
               </label>
-              <div className="relative rounded-xl shadow-sm">
+              <div className="relative rounded-none shadow-[4px_4px_0px_#111]">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
                   <Lock className="w-4 h-4" />
                 </div>
@@ -126,7 +126,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="block w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
+                  className="block w-full pl-10 pr-4 py-3 border border-[#111] border-2 rounded-none text-sm focus:outline-none focus:ring-2 focus:ring-mio-violet focus:border-transparent text-gray-900"
                   required
                 />
               </div>
@@ -135,7 +135,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 py-3.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold text-sm shadow-md shadow-indigo-200 hover:shadow-indigo-300 hover:opacity-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full mt-2 py-3.5 px-4 rounded-none bg-gradient-to-r from-mio-lime to-[#c8ff6a] text-gray-900 font-semibold text-sm shadow-[6px_6px_0px_#111] shadow-mio-violet/30 hover:shadow-mio-violet/40 hover:opacity-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? (
                 'Procesando...'
@@ -151,7 +151,7 @@ export default function LoginPage() {
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-100" />
+                <div className="w-full border-t border-[#111] border-2" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-white px-3 text-gray-400 font-medium">O continuar con</span>
@@ -162,7 +162,7 @@ export default function LoginPage() {
               type="button"
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="w-full mt-4 py-3 px-4 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+              className="w-full mt-4 py-3 px-4 border border-[#111] border-2 rounded-none text-sm font-medium text-gray-700 bg-white hover:bg-white transition-colors flex items-center justify-center gap-2"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path
@@ -185,10 +185,10 @@ export default function LoginPage() {
               <span>Continuar con Google</span>
             </button>
 
-            <div className="mt-4 pt-4 border-t border-gray-100 text-center">
+            <div className="mt-4 pt-4 border-t border-[#111] border-2 text-center">
               <Link
                 href="/dashboard"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100/70 px-4 py-2 rounded-xl transition-all"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-mio-violet hover:text-mio-violet/90 bg-mio-violet/10/70 hover:bg-indigo-100/70 px-4 py-2 rounded-none transition-all"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Explorar Dashboard en Modo Demo (sin cuenta)</span>

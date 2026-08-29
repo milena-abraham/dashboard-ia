@@ -7,7 +7,7 @@ import FileUploader from '@/components/FileUploader';
 import KPICards from '@/components/KPICards';
 import ChartRenderer from '@/components/ChartRenderer';
 import InsightPanel from '@/components/InsightPanel';
-import DataChatbot from '@/components/DataChatbot';
+import DataChatbot, { Message as ChatMessage } from '@/components/DataChatbot';
 import LoadingAnalysis from '@/components/LoadingAnalysis';
 import DataQualityBadge from '@/components/DataQualityBadge';
 import { analyzeFile, exportPDF } from '@/lib/api';
@@ -26,8 +26,7 @@ import {
   Download,
   RotateCcw,
   Sparkles,
-  Layers,
-  HelpCircle,
+  Save,
 } from 'lucide-react';
 import { AnalysisResult } from '@/types/analysis';
 
@@ -40,6 +39,19 @@ export default function DashboardPage() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [activeTab, setActiveTab] = useState<number>(0);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [savingProject, setSavingProject] = useState(false);
+
+  // Persistent chat state (lives in parent so tab changes don't reset it)
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([{
+    id: '1',
+    role: 'assistant',
+    content: '¡Hola! Soy **Asistente MIO**. He analizado tu archivo. ¿Qué te gustaría saber sobre los resultados? También podés pedirme que *modifique un gráfico*.'
+  }]);
+
+  // Chart overrides: map of chart index -> overridden chart_data
+  const [chartOverrides, setChartOverrides] = useState<Record<number, any>>({});
+  const originalCharts = result?.charts || [];
+
   const router = useRouter();
 
   useEffect(() => {
@@ -122,6 +134,38 @@ export default function DashboardPage() {
     setResult(null);
     setTargetCol('');
     setActiveTab(0);
+    setChartOverrides({});
+    setChatMessages([{
+      id: '1',
+      role: 'assistant',
+      content: '¡Hola! Soy **Asistente MIO**. He analizado tu archivo. ¿Qué te gustaría saber sobre los resultados? También podés pedirme que *modifique un gráfico*.'
+    }]);
+  };
+
+  const handleSaveProject = async () => {
+    if (!result || !user) return;
+    setSavingProject(true);
+    try {
+      await addDoc(collection(db, 'users', user.uid, 'analyses'), {
+        filename: result.filename || 'dataset',
+        target_col: result.target_col || result.target_column || '',
+        kpis: result.kpis || {},
+        quality_score: result.profile?.quality_score ?? 0,
+        narrative_text: result.narrative?.text || '',
+        created_at: serverTimestamp(),
+      });
+      toast.success('✅ Proyecto guardado en Mis Proyectos');
+    } catch (e) {
+      console.error(e);
+      toast.error('No se pudo guardar el proyecto.');
+    } finally {
+      setSavingProject(false);
+    }
+  };
+
+  const handleChartOverride = (index: number, chartData: any) => {
+    setChartOverrides(prev => ({ ...prev, [index]: chartData }));
+    toast.success(`✏️ Gráfico ${index + 1} actualizado por el Asistente IA`);
   };
 
   const tabs = [
@@ -153,7 +197,7 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm mb-6">
+            <div className="bg-white p-6 sm:p-8 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] mb-6">
               <FileUploader onFileSelect={(f) => setFile(f)} selectedFile={file} />
 
               {!file && (
@@ -183,7 +227,7 @@ export default function DashboardPage() {
                       setTargetCol('ventas');
                       toast.success('Dataset de ejemplo cargado');
                     }}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100/70 px-4 py-2 rounded-xl transition-all"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-mio-violet hover:text-mio-violet/90 bg-white/70 hover:bg-indigo-100/70 px-4 py-2 rounded-none transition-all"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>O probá cargando un dataset de ejemplo de ventas</span>
@@ -192,7 +236,7 @@ export default function DashboardPage() {
               )}
 
               {file && (
-                <div className="mt-6 pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="mt-6 pt-6 border-t border-[#111] border-2 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="w-full sm:w-auto">
                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
                       Métrica objetivo (opcional)
@@ -202,13 +246,13 @@ export default function DashboardPage() {
                       value={targetCol}
                       onChange={(e) => setTargetCol(e.target.value)}
                       placeholder="Ej: ventas, ingreso, precio"
-                      className="w-full sm:w-64 px-3.5 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900"
+                      className="w-full sm:w-64 px-3.5 py-2 border border-[#111] border-2 rounded-none text-sm focus:outline-none focus:ring-2 focus:ring-mio-violet text-gray-900"
                     />
                   </div>
 
                   <button
                     onClick={handleStartAnalysis}
-                    className="w-full sm:w-auto px-8 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold text-sm shadow-md shadow-indigo-200 hover:shadow-indigo-300 hover:opacity-95 transition-all flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto px-8 py-3 rounded-none bg-gradient-to-r from-mio-lime to-[#c8ff6a] text-gray-900 font-semibold text-sm shadow-[6px_6px_0px_#111] shadow-mio-violet/30 hover:shadow-mio-violet/40 hover:opacity-95 transition-all flex items-center justify-center gap-2"
                   >
                     <Sparkles className="w-4 h-4" />
                     <span>Ejecutar Análisis Completo</span>
@@ -221,7 +265,7 @@ export default function DashboardPage() {
           /* Estado 2: Resultados del Dashboard */
           <div className="space-y-6">
             {/* Header del análisis */}
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
               <div>
                 <div className="flex items-center gap-3 mb-1">
                   <h2 className="text-2xl font-bold text-gray-900">{result.filename}</h2>
@@ -231,22 +275,30 @@ export default function DashboardPage() {
                   />
                 </div>
                 <p className="text-sm text-gray-500">
-                  Analizando foco en: <span className="font-semibold text-indigo-600">"{result.target_col}"</span> • {result.profile.n_rows} filas • {result.profile.n_cols} columnas
+                  Analizando foco en: <span className="font-semibold text-mio-violet">"{result.target_col}"</span> • {result.profile.n_rows} filas • {result.profile.n_cols} columnas
                 </p>
               </div>
 
               <div className="flex items-center gap-2.5 w-full md:w-auto">
                 <button
+                  onClick={handleSaveProject}
+                  disabled={savingProject}
+                  className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-none bg-mio-lime text-gray-900 border-2 border-[#111] text-xs font-bold shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-y-[1px] transition-all disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{savingProject ? 'Guardando...' : 'Guardar Proyecto'}</span>
+                </button>
+                <button
                   onClick={handleDownloadPdf}
                   disabled={downloadingPdf}
-                  className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
+                  className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-none bg-mio-violet hover:bg-mio-violet/90 text-white text-xs font-semibold shadow-[4px_4px_0px_#111] transition-all disabled:opacity-50"
                 >
                   <Download className="w-4 h-4" />
                   <span>{downloadingPdf ? 'Generando PDF...' : 'Exportar PDF'}</span>
                 </button>
                 <button
                   onClick={handleReset}
-                  className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold transition-colors"
+                  className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-none bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold transition-colors"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Cargar otro archivo</span>
@@ -258,7 +310,7 @@ export default function DashboardPage() {
             <KPICards kpis={result.kpis} />
 
             {/* Navigation Tabs */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-gray-200/80">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-[#111] border-2/80">
               {tabs.map((tab, idx) => {
                 const Icon = tab.icon;
                 const active = activeTab === idx;
@@ -266,9 +318,9 @@ export default function DashboardPage() {
                   <button
                     key={idx}
                     onClick={() => setActiveTab(idx)}
-                    className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                    className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-none text-xs font-semibold whitespace-nowrap transition-all ${
                       active
-                        ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
+                        ? 'bg-mio-violet text-white shadow-[4px_4px_0px_#111] shadow-mio-violet/30'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-white'
                     }`}
                   >
@@ -285,13 +337,28 @@ export default function DashboardPage() {
               {activeTab === 0 && (
                 <div className="grid md:grid-cols-2 gap-6">
                   {result.charts && result.charts.length > 0 ? (
-                    result.charts.map((c, i) => (
-                      <div key={i} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-                        <h4 className="text-base font-bold text-gray-900 mb-1">{c.title}</h4>
-                        <p className="text-xs text-gray-400 mb-4">{c.description}</p>
-                        <ChartRenderer chartData={c.chart_data} />
-                      </div>
-                    ))
+                    result.charts.map((c, i) => {
+                      const isOverridden = !!chartOverrides[i];
+                      const activeChartData = isOverridden ? chartOverrides[i] : c.chart_data;
+                      return (
+                        <div key={i} className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="text-base font-bold text-gray-900">{isOverridden ? (activeChartData.title || c.title) : c.title}</h4>
+                            {isOverridden && (
+                              <button
+                                onClick={() => setChartOverrides(prev => { const n = {...prev}; delete n[i]; return n; })}
+                                className="flex items-center gap-1 text-[11px] px-2 py-1 border border-gray-300 text-gray-500 hover:border-mio-violet hover:text-mio-violet transition-colors"
+                                title="Restaurar gráfico original"
+                              >
+                                <RotateCcw className="w-3 h-3" /> Reset
+                              </button>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-400 mb-4">{isOverridden ? '✏️ Modificado por Asistente IA' : c.description}</p>
+                          <ChartRenderer chartData={activeChartData} />
+                        </div>
+                      );
+                    })
                   ) : (
                     <div className="col-span-2 text-center py-12 text-gray-400">
                       No se encontraron gráficos automáticos para esta configuración.
@@ -302,14 +369,14 @@ export default function DashboardPage() {
 
               {/* Tab 1: Proyecciones */}
               {activeTab === 1 && (
-                <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm space-y-6">
+                <div className="bg-white p-6 sm:p-8 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] space-y-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-lg font-bold text-gray-900">Proyección y Predicción Temporal</h3>
                       <p className="text-xs text-gray-500">Estimación de tendencia futura basada en series de tiempo</p>
                     </div>
                     {result.forecast?.metrics?.tendencia_pct !== undefined && (
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                      <span className={`px-3 py-1 rounded-none text-xs font-bold ${
                         result.forecast.metrics.tendencia_pct >= 0
                           ? 'bg-emerald-50 text-emerald-700'
                           : 'bg-red-50 text-red-700'
@@ -325,11 +392,11 @@ export default function DashboardPage() {
               {/* Tab 2: Segmentos */}
               {activeTab === 2 && (
                 <div className="grid md:grid-cols-2 gap-6">
-                  <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                  <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
                     <h4 className="text-base font-bold text-gray-900 mb-2">Mapa de Segmentación 2D (PCA)</h4>
                     <ChartRenderer chartData={result.segmentation?.scatter_data} />
                   </div>
-                  <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                  <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
                     <h4 className="text-base font-bold text-gray-900 mb-2">Perfil Promedio por Segmento</h4>
                     <ChartRenderer chartData={result.segmentation?.radar_data} />
                   </div>
@@ -338,20 +405,20 @@ export default function DashboardPage() {
 
               {/* Tab 3: Anomalías */}
               {activeTab === 3 && (
-                <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm space-y-6">
+                <div className="bg-white p-6 sm:p-8 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] space-y-6">
                   <div>
                     <h3 className="text-lg font-bold text-gray-900">Detección de Anomalías (Isolation Forest)</h3>
                     <p className="text-xs text-gray-500">Registros atípicos marcados para auditoría</p>
                   </div>
                   <ChartRenderer chartData={result.anomalies?.chart_data} height={400} />
                   {result.anomalies?.metrics?.anomalias_detalle && (
-                    <div className="pt-4 border-t border-gray-100">
+                    <div className="pt-4 border-t border-[#111] border-2">
                       <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-3">
                         Detalle de casos detectados:
                       </h5>
                       <div className="space-y-2">
                         {result.anomalies.metrics.anomalias_detalle.map((d: string, idx: number) => (
-                          <div key={idx} className="p-3 bg-red-50/50 border border-red-100 rounded-xl text-xs text-red-800">
+                          <div key={idx} className="p-3 bg-red-50/50 border border-red-100 rounded-none text-xs text-red-800">
                             ⚠️ {d}
                           </div>
                         ))}
@@ -364,11 +431,11 @@ export default function DashboardPage() {
               {/* Tab 4: Factores Clave */}
               {activeTab === 4 && (
                 <div className="grid md:grid-cols-2 gap-6">
-                  <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                  <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
                     <h4 className="text-base font-bold text-gray-900 mb-2">Impacto de Variables (LightGBM)</h4>
                     <ChartRenderer chartData={result.feature_importance?.chart_importance} />
                   </div>
-                  <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                  <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
                     <h4 className="text-base font-bold text-gray-900 mb-2">Explicabilidad SHAP</h4>
                     <ChartRenderer chartData={result.feature_importance?.chart_shap} />
                   </div>
@@ -383,12 +450,16 @@ export default function DashboardPage() {
                 />
               )}
 
-              {/* Tab 6: Asistente IA */}
-              {activeTab === 6 && (
-                <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-                  <DataChatbot context={result} />
-                </div>
-              )}
+              {/* Tab 6: Asistente IA — always rendered to persist chat state across tab changes */}
+              <div className={activeTab === 6 ? '' : 'hidden'}>
+                <DataChatbot
+                  context={result}
+                  charts={result.charts || []}
+                  messages={chatMessages}
+                  onMessagesChange={setChatMessages}
+                  onChartOverride={handleChartOverride}
+                />
+              </div>
             </div>
           </div>
         )}

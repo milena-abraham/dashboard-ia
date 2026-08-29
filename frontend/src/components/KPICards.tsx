@@ -17,7 +17,7 @@ export default function KPICards({ kpis }: KPICardsProps) {
       return <DollarSign className="w-5 h-5 text-emerald-600" />;
     }
     if (k.includes('promedio') || k.includes('mean')) {
-      return <TrendingUp className="w-5 h-5 text-indigo-600" />;
+      return <TrendingUp className="w-5 h-5 text-mio-violet" />;
     }
     if (k.includes('registros') || k.includes('filas')) {
       return <Database className="w-5 h-5 text-purple-600" />;
@@ -33,7 +33,7 @@ export default function KPICards({ kpis }: KPICardsProps) {
       {entries.slice(0, 4).map(([key, value], idx) => (
         <div
           key={idx}
-          className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-start justify-between"
+          className="bg-white p-5 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] hover:shadow-[6px_6px_0px_#111] transition-shadow flex items-start justify-between"
         >
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
@@ -43,7 +43,7 @@ export default function KPICards({ kpis }: KPICardsProps) {
               {String(value)}
             </h3>
           </div>
-          <div className="p-2.5 bg-gray-50 rounded-xl border border-gray-100">
+          <div className="p-2.5 bg-white rounded-none border border-[#111] border-2">
             {getIcon(key)}
           </div>
         </div>

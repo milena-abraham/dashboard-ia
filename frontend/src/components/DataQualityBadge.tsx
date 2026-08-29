@@ -21,7 +21,7 @@ export default function DataQualityBadge({ score, label }: DataQualityBadgeProps
   }
 
   return (
-    <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-semibold ${colorBg}`}>
+    <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-none border text-xs font-semibold ${colorBg}`}>
       <Icon className="w-4 h-4" />
       <span>Calidad de datos: {score}/100 ({label})</span>
     </div>

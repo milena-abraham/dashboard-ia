@@ -35,8 +35,8 @@ interface ChartRendererProps {
 }
 
 const COLORS = [
-  "#667eea", "#764ba2", "#f093fb", "#4facfe", 
-  "#43e97b", "#fa709a", "#fee140"
+  "#815ae1", "#bdf559", "#a282fa", "#d4fc88", 
+  "#613eb5", "#92d433", "#c6b0f7"
 ];
 
 // PATRON 1: chartDefaults shared config
@@ -99,15 +99,15 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
           {
             label: 'Real',
             data: chartData.real_values,
-            borderColor: '#764ba2',
-            backgroundColor: '#764ba2',
+            borderColor: '#613eb5',
+            backgroundColor: '#613eb5',
             tension: 0.4,
             spanGaps: true
           },
           {
             label: 'Proyección',
             data: chartData.forecast_values,
-            borderColor: '#667eea',
+            borderColor: '#815ae1',
             borderDash: [5, 5],
             tension: 0.4,
             spanGaps: true
@@ -164,7 +164,7 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
           {
             label: 'Normal',
             data: chartData.normal.x.map((xVal: any, idx: number) => ({ x: xVal, y: chartData.normal.y[idx] })),
-            backgroundColor: '#667eea',
+            backgroundColor: '#815ae1',
           },
           {
             label: 'Anomalías',
@@ -198,8 +198,8 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
                 {
                     label: 'Normal',
                     data: normalData,
-                    borderColor: '#667eea',
-                    backgroundColor: '#667eea',
+                    borderColor: '#815ae1',
+                    backgroundColor: '#815ae1',
                     spanGaps: true
                 },
                 {
@@ -297,7 +297,7 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
 
   if (!renderedChart) {
     return (
-      <div className="w-full h-72 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 text-sm border border-gray-100">
+      <div className="w-full h-72 bg-white rounded-none flex items-center justify-center text-gray-400 text-sm border border-[#111] border-2">
         Visualización no disponible para esta configuración
       </div>
     );

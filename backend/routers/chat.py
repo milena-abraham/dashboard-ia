@@ -1,13 +1,15 @@
 """
 routers/chat.py
 Endpoint para interactuar con la API de Gemini (Chat con el dataset).
+Soporta modificaciones de gráficos a través del campo `chart_override`.
 """
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import os
 import json
+import re
 
 try:
     import google.generativeai as genai
@@ -20,6 +22,7 @@ router = APIRouter()
 class ChatRequest(BaseModel):
     message: str
     context: Dict[str, Any]
+    charts: Optional[List[Dict[str, Any]]] = None  # Lista de gráficos actuales
 
 @router.post("/chat")
 async def chat_with_data(request: ChatRequest):
@@ -34,10 +37,9 @@ async def chat_with_data(request: ChatRequest):
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel("gemini-3.6-flash")
 
-        # Preparar un resumen del contexto para no enviar demasiados tokens
         ctx = request.context
         
-        # Filtramos el contexto para enviar solo lo necesario
+        # Resumen del contexto
         summary_ctx = {
             "filename": ctx.get("filename", "Dataset"),
             "target": ctx.get("target_col"),
@@ -59,21 +61,66 @@ async def chat_with_data(request: ChatRequest):
         if "feature_importance" in ctx and "metrics" in ctx["feature_importance"]:
             summary_ctx["features"] = ctx["feature_importance"]["metrics"]
 
-        prompt = f"""
-Eres el "Asistente de Datos", un experto en análisis de datos integrado en un Dashboard de Inteligencia Artificial.
+        # Resumen de gráficos disponibles
+        charts_info = ""
+        if request.charts:
+            charts_summary = [
+                {"index": i, "title": c.get("title",""), "type": c.get("chart_data", {}).get("type", "?")}
+                for i, c in enumerate(request.charts)
+            ]
+            charts_info = f"\nGRÁFICOS ACTUALES: {json.dumps(charts_summary, ensure_ascii=False)}"
+
+        # Detectar si el usuario quiere modificar un gráfico
+        chart_request_keywords = ["cambia", "modifica", "convierte", "transforma", "muestra", "chart", "gráfico", "grafico", "barras", "línea", "pie", "radar", "scatter"]
+        is_chart_request = any(kw in request.message.lower() for kw in chart_request_keywords) and any(
+            digit in request.message for digit in ["0","1","2","3","4","5","6","7","8","9","primero","segundo","tercero"]
+        )
+
+        chart_override_instruction = ""
+        if is_chart_request and request.charts:
+            chart_override_instruction = """
+Si el usuario pide modificar un gráfico específico, responde en este formato JSON exacto al FINAL de tu respuesta (después de tu texto normal), encerrado entre <CHART_OVERRIDE> y </CHART_OVERRIDE>:
+<CHART_OVERRIDE>
+{"index": <número_de_gráfico>, "chart_data": {"type": "<bar|bar_horizontal|line|doughnut|scatter>", "labels": [...], "datasets": [{"label": "...", "data": [...]}], "title": "..."}}
+</CHART_OVERRIDE>
+
+Si no hay suficiente información para generar datos exactos del gráfico, no incluyas el bloque CHART_OVERRIDE.
+"""
+
+        prompt = f"""Eres el "Asistente de Datos MIO", un experto en análisis de datos integrado en un Dashboard de Inteligencia Artificial llamado MIO.
 El usuario está analizando un dataset llamado '{summary_ctx["filename"]}' enfocado en '{summary_ctx["target"]}'.
 
-AQUÍ ESTÁ EL RESUMEN DE LOS DATOS ANALIZADOS:
+RESUMEN DE LOS DATOS ANALIZADOS:
 {json.dumps(summary_ctx, indent=2, ensure_ascii=False)}
+{charts_info}
+
+{chart_override_instruction}
 
 El usuario te pregunta:
 "{request.message}"
 
-Responde de manera concisa, analítica, profesional pero amigable. No menciones el JSON. Basa tu respuesta en el contexto proporcionado.
+Responde de manera concisa, analítica, profesional pero amigable. Usa Markdown para formatear tu respuesta (negritas, listas, etc.).
+No menciones el JSON interno. Basa tu respuesta en el contexto proporcionado.
 Si el usuario pregunta algo que no está en el contexto, indícale que con los datos actuales no puedes asegurarlo.
 """
         response = model.generate_content(prompt)
-        return {"response": response.text}
+        raw_text = response.text
+
+        # Extraer chart_override si existe
+        chart_override = None
+        override_match = re.search(r'<CHART_OVERRIDE>(.*?)</CHART_OVERRIDE>', raw_text, re.DOTALL)
+        if override_match:
+            try:
+                chart_override = json.loads(override_match.group(1).strip())
+                # Eliminar el bloque del texto de respuesta
+                raw_text = raw_text.replace(override_match.group(0), '').strip()
+            except json.JSONDecodeError:
+                pass
+
+        return {
+            "response": raw_text,
+            "chart_override": chart_override
+        }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error comunicándose con Gemini: {str(e)}")

@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { Sparkles, Cpu, CheckCircle2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface InsightPanelProps {
   text: string;
@@ -12,10 +14,10 @@ export default function InsightPanel({ text, source }: InsightPanelProps) {
   const isGemini = source === 'gemini';
 
   return (
-    <div className="bg-gradient-to-br from-indigo-50/50 via-purple-50/30 to-white p-6 sm:p-8 rounded-3xl border border-indigo-100 shadow-sm relative overflow-hidden">
+    <div className="bg-gradient-to-br from-indigo-50/50 via-purple-50/30 to-white p-6 sm:p-8 rounded-none border border-mio-violet/20 shadow-[4px_4px_0px_#111] relative overflow-hidden">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-200">
+          <div className="w-10 h-10 rounded-none bg-mio-violet text-white flex items-center justify-center shadow-[6px_6px_0px_#111] shadow-mio-violet/30">
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
@@ -25,7 +27,7 @@ export default function InsightPanel({ text, source }: InsightPanelProps) {
         </div>
 
         <span
-          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-none text-xs font-semibold ${
             isGemini
               ? 'bg-purple-100 text-purple-700 border border-purple-200'
               : 'bg-blue-100 text-blue-700 border border-blue-200'
@@ -36,8 +38,10 @@ export default function InsightPanel({ text, source }: InsightPanelProps) {
         </span>
       </div>
 
-      <div className="prose prose-indigo max-w-none text-gray-700 text-sm leading-relaxed whitespace-pre-wrap font-sans">
-        {text}
+      <div className="text-gray-700 text-sm leading-relaxed font-sans markdown-content">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          {text}
+        </ReactMarkdown>
       </div>
     </div>
   );
