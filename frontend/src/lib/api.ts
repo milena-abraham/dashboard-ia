@@ -1,6 +1,6 @@
 import { AnalysisResult } from '@/types/analysis';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://dashboard-ia-1.onrender.com';
+const API_URL = 'https://dashboard-ia-1.onrender.com';
 
 export async function analyzeFile(
   file: File,
@@ -12,10 +12,7 @@ export async function analyzeFile(
     formData.append('target_col', targetCol);
   }
 
-  const cleanBaseUrl = API_URL.replace(/\/+$/, '');
-  const endpoint = cleanBaseUrl.endsWith('/api') ? `${cleanBaseUrl}/analyze` : `${cleanBaseUrl}/api/analyze`;
-
-  const response = await fetch(endpoint, {
+  const response = await fetch(`${API_URL}/api/analyze`, {
     method: 'POST',
     body: formData,
   });
@@ -29,10 +26,7 @@ export async function analyzeFile(
 }
 
 export async function exportPDF(data: any): Promise<Blob> {
-  const cleanBaseUrl = API_URL.replace(/\/+$/, '');
-  const endpoint = cleanBaseUrl.endsWith('/api') ? `${cleanBaseUrl}/export/pdf` : `${cleanBaseUrl}/api/export/pdf`;
-
-  const response = await fetch(endpoint, {
+  const response = await fetch(`${API_URL}/api/export/pdf`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
