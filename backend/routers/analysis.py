@@ -48,18 +48,33 @@ async def analyze(
         fname_lower = filename.lower()
 
         # 1. Leer archivo
-        if fname_lower.endswith(".csv"):
+        if fname_lower.endswith(".csv") or not fname_lower.endswith((".xlsx", ".xls")):
             df_raw = None
-            for sep in [",", ";", "\t", "|"]:
-                try:
-                    df_test = pd.read_csv(io.BytesIO(contents), sep=sep)
-                    if len(df_test.columns) > 1:
-                        df_raw = df_test
-                        break
-                except Exception:
-                    continue
+            encodings = ["utf-8", "latin1", "cp1252", "iso-8859-1", "utf-8-sig"]
+            separators = [",", ";", "\t", "|"]
+            
+            for enc in encodings:
+                for sep in separators:
+                    try:
+                        df_test = pd.read_csv(io.BytesIO(contents), sep=sep, encoding=enc)
+                        if len(df_test.columns) > 1 and len(df_test) > 0:
+                            df_raw = df_test
+                            break
+                    except Exception:
+                        continue
+                if df_raw is not None:
+                    break
+            
             if df_raw is None:
-                df_raw = pd.read_csv(io.BytesIO(contents))
+                for enc in encodings:
+                    try:
+                        df_raw = pd.read_csv(io.BytesIO(contents), sep=None, engine="python", encoding=enc)
+                        break
+                    except Exception:
+                        continue
+            
+            if df_raw is None:
+                df_raw = pd.read_csv(io.BytesIO(contents), encoding="latin1")
         elif fname_lower.endswith((".xlsx", ".xls")):
             df_raw = pd.read_excel(io.BytesIO(contents))
         else:

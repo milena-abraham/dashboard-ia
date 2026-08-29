@@ -153,6 +153,41 @@ export default function DashboardPage() {
             <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm mb-6">
               <FileUploader onFileSelect={(f) => setFile(f)} selectedFile={file} />
 
+              {!file && (
+                <div className="mt-4 text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const sampleCsv = `fecha,ventas,clientes,categoria,gasto_marketing,descuento_pct
+2024-01-01,15400,120,Electrónica,2500,5
+2024-01-02,18200,145,Electrónica,2800,10
+2024-01-03,12100,98,Hogar,1500,0
+2024-01-04,21300,160,Electrónica,3100,15
+2024-01-05,19500,150,Hogar,2700,5
+2024-01-06,24800,190,Indumentaria,3500,10
+2024-01-07,26100,210,Electrónica,3800,20
+2024-01-08,17200,135,Indumentaria,2200,5
+2024-01-09,14900,115,Hogar,1800,0
+2024-01-10,22500,175,Electrónica,3200,10
+2024-01-11,28900,225,Indumentaria,4100,15
+2024-01-12,31200,250,Electrónica,4500,25
+2024-01-13,16400,130,Hogar,2000,5
+2024-01-14,20100,155,Indumentaria,2900,10
+2024-01-15,35000,280,Electrónica,5000,20`;
+                      const blob = new Blob([sampleCsv], { type: 'text/csv' });
+                      const sampleFile = new File([blob], 'ventas_retail_ejemplo.csv', { type: 'text/csv' });
+                      setFile(sampleFile);
+                      setTargetCol('ventas');
+                      toast.success('Dataset de ejemplo cargado');
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100/70 px-4 py-2 rounded-xl transition-all"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>O probá cargando un dataset de ejemplo de ventas</span>
+                  </button>
+                </div>
+              )}
+
               {file && (
                 <div className="mt-6 pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="w-full sm:w-auto">
