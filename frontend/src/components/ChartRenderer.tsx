@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 
 const Plot = dynamic(() => import('react-plotly.js'), {
@@ -18,6 +18,12 @@ interface ChartRendererProps {
 }
 
 export default function ChartRenderer({ figJson, height = 380 }: ChartRendererProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const chartData = useMemo(() => {
     if (!figJson) return null;
     try {
@@ -28,10 +34,10 @@ export default function ChartRenderer({ figJson, height = 380 }: ChartRendererPr
     }
   }, [figJson]);
 
-  if (!chartData) {
+  if (!mounted || !chartData) {
     return (
       <div className="w-full h-72 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 text-sm border border-gray-100">
-        Visualización no disponible para esta configuración
+        {!mounted ? 'Preparando gráfico...' : 'Visualización no disponible para esta configuración'}
       </div>
     );
   }
