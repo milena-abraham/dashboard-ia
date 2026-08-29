@@ -64,11 +64,11 @@ export default function DashboardPage() {
       if (user) {
         try {
           await addDoc(collection(db, 'users', user.uid, 'analyses'), {
-            filename: data.filename,
-            target_col: data.target_col,
-            kpis: data.kpis,
-            quality_score: data.profile.quality_score,
-            narrative_text: data.narrative.text,
+            filename: data.filename || 'dataset',
+            target_col: data.target_col || data.target_column || '',
+            kpis: data.kpis || {},
+            quality_score: data.profile?.quality_score ?? 0,
+            narrative_text: data.narrative?.text || '',
             created_at: serverTimestamp(),
           });
         } catch (firestoreErr) {

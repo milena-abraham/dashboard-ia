@@ -41,6 +41,7 @@ export interface Narrative {
 export interface AnalysisResult {
   filename: string;
   target_col: string;
+  target_column?: string;
   profile: Profile;
   cleaning_report: CleaningReport;
   kpis: KPIs;
