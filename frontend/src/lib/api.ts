@@ -9,10 +9,13 @@ export async function analyzeFile(
   const formData = new FormData();
   formData.append('file', file);
   if (targetCol) {
-    formData.append('target_column', targetCol);
+    formData.append('target_col', targetCol);
   }
 
-  const response = await fetch(`${API_URL}/analyze`, {
+  const cleanBaseUrl = API_URL.replace(/\/+$/, '');
+  const endpoint = cleanBaseUrl.endsWith('/api') ? `${cleanBaseUrl}/analyze` : `${cleanBaseUrl}/api/analyze`;
+
+  const response = await fetch(endpoint, {
     method: 'POST',
     body: formData,
   });
@@ -25,8 +28,11 @@ export async function analyzeFile(
   return response.json() as Promise<AnalysisResult>;
 }
 
-export async function exportPDF(data: AnalysisResult): Promise<Blob> {
-  const response = await fetch(`${API_URL}/export/pdf`, {
+export async function exportPDF(data: any): Promise<Blob> {
+  const cleanBaseUrl = API_URL.replace(/\/+$/, '');
+  const endpoint = cleanBaseUrl.endsWith('/api') ? `${cleanBaseUrl}/export/pdf` : `${cleanBaseUrl}/api/export/pdf`;
+
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
