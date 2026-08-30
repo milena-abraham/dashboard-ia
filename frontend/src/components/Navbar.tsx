@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
-import { Share2, LogOut, UserCircle, Layers } from 'lucide-react';
+import { Share2, LogOut, UserCircle, Layers, Activity } from 'lucide-react';
 
 export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
@@ -36,13 +36,24 @@ export default function Navbar() {
 
         <div className="flex items-center gap-6">
           {user && (
-            <Link
-              href="/projects"
-              className="flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-mio-violet transition-colors"
-            >
-              <Layers className="w-4 h-4" />
-              Mis Proyectos
-            </Link>
+            <div className="flex items-center gap-6">
+              {['tadeomunozgarces@gmail.com', 'milenapabraham@gmail.com'].includes(user.email || '') && (
+                <Link
+                  href="/admin"
+                  className="flex items-center justify-center gap-1.5 text-xs font-bold text-gray-900 bg-mio-lime border-2 border-[#111] shadow-[3px_3px_0px_#111] hover:shadow-none hover:translate-y-[2px] hover:translate-x-[2px] transition-all px-3 py-1.5"
+                >
+                  <Activity className="w-4 h-4" />
+                  Admin
+                </Link>
+              )}
+              <Link
+                href="/projects"
+                className="flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-mio-violet transition-colors"
+              >
+                <Layers className="w-4 h-4" />
+                Mis Proyectos
+              </Link>
+            </div>
           )}
 
           <div className="flex items-center gap-3">

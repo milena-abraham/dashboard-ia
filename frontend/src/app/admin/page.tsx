@@ -19,7 +19,7 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const ADMIN_EMAILS = ['tadeomunozgarces@gmail.com', 'milena@example.com'];
+const ADMIN_EMAILS = ['tadeomunozgarces@gmail.com', 'milenapabraham@gmail.com'];
 
 export default function AdminDashboard() {
   const [authorized, setAuthorized] = useState<boolean | null>(null);
