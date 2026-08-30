@@ -55,3 +55,17 @@ export async function askGemini(message: string, context: any, charts?: any[]): 
 
   return response.json();
 }
+
+export async function exportPPTX(data: any): Promise<Blob> {
+  const response = await fetch(`${API_URL}/api/export/pptx`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error al exportar PPTX: HTTP ${response.status}`);
+  }
+
+  return await response.blob();
+}

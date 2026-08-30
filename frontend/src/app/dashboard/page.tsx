@@ -10,7 +10,7 @@ import InsightPanel from '@/components/InsightPanel';
 import DataChatbot, { Message as ChatMessage } from '@/components/DataChatbot';
 import LoadingAnalysis from '@/components/LoadingAnalysis';
 import DataQualityBadge from '@/components/DataQualityBadge';
-import { analyzeFile, exportPDF } from '@/lib/api';
+import { analyzeFile, exportPDF, exportPPTX } from '@/lib/api';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -24,6 +24,7 @@ import {
   Target,
   FileText,
   Download,
+  Presentation,
   RotateCcw,
   Sparkles,
   Save,
@@ -41,6 +42,7 @@ function DashboardInner() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [activeTab, setActiveTab] = useState<number>(0);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadingPptx, setDownloadingPptx] = useState(false);
   const [savingProject, setSavingProject] = useState(false);
   const [chatLogged, setChatLogged] = useState(false);
 
@@ -117,8 +119,36 @@ function DashboardInner() {
         precision = "75%"; // Placeholder, we should fix backend to return mape/precision
       }
 
+      
       setResult(data);
       toast.success('¡Análisis completado con éxito!');
+      
+      // AUTO SAVE PROJECT
+      if (user) {
+        try {
+          const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
+          const savePromise = addDoc(collection(db, 'users', user.uid, 'analyses'), {
+            filename: data.filename || 'dataset',
+            target_col: data.target_col || data.target_column || '',
+            created_at: serverTimestamp(),
+            result_data: JSON.stringify(data)
+          });
+          const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000));
+          const docRef = await Promise.race([savePromise, timeout]) as any;
+          if (docRef?.id) {
+            try {
+              localStorage.setItem(`mio_result_${docRef.id}`, JSON.stringify(data));
+            } catch (storageErr) {
+              console.warn('localStorage full');
+            }
+          }
+          logSystemEvent('project_saved_auto', { uid: user.uid, filename: data.filename });
+          toast.success('💾 Guardado automáticamente en Mis Proyectos');
+        } catch (e) {
+          console.error('Auto-save error:', e);
+        }
+      }
+
       
       // Calculate precision from backend if possible
       let precisionVal = 0;
@@ -180,6 +210,39 @@ function DashboardInner() {
       toast.error('Error al generar el PDF.');
     } finally {
       setDownloadingPdf(false);
+    }
+  };
+
+  
+  const handleDownloadPptx = async () => {
+    if (!result) return;
+    setDownloadingPptx(true);
+    try {
+      const blob = await exportPPTX({
+        filename: result.filename,
+        target_col: result.target_col,
+        kpis: result.kpis,
+        narrative_text: result.narrative.text,
+        profile: result.profile,
+        anomaly_metrics: result.anomalies?.metrics || {},
+        forecast_metrics: result.forecast?.metrics || {},
+        segmentation_metrics: result.segmentation?.metrics || {},
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `presentacion_${result.filename}.pptx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('PPTX descargado exitosamente');
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al generar el PPTX.');
+    } finally {
+      setDownloadingPptx(false);
     }
   };
 
@@ -359,14 +422,16 @@ function DashboardInner() {
               </div>
 
               <div className="flex items-center gap-2.5 w-full md:w-auto">
+                
                 <button
-                  onClick={handleSaveProject}
-                  disabled={savingProject}
-                  className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-none bg-mio-lime text-gray-900 border-2 border-[#111] text-xs font-bold shadow-[3px_3px_0px_#111] hover:shadow-[1px_1px_0px_#111] hover:translate-y-[1px] transition-all disabled:opacity-50"
+                  onClick={handleDownloadPptx}
+                  disabled={downloadingPptx}
+                  className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-none bg-mio-lime hover:bg-mio-lime/90 text-gray-900 text-xs font-semibold shadow-[4px_4px_0px_#111] transition-all disabled:opacity-50"
                 >
-                  <Save className="w-4 h-4" />
-                  <span>{savingProject ? 'Guardando...' : 'Guardar Proyecto'}</span>
+                  <Presentation className="w-4 h-4" />
+                  <span>{downloadingPptx ? 'Generando PPTX...' : 'Exportar PPTX'}</span>
                 </button>
+
                 <button
                   onClick={handleDownloadPdf}
                   disabled={downloadingPdf}

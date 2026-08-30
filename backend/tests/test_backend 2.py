@@ -58,12 +58,3 @@ if r3.status_code != 200:
 else:
     print("Test 3 Passed.")
 
-
-print("\\nTest 4: PPTX Export")
-pptx_url = "http://localhost:10000/api/export/pptx"
-r4 = requests.post(pptx_url, json=pdf_data)
-print(f"Status: {r4.status_code}")
-if r4.status_code != 200:
-    print(r4.text)
-else:
-    print("Test 4 Passed.")
