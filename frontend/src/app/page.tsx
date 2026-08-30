@@ -375,7 +375,7 @@ export default function LandingPage() {
             transition={{ delay: 0.6, duration: 0.5 }}
             className="text-base sm:text-xl text-gray-600 max-w-2xl mx-auto mb-10 sm:mb-12 font-medium leading-relaxed"
           >
-            Subí un CSV. MIO limpia los datos, corre modelos de Machine Learning y arma tu dashboard ejecutivo en 60 segundos.
+            Subí tus datos. MIO limpia los datos, corre modelos de Machine Learning y arma tu dashboard ejecutivo en 60 segundos.
           </motion.p>
 
           <motion.div 
