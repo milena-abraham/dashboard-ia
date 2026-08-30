@@ -17,7 +17,7 @@ def run_anomaly_detection(
     numeric_cols: List[str],
     target_col: Optional[str] = None,
     date_col: Optional[str] = None,
-    contamination: str = 'auto',
+    contamination: float = 0.01,
 ) -> Tuple[pd.DataFrame, Optional[dict], dict]:
     """
     Detecta anomalias usando Isolation Forest.
@@ -40,9 +40,13 @@ def run_anomaly_detection(
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)
 
+        # Dynamic contamination: cap at ~150 anomalies to prevent chart smearing and noise, 
+        # but keep it between 0.1% and 5%
+        dynamic_contamination = min(0.05, max(0.001, 150 / len(X_scaled)))
+        
         iso = IsolationForest(
             n_estimators=100,
-            contamination=contamination,
+            contamination=dynamic_contamination,
             random_state=42,
         )
         labels = iso.fit_predict(X_scaled)

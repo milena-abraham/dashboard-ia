@@ -227,7 +227,7 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
             label: 'Anomalías',
             data: chartData.anomalies.x.map((xVal: any, idx: number) => ({ x: xVal, y: chartData.anomalies.y[idx] })),
             backgroundColor: '#fa709a',
-            pointRadius: 6,
+            pointRadius: 4,
           }
         ]
       };
@@ -257,7 +257,7 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
                     label: 'Normal',
                     data: normalData,
                     backgroundColor: 'rgba(129, 90, 225, 0.3)', // Light transparent purple
-                    pointRadius: isDense ? 2 : 4,
+                    pointRadius: isDense ? 1 : 3,
                     showLine: false, // CRITICAL: turns off the ugly zigzag line
                     borderWidth: 0
                 },
@@ -266,7 +266,7 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
                     data: anomData,
                     backgroundColor: '#fa709a',
                     pointStyle: 'rectRot',
-                    pointRadius: isDense ? 4 : 6,
+                    pointRadius: isDense ? 3 : 5,
                     showLine: false,
                     borderWidth: 0
                 }
