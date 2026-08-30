@@ -318,25 +318,6 @@ function AboutUs() {
 }
 
 export default function LandingPage() {
-  const titleText = "Decisiones inteligentes.";
-  const titleWords = titleText.split(" ");
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2
-      }
-    }
-  };
-
-  const wordVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { type: 'spring', damping: 12, stiffness: 100 } }
-  };
-
   return (
     <div className="min-h-screen bg-[#fafafc] flex flex-col selection:bg-mio-lime selection:text-black">
       <Navbar />
@@ -356,17 +337,15 @@ export default function LandingPage() {
           </motion.div>
 
           <motion.h1 
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-gray-950 tracking-tighter max-w-5xl mx-auto leading-[1.05] mb-6 sm:mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.8, type: 'spring', damping: 12, stiffness: 100 }}
+            className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-gray-950 tracking-tighter max-w-5xl mx-auto leading-[1.1] sm:leading-[1.05] mb-6 sm:mb-8"
           >
             Convertí planillas de datos en <br className="hidden md:block" />
-            {titleWords.map((word, i) => (
-              <motion.span key={i} variants={wordVariants} className="inline-block mr-2 sm:mr-3 text-transparent bg-clip-text bg-gradient-to-r from-mio-lime to-[#815ae1]">
-                {word}
-              </motion.span>
-            ))}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-mio-lime to-mio-violet py-2">
+              decisiones inteligentes.
+            </span>
           </motion.h1>
 
           <motion.p 
