@@ -45,13 +45,13 @@ Proyección: {context.get('forecast')}
 Segmentación: {context.get('segmentacion')}
 
 ESTRUCTURA REQUERIDA (en Markdown):
-1. **📋 Resumen Ejecutivo** (Visión general clara y concisa)
-2. **💰 Análisis de Resultados Clave** (Patrones y métricas más relevantes)
-3. **🎯 Factores Determinantes** (Qué variables están impulsando el resultado según el modelo)
-4. **⚠️ Hallazgos y Anomalías** (Alertas a tener en cuenta)
-5. **🚀 Recomendaciones Estratégicas** (3-4 acciones concretas que el equipo debería tomar)
+1. **Resumen Ejecutivo** (Visión general clara y concisa)
+2. **Análisis de Resultados Clave** (Patrones y métricas más relevantes)
+3. **Factores Determinantes** (Qué variables están impulsando el resultado según el modelo)
+4. **Hallazgos y Anomalías** (Alertas a tener en cuenta)
+5. **Recomendaciones Estratégicas** (3-4 acciones concretas que el equipo debería tomar)
 
-Usa un tono profesional, orientado al negocio y fácil de entender sin tecnicismos matemáticos.
+Usa un tono profesional, orientado al negocio y fácil de entender sin tecnicismos matemáticos. NO uses ningún emoji en tu respuesta. Mantén un formato sobrio.
 """
     response = model.generate_content(prompt)
     return response.text
@@ -67,10 +67,10 @@ def _generate_heuristic(context: dict) -> str:
     segmentacion = context.get("segmentacion", {})
 
     lines = [
-        "## 📋 Resumen Ejecutivo",
+        "## Resumen Ejecutivo",
         f"Se analizaron exitosamente **{context.get('n_rows', 0):,} registros** enfocados en la variable **{target}**.",
         "",
-        "## 💰 Indicadores Clave",
+        "## Indicadores Clave",
     ]
 
     for k, v in list(kpis.items())[:4]:
