@@ -413,12 +413,9 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.8, type: 'spring', damping: 12, stiffness: 100 }}
-            className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-gray-950 tracking-tighter max-w-5xl mx-auto leading-[1.1] sm:leading-[1.05] mb-6 sm:mb-8"
+            className="text-4xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black text-gray-950 tracking-tighter max-w-6xl mx-auto leading-[1.1] sm:leading-[1.05]  mb-6 sm:mb-8"
           >
-            Convertí planillas de datos en <br className="hidden md:block" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-mio-lime to-mio-violet py-2">
-              decisiones inteligentes.
-            </span>
+            Convertí planillas de datos en <span className="text-transparent bg-clip-text bg-gradient-to-r from-mio-lime via-cyan-400 to-mio-violet py-1">decisiones inteligentes.</span>
           </motion.h1>
 
           <motion.p 
