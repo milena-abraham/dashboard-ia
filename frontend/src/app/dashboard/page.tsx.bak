@@ -102,21 +102,11 @@ function DashboardInner() {
 
     setLoading(true);
     setChatLogged(false);
-    setChartOverrides({});
     try {
       const data = await analyzeFile(file, targetCol || undefined);
       setResult(data);
       toast.success('¡Análisis completado con éxito!');
-      logSystemEvent('analysis_success', { 
-        filename: file.name, 
-        uid: user?.uid,
-        metrics: {
-          forecast: data.forecast?.metrics || {},
-          segmentation: data.segmentation?.metrics || {},
-          anomalies: data.anomalies?.metrics || {},
-          feature_importance: data.feature_importance?.metrics || {}
-        }
-      });
+      logSystemEvent('analysis_success', { filename: file.name, uid: user?.uid });
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || 'Ocurrió un error al procesar el dataset.');
@@ -229,8 +219,8 @@ function DashboardInner() {
     { label: 'Anomalías', icon: AlertTriangle },
     { label: 'Factores Clave', icon: Target },
     { label: 'Informe IA', icon: FileText },
-    { id: 'chat', label: 'Asistente IA', icon: Bot, hidden: true },
-  ];
+    { id: 'chat', label: 'Asistente IA', icon: Bot },
+];
 
   return (
     <div className="min-h-screen bg-[#fafafc] flex flex-col">
@@ -368,7 +358,6 @@ function DashboardInner() {
               {tabs.map((tab, idx) => {
                 const Icon = tab.icon;
                 const active = activeTab === idx;
-                if (tab.hidden) return null;
                 return (
                   <button
                     key={idx}
@@ -410,7 +399,7 @@ function DashboardInner() {
                             )}
                           </div>
                           <p className="text-xs text-gray-400 mb-4">{isOverridden ? '✏️ Modificado por Asistente IA' : c.description}</p>
-                          <ChartRenderer key={result.filename + i} chartData={activeChartData} />
+                          <ChartRenderer chartData={activeChartData} />
                         </div>
                       );
                     })
@@ -425,95 +414,60 @@ function DashboardInner() {
               {/* Tab 1: Proyecciones */}
               {activeTab === 1 && (
                 <div className="bg-white p-6 sm:p-8 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] space-y-6">
-                  {result.forecast?.metrics?.error ? (
-                    <div className="flex items-center justify-center h-48 bg-gray-50 border-2 border-dashed border-gray-300">
-                      <p className="text-gray-500 font-bold">{result.forecast.metrics.error}</p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900">Proyección y Predicción Temporal</h3>
+                      <p className="text-xs text-gray-500">Estimación de tendencia futura basada en series de tiempo</p>
                     </div>
-                  ) : (
-                    <>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-lg font-bold text-gray-900">Proyección y Predicción Temporal</h3>
-                          <p className="text-xs text-gray-500">Estimación de tendencia futura basada en series de tiempo</p>
-                        </div>
-                        <div className="flex gap-2">
-                          {result.forecast?.metrics?.confianza && (
-                            <span className={`px-3 py-1 text-xs font-bold ${result.forecast.metrics.confianza === 'Alta' ? 'bg-emerald-50 text-emerald-700' : result.forecast.metrics.confianza === 'Media' ? 'bg-yellow-50 text-yellow-700' : 'bg-red-50 text-red-700'}`}>
-                              Confianza: {result.forecast.metrics.confianza}
-                            </span>
-                          )}
-                          {result.forecast?.metrics?.tendencia_pct !== undefined && (
-                            <span className={`px-3 py-1 rounded-none text-xs font-bold ${
-                              result.forecast.metrics.tendencia_pct >= 0
-                                ? 'bg-emerald-50 text-emerald-700'
-                                : 'bg-red-50 text-red-700'
-                            }`}>
-                              Tendencia: {result.forecast.metrics.tendencia_pct}%
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <ChartRenderer key={`forecast-${result.filename}`} chartData={result.forecast?.chart_data} height={420} />
-                      <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-500 text-xs text-blue-800">
-                        <strong>Aviso:</strong> Esta proyección se basa exclusivamente en el comportamiento histórico de tus datos usando el modelo {result.forecast?.metrics?.motor || 'Predictivo'} y no es una garantía del futuro. 
-                        {result.forecast?.metrics?.mae !== undefined && ` Margen de error histórico (MAE): ${result.forecast.metrics.mae}`}
-                      </div>
-                    </>
-                  )}
+                    {result.forecast?.metrics?.tendencia_pct !== undefined && (
+                      <span className={`px-3 py-1 rounded-none text-xs font-bold ${
+                        result.forecast.metrics.tendencia_pct >= 0
+                          ? 'bg-emerald-50 text-emerald-700'
+                          : 'bg-red-50 text-red-700'
+                      }`}>
+                        Tendencia: {result.forecast.metrics.tendencia_pct}%
+                      </span>
+                    )}
+                  </div>
+                  <ChartRenderer chartData={result.forecast?.chart_data} height={420} />
                 </div>
               )}
 
               {/* Tab 2: Segmentos */}
               {activeTab === 2 && (
                 <div className="grid md:grid-cols-2 gap-6">
-                  {result.segmentation?.metrics?.error ? (
-                    <div className="col-span-2 flex items-center justify-center h-48 bg-gray-50 border-2 border-dashed border-gray-300">
-                      <p className="text-gray-500 font-bold">{result.segmentation.metrics.error}</p>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
-                        <h4 className="text-base font-bold text-gray-900 mb-2">Mapa de Segmentación 2D (PCA)</h4>
-                        <ChartRenderer key={`seg-scatter-${result.filename}`} chartData={result.segmentation?.scatter_data} />
-                      </div>
-                      <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
-                        <h4 className="text-base font-bold text-gray-900 mb-2">Perfil Promedio por Segmento</h4>
-                        <ChartRenderer key={`seg-radar-${result.filename}`} chartData={result.segmentation?.radar_data} />
-                      </div>
-                    </>
-                  )}
+                  <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
+                    <h4 className="text-base font-bold text-gray-900 mb-2">Mapa de Segmentación 2D (PCA)</h4>
+                    <ChartRenderer chartData={result.segmentation?.scatter_data} />
+                  </div>
+                  <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
+                    <h4 className="text-base font-bold text-gray-900 mb-2">Perfil Promedio por Segmento</h4>
+                    <ChartRenderer chartData={result.segmentation?.radar_data} />
+                  </div>
                 </div>
               )}
 
               {/* Tab 3: Anomalías */}
               {activeTab === 3 && (
                 <div className="bg-white p-6 sm:p-8 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] space-y-6">
-                  {result.anomalies?.metrics?.error ? (
-                    <div className="flex items-center justify-center h-48 bg-gray-50 border-2 border-dashed border-gray-300">
-                      <p className="text-gray-500 font-bold">{result.anomalies.metrics.error}</p>
-                    </div>
-                  ) : (
-                    <>
-                      <div>
-                        <h3 className="text-lg font-bold text-gray-900">Detección de Anomalías (Isolation Forest)</h3>
-                        <p className="text-xs text-gray-500">Registros atípicos marcados para auditoría</p>
-                      </div>
-                      <ChartRenderer key={`anom-${result.filename}`} chartData={result.anomalies?.chart_data} height={400} />
-                      {result.anomalies?.metrics?.anomalias_detalle && (
-                        <div className="pt-4 border-t border-[#111] border-2">
-                          <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-3">
-                            Detalle de casos detectados:
-                          </h5>
-                          <div className="space-y-2">
-                            {result.anomalies.metrics.anomalias_detalle.map((d: string, idx: number) => (
-                              <div key={idx} className="p-3 bg-red-50/50 border border-red-100 rounded-none text-xs text-red-800">
-                                ⚠️ {d}
-                              </div>
-                            ))}
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">Detección de Anomalías (Isolation Forest)</h3>
+                    <p className="text-xs text-gray-500">Registros atípicos marcados para auditoría</p>
+                  </div>
+                  <ChartRenderer chartData={result.anomalies?.chart_data} height={400} />
+                  {result.anomalies?.metrics?.anomalias_detalle && (
+                    <div className="pt-4 border-t border-[#111] border-2">
+                      <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-3">
+                        Detalle de casos detectados:
+                      </h5>
+                      <div className="space-y-2">
+                        {result.anomalies.metrics.anomalias_detalle.map((d: string, idx: number) => (
+                          <div key={idx} className="p-3 bg-red-50/50 border border-red-100 rounded-none text-xs text-red-800">
+                            ⚠️ {d}
                           </div>
-                        </div>
-                      )}
-                    </>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
@@ -521,22 +475,14 @@ function DashboardInner() {
               {/* Tab 4: Factores Clave */}
               {activeTab === 4 && (
                 <div className="grid md:grid-cols-2 gap-6">
-                  {result.feature_importance?.metrics?.error ? (
-                    <div className="col-span-2 flex items-center justify-center h-48 bg-gray-50 border-2 border-dashed border-gray-300">
-                      <p className="text-gray-500 font-bold">{result.feature_importance.metrics.error}</p>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
-                        <h4 className="text-base font-bold text-gray-900 mb-2">Impacto de Variables (LightGBM)</h4>
-                        <ChartRenderer key={`feat-imp-${result.filename}`} chartData={result.feature_importance?.chart_importance} />
-                      </div>
-                      <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
-                        <h4 className="text-base font-bold text-gray-900 mb-2">Explicabilidad SHAP</h4>
-                        <ChartRenderer key={`feat-shap-${result.filename}`} chartData={result.feature_importance?.chart_shap} />
-                      </div>
-                    </>
-                  )}
+                  <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
+                    <h4 className="text-base font-bold text-gray-900 mb-2">Impacto de Variables (LightGBM)</h4>
+                    <ChartRenderer chartData={result.feature_importance?.chart_importance} />
+                  </div>
+                  <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
+                    <h4 className="text-base font-bold text-gray-900 mb-2">Explicabilidad SHAP</h4>
+                    <ChartRenderer chartData={result.feature_importance?.chart_shap} />
+                  </div>
                 </div>
               )}
 

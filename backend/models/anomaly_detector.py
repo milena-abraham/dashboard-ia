@@ -27,7 +27,16 @@ def run_anomaly_detection(
         return df, None, {"error": "No hay columnas numéricas para analizar."}
 
     try:
+        if len(df) < 10:
+            return df, None, {"error": "Se requieren al menos 10 registros para detectar anomalías con precisión."}
+
         X = df[numeric_cols].copy().fillna(df[numeric_cols].median())
+        var = X.var()
+        valid_cols = var[var > 0].index.tolist()
+        if not valid_cols:
+            return df, None, {"error": "Las columnas numéricas no tienen varianza para analizar anomalías."}
+            
+        X = X[valid_cols]
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)
 

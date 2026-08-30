@@ -58,6 +58,16 @@ def run_clustering(
 
     try:
         X = df[numeric_cols].copy()
+        if len(X) < 10:
+            return df, None, None, {"error": "Se requieren al menos 10 registros para segmentar."}
+            
+        # Remove zero variance columns to avoid scaling issues
+        var = X.var()
+        valid_cols = var[var > 0].index.tolist()
+        if len(valid_cols) < 2:
+            return df, None, None, {"error": "Las columnas numéricas no tienen suficiente varianza para segmentar."}
+            
+        X = X[valid_cols]
         X = X.fillna(X.median())
 
         scaler = StandardScaler()

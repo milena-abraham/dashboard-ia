@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import Optional, Tuple, Dict, Any
 import pandas as pd
 import numpy as np
+import traceback
 
 try:
     from prophet import Prophet
@@ -27,23 +28,33 @@ def run_forecast(
     Ejecuta forecast de serie temporal.
     Retorna (df_forecast, data_dict, metrics)
     """
-    if not PROPHET_AVAILABLE:
-        # Fallback simple con extrapolación de tendencia lineal para no romper la app si no está Prophet
-        try:
-            df_prep = df[[date_col, value_col]].copy()
-            df_prep[date_col] = pd.to_datetime(df_prep[date_col], errors="coerce")
-            df_prep = df_prep.dropna().sort_values(date_col)
-            df_agg = df_prep.groupby(date_col)[value_col].sum().reset_index()
-            
-            if len(df_agg) < 2:
-                return None, None, {"error": "Insuficientes datos para proyecciones."}
+    try:
+        df_prep = df[[date_col, value_col]].copy()
+        df_prep[date_col] = pd.to_datetime(df_prep[date_col], errors="coerce")
+        df_prep = df_prep.dropna()
 
+        if len(df_prep) < 2:
+            return None, None, {"error": "Se requieren al menos 2 fechas válidas con datos numéricos."}
+
+        df_agg = df_prep.groupby(date_col)[value_col].sum().reset_index()
+        df_agg.columns = ["ds", "y"]
+        df_agg = df_agg.sort_values("ds")
+
+        if len(df_agg) < 5:
+            return None, None, {"error": "Insuficientes datos agregados por fecha para proyecciones (min: 5)."}
+            
+        # Check variance (flat series)
+        if df_agg["y"].nunique() <= 1:
+            return None, None, {"error": "La serie de tiempo es constante (varianza 0). No se puede proyectar."}
+            
+        if not PROPHET_AVAILABLE:
+            # Fallback simple con extrapolación de tendencia lineal
             x = np.arange(len(df_agg))
-            y = df_agg[value_col].values
+            y = df_agg["y"].values
             z = np.polyfit(x, y, 1)
             p = np.poly1d(z)
 
-            future_dates = pd.date_range(start=df_agg[date_col].iloc[-1], periods=periods + 1, freq=freq)[1:]
+            future_dates = pd.date_range(start=df_agg["ds"].iloc[-1], periods=periods + 1, freq=freq)[1:]
             x_future = np.arange(len(df_agg), len(df_agg) + periods)
             y_future = p(x_future)
 
@@ -51,45 +62,38 @@ def run_forecast(
             proj_val = float(y_future[-1])
             trend_pct = round(((proj_val - last_val) / max(abs(last_val), 1)) * 100, 1)
 
+            # Pseudo-MAE (In-sample)
+            y_pred_in_sample = p(x)
+            mae = np.mean(np.abs(y - y_pred_in_sample))
+
             metrics = {
                 "ultimo_valor_real": round(last_val, 2),
                 "valor_final_forecast": round(proj_val, 2),
                 "tendencia_pct": trend_pct,
                 "periodos": periods,
-                "motor": "Regresión de Tendencia (Fast)",
+                "motor": "Regresión Lineal",
+                "mae": round(mae, 2),
+                "confianza": "Baja (pocos datos o modelo base)"
             }
             
             chart_data = {
-                "labels": df_agg[date_col].dt.strftime('%Y-%m-%d').tolist() + future_dates.strftime('%Y-%m-%d').tolist(),
+                "labels": df_agg["ds"].dt.strftime('%Y-%m-%d').tolist() + future_dates.strftime('%Y-%m-%d').tolist(),
                 "real_values": [x if not pd.isna(x) else None for x in y] + [None] * len(future_dates),
                 "forecast_values": [None] * (len(df_agg) - 1) + [y[-1]] + y_future.tolist(),
             }
-            
             return None, chart_data, metrics
-        except Exception as ex:
-            return None, None, {"error": f"Error en cálculo de proyección: {str(ex)}"}
 
-    try:
-        df_prep = df[[date_col, value_col]].copy()
-        df_prep[date_col] = pd.to_datetime(df_prep[date_col], errors="coerce")
-        df_prep = df_prep.dropna()
-
-        df_agg = df_prep.groupby(date_col)[value_col].sum().reset_index()
-        df_agg.columns = ["ds", "y"]
-        df_agg = df_agg.sort_values("ds")
-
-        if len(df_agg) < 2:
-            return None, None, {"error": "Insuficientes datos para forecasting."}
-
+        # Model Prophet
         model = Prophet(
             yearly_seasonality=True if len(df_agg) > 180 else False,
             weekly_seasonality=True if len(df_agg) > 14 else False,
             daily_seasonality=False,
-            seasonality_mode="multiplicative",
+            seasonality_mode="additive" if df_agg["y"].min() <= 0 else "multiplicative",
             interval_width=0.8,
         )
         model.fit(df_agg)
 
+        # Predict future
         future = model.make_future_dataframe(periods=periods, freq=freq)
         forecast = model.predict(future)
 
@@ -97,17 +101,31 @@ def run_forecast(
         end_forecast = float(forecast["yhat"].iloc[-1])
         trend_pct = round(((end_forecast - last_actual) / max(abs(last_actual), 1)) * 100, 1)
 
+        # In-sample MAE
+        in_sample = forecast.set_index("ds")["yhat"].loc[df_agg["ds"]].values
+        mae = np.mean(np.abs(df_agg["y"].values - in_sample))
+        mape = np.mean(np.abs((df_agg["y"].values - in_sample) / (df_agg["y"].values + 0.001))) * 100
+        
+        # Confidence logic based on data length and MAPE
+        confianza = "Alta"
+        if len(df_agg) < 30 or mape > 25:
+            confianza = "Baja"
+        elif len(df_agg) < 90 or mape > 10:
+            confianza = "Media"
+
         metrics = {
             "ultimo_valor_real": round(last_actual, 2),
             "valor_final_forecast": round(end_forecast, 2),
             "tendencia_pct": trend_pct,
             "periodos": periods,
             "motor": "Prophet (Meta AI)",
+            "mae": round(mae, 2),
+            "mape": round(mape, 2),
+            "confianza": confianza
         }
 
         merged = pd.merge(forecast, df_agg, on='ds', how='left')
         
-        # Helper function to convert NaNs to None for JSON serialization
         def to_list_clean(series):
             return [x if not pd.isna(x) else None for x in series]
 
@@ -122,4 +140,6 @@ def run_forecast(
         return forecast, chart_data, metrics
 
     except Exception as e:
-        return None, None, {"error": str(e)}
+        print(f"Error en Prophet:\n{traceback.format_exc()}")
+        return None, None, {"error": "Error matemático al calcular la proyección. Revise si hay valores atípicos extremos."}
+

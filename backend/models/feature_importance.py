@@ -53,8 +53,20 @@ def run_feature_importance(
         X = df_ml[available]
         y = df_ml[target_col]
 
-        if len(X) < 10:
-            return None, None, {"error": "Se requieren al menos 10 filas para análisis de factores."}
+        if len(X) < 20:
+            return None, None, {"error": "Se requieren al menos 20 registros para encontrar factores clave."}
+            
+        if y.nunique() <= 1:
+            return None, None, {"error": "La variable objetivo es constante. No se pueden buscar factores."}
+            
+        var = X.var(numeric_only=True)
+        valid_cols = var[var > 0].index.tolist()
+        if not valid_cols:
+            return None, None, {"error": "Las variables predictoras no tienen varianza."}
+
+        # Keep valid features
+        available = valid_cols
+        X = X[available]
 
         model = lgb.LGBMRegressor(
             n_estimators=100,

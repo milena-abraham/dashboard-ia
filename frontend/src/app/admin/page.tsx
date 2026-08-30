@@ -252,6 +252,55 @@ export default function AdminDashboard() {
           </div>
 
         </div>
+        
+        {/* Model Metrics Section */}
+        <div className="mt-8 bg-white border-2 border-[#111] shadow-[6px_6px_0px_#111] flex flex-col max-h-[400px]">
+          <div className="p-4 border-b-2 border-[#111] bg-mio-lime">
+            <h3 className="font-bold text-gray-900 flex items-center gap-2">
+              <Database className="w-5 h-5" />
+              Métricas de Rendimiento de Modelos
+            </h3>
+          </div>
+          <div className="flex-1 overflow-auto p-0">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-gray-50 sticky top-0 border-b-2 border-[#111] shadow-sm">
+                <tr>
+                  <th className="p-4 text-xs font-bold text-gray-900 uppercase">Dataset</th>
+                  <th className="p-4 text-xs font-bold text-gray-900 uppercase">Prophet (Predicción)</th>
+                  <th className="p-4 text-xs font-bold text-gray-900 uppercase">Isolation Forest (Anomalías)</th>
+                  <th className="p-4 text-xs font-bold text-gray-900 uppercase">LightGBM (Factores)</th>
+                  <th className="p-4 text-xs font-bold text-gray-900 uppercase">PCA (Segmentación)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {logs.filter(l => l.type === 'analysis_success' && l.metrics).length === 0 ? (
+                  <tr><td colSpan={5} className="p-8 text-center text-gray-500">No hay métricas de modelos aún</td></tr>
+                ) : logs.filter(l => l.type === 'analysis_success' && l.metrics).map((log) => (
+                  <tr key={`metric-${log.id}`} className="hover:bg-gray-50 transition-colors">
+                    <td className="p-4 text-xs font-bold text-gray-700">{log.filename || 'Desconocido'}</td>
+                    <td className="p-4 text-xs text-gray-600">
+                      {log.metrics.forecast?.error ? <span className="text-red-500">Error: {log.metrics.forecast.error}</span> : 
+                        (log.metrics.forecast?.mae ? `MAE: ${log.metrics.forecast.mae} | MAPE: ${log.metrics.forecast.mape}%` : '-')}
+                    </td>
+                    <td className="p-4 text-xs text-gray-600">
+                      {log.metrics.anomalies?.error ? <span className="text-red-500">Error: {log.metrics.anomalies.error}</span> : 
+                        (log.metrics.anomalies?.pct_anomalias !== undefined ? `${log.metrics.anomalies.n_anomalias} anomalías (${log.metrics.anomalies.pct_anomalias}%)` : '-')}
+                    </td>
+                    <td className="p-4 text-xs text-gray-600">
+                      {log.metrics.feature_importance?.error ? <span className="text-red-500">Error: {log.metrics.feature_importance.error}</span> : 
+                        (log.metrics.feature_importance?.n_features ? `${log.metrics.feature_importance.n_features} variables analizadas` : '-')}
+                    </td>
+                    <td className="p-4 text-xs text-gray-600">
+                      {log.metrics.segmentation?.error ? <span className="text-red-500">Error: {log.metrics.segmentation.error}</span> : 
+                        (log.metrics.segmentation?.varianza_explicada_pca ? `K=${log.metrics.segmentation.k} | Varianza PCA: ${log.metrics.segmentation.varianza_explicada_pca}%` : '-')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </div>
     </div>
