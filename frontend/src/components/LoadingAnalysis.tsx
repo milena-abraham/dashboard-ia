@@ -22,34 +22,30 @@ export default function LoadingAnalysis({ fileSize = 1000000 }: { fileSize?: num
   const estimatedTotalSeconds = Math.min(45, Math.max(12, 12 + (fileSize / 200000)));
 
   useEffect(() => {
-    setTimeLeft(Math.ceil(estimatedTotalSeconds));
+    const startTime = Date.now();
+    const totalMs = estimatedTotalSeconds * 1000;
     
-    // Intervalo de mensajes (cada X seg según el tiempo total)
-    const msgIntervalTime = (estimatedTotalSeconds * 1000) / MESSAGES.length;
-    const msgInterval = setInterval(() => {
-      setMsgIndex((prev) => (prev + 1 < MESSAGES.length ? prev + 1 : prev));
-    }, msgIntervalTime);
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      
+      // Update progress based on actual time passed (resilient to tab switching)
+      let currentProgress = (elapsed / totalMs) * 100;
+      if (currentProgress > 99) currentProgress = 99;
+      setProgress(currentProgress);
+      
+      // Update time left
+      let remaining = (totalMs - elapsed) / 1000;
+      if (remaining < 0) remaining = 0;
+      setTimeLeft(remaining);
+      
+      // Update message index
+      let mIndex = Math.floor((elapsed / totalMs) * MESSAGES.length);
+      if (mIndex >= MESSAGES.length) mIndex = MESSAGES.length - 1;
+      setMsgIndex(mIndex);
+      
+    }, 100);
 
-    // Intervalo de progreso (cada 100ms)
-    const updateRate = 100;
-    const progressIncrement = 100 / ((estimatedTotalSeconds * 1000) / updateRate);
-    
-    const progressInterval = setInterval(() => {
-      setProgress((prev) => {
-        const next = prev + progressIncrement;
-        // Frenar en 99% si todavía no llega la respuesta del backend
-        return next > 99 ? 99 : next;
-      });
-      setTimeLeft((prev) => {
-        const next = prev - (updateRate / 1000);
-        return next > 0 ? next : 0;
-      });
-    }, updateRate);
-
-    return () => {
-      clearInterval(msgInterval);
-      clearInterval(progressInterval);
-    };
+    return () => clearInterval(interval);
   }, [estimatedTotalSeconds]);
 
   return (
