@@ -45,8 +45,8 @@ def format_number(n, prefix=""):
 
 @router.post("/analyze")
 async def analyze(file: UploadFile = File(...), target_col: Optional[str] = Form(None)):
-    # contents given as arg
-    # filename given as arg
+    contents = await file.read()
+    filename = file.filename or "dataset"
     h = hashlib.sha256(contents).hexdigest()
     t = str(target_col).lower() if target_col else "none"
     cache_key = f"{h}_{t}"
