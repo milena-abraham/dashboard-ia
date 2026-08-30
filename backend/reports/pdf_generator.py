@@ -49,13 +49,19 @@ class DashboardPDF(FPDF):
     def body_text(self, text: str, font_size: int = 10):
         self.set_font("Helvetica", "", font_size)
         self.set_text_color(50, 50, 50)
-        clean_text = (
-            text.replace("**", "")
-            .replace("##", "")
-            .replace("#", "")
-            .encode("latin-1", errors="replace")
-            .decode("latin-1")
-        )
+        
+        # Mapa de caracteres UTF-8 comunes a Latin-1 equivalentes
+        replacements = {
+            '“': '"', '”': '"', "‘": "'", "’": "'",
+            '—': '-', '–': '-', '…': '...',
+            '€': 'EUR', '£': 'GBP', '¥': 'JPY',
+            '✅': '[OK]', '❌': '[X]', '🚀': '->', '📈': '(+)', '📉': '(-)'
+        }
+        clean_text = text.replace("**", "").replace("##", "").replace("#", "")
+        for k, v in replacements.items():
+            clean_text = clean_text.replace(k, v)
+        
+        clean_text = clean_text.encode("latin-1", errors="replace").decode("latin-1")
         self.multi_cell(0, 6, clean_text)
         self.ln(2)
 
