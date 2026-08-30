@@ -110,8 +110,45 @@ def auto_charts(df: pd.DataFrame, profile, target_col: str) -> List[Dict[str, An
     num_cols = profile.numeric_columns
 
     if target_col not in num_cols:
-        return charts
+        # Generar gráficos de frecuencia para variables categóricas
+        try:
+            val_counts = df[target_col].value_counts().head(15)
+            charts.append({
+                "title": f"Distribución de {target_col}",
+                "chart_data": {
+                    "type": "bar_horizontal",
+                    "labels": val_counts.index.astype(str).tolist(),
+                    "datasets": [{
+                        "label": "Cantidad",
+                        "data": val_counts.values.tolist(),
+                    }],
+                    "title": f"Frecuencia de {target_col}"
+                },
+                "description": f"Ranking de los valores más comunes en la columna {target_col}."
+            })
+        except Exception:
+            pass
+            
+        try:
+            if len(df[target_col].unique()) <= 8:
+                val_counts = df[target_col].value_counts()
+                charts.append({
+                    "title": f"Composición de {target_col}",
+                    "chart_data": {
+                        "type": "doughnut",
+                        "labels": val_counts.index.astype(str).tolist(),
+                        "datasets": [{
+                            "label": "Cantidad",
+                            "data": val_counts.values.tolist(),
+                        }],
+                        "title": f"Composición de {target_col}"
+                    },
+                    "description": f"Porcentaje de participación de cada valor en {target_col}."
+                })
+        except Exception:
+            pass
 
+        return charts
     # 1. Serie temporal
     if date_cols:
         dc = date_cols[0]
