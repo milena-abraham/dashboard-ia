@@ -93,6 +93,7 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
 
     // Format: Forecast
     if (chartData.forecast_values) {
+      const isDense = chartData.labels.length > 200;
       const data = {
         labels: chartData.labels,
         datasets: [
@@ -102,7 +103,9 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
             borderColor: '#613eb5',
             backgroundColor: '#613eb5',
             tension: 0.4,
-            spanGaps: true
+            spanGaps: true,
+            pointRadius: isDense ? 0 : 3,
+            borderWidth: isDense ? 1 : 2
           },
           {
             label: 'Proyección',
@@ -110,7 +113,9 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
             borderColor: '#815ae1',
             borderDash: [5, 5],
             tension: 0.4,
-            spanGaps: true
+            spanGaps: true,
+            pointRadius: isDense ? 0 : 3,
+            borderWidth: isDense ? 1 : 2
           },
           {
             label: 'Límite Superior',
@@ -180,7 +185,8 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
 
     // Format: Timeseries (from anomalies)
     if (chartData.type === 'timeseries' && chartData.normal) {
-        const labels = Array.from(new Set([...chartData.normal.x, ...chartData.anomalies.x])).sort();
+        const labels = Array.from(new Set([...chartData.normal.x, ...chartData.anomalies.x])).sort() as string[];
+        const isDense = labels.length > 200;
         
         // Map data to full timeline
         const normalData = labels.map(l => {
@@ -200,7 +206,9 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
                     data: normalData,
                     borderColor: '#815ae1',
                     backgroundColor: '#815ae1',
-                    spanGaps: true
+                    spanGaps: true,
+                    pointRadius: isDense ? 0 : 3,
+                    borderWidth: isDense ? 1 : 2
                 },
                 {
                     label: 'Anomalías',
@@ -208,7 +216,7 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
                     borderColor: '#fa709a',
                     backgroundColor: '#fa709a',
                     pointStyle: 'rectRot',
-                    pointRadius: 8,
+                    pointRadius: isDense ? 6 : 8,
                     showLine: false
                 }
             ]
