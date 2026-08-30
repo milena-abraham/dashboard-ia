@@ -280,7 +280,7 @@ function AboutUs() {
             <h3 className="text-2xl font-black text-gray-900 mb-1">Tadeo Muñoz Garcés</h3>
             <p className="text-gray-500 font-bold text-sm mb-4">Co-Founder & Developer</p>
             <p className="text-gray-600 text-sm font-medium mb-6">
-              Pasión por la arquitectura de software, inteligencia artificial y en crear experiencias Neo-Brutalistas que rompen el molde.
+              Estudiante de Ciencia de Datos. Pasión por la arquitectura de software, inteligencia artificial y experiencias Neo-Brutalistas que rompen el molde.
             </p>
             <div className="flex gap-4 mt-auto">
               <a href="#" className="w-10 h-10 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center hover:translate-y-1 hover:shadow-none transition-all">
@@ -298,9 +298,9 @@ function AboutUs() {
               M
             </div>
             <h3 className="text-2xl font-black text-gray-900 mb-1">Milena Abraham</h3>
-            <p className="text-gray-500 font-bold text-sm mb-4">Co-Founder & Data Specialist</p>
+            <p className="text-gray-500 font-bold text-sm mb-4">Co-Founder & Developer</p>
             <p className="text-gray-600 text-sm font-medium mb-6">
-              Especialista en análisis de datos, modelos predictivos y en extraer valor de negocios a partir de la entropía.
+              Estudiante de Ciencia de Datos. Especialista en análisis estadístico, modelos predictivos y en extraer valor estratégico de la entropía.
             </p>
             <div className="flex gap-4 mt-auto">
               <a href="#" className="w-10 h-10 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center hover:translate-y-1 hover:shadow-none transition-all">
