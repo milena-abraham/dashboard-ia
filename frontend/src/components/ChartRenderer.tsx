@@ -43,6 +43,8 @@ const COLORS = [
 const chartDefaults: any = {
   responsive: true,
   maintainAspectRatio: false,
+  animation: { duration: 500 }, // Reduce animation time for performance
+  normalized: true, // Huge performance boost for Chart.js
   plugins: {
     legend: {
       position: 'bottom' as const,
@@ -55,14 +57,18 @@ const chartDefaults: any = {
   // PATRON 2: Hover dimming effect
   onHover: function(e: any, activeElements: any[], chart: any) {
     const datasets = chart.data.datasets;
+    let needsUpdate = false;
+    
     if (activeElements.length === 0) {
       datasets.forEach((dataset: any) => {
-        if (dataset._origBg) {
+        if (dataset._isDimmed) {
           dataset.backgroundColor = dataset._origBg;
           dataset.borderColor = dataset._origBorder;
+          dataset._isDimmed = false;
+          needsUpdate = true;
         }
       });
-      chart.update();
+      if (needsUpdate) chart.update();
       return;
     }
     const activeDatasetIndex = activeElements[0].datasetIndex;
@@ -72,18 +78,26 @@ const chartDefaults: any = {
         dataset._origBorder = dataset.borderColor;
       }
       if (i === activeDatasetIndex) {
-        dataset.backgroundColor = dataset._origBg;
-        dataset.borderColor = dataset._origBorder;
+        if (dataset._isDimmed) {
+          dataset.backgroundColor = dataset._origBg;
+          dataset.borderColor = dataset._origBorder;
+          dataset._isDimmed = false;
+          needsUpdate = true;
+        }
       } else {
-        dataset.backgroundColor = Array.isArray(dataset._origBg) 
-          ? dataset._origBg.map(() => 'rgba(200, 200, 200, 0.2)') 
-          : 'rgba(200, 200, 200, 0.2)';
-        dataset.borderColor = Array.isArray(dataset._origBorder)
-          ? dataset._origBorder.map(() => 'transparent')
-          : 'transparent';
+        if (!dataset._isDimmed) {
+          dataset.backgroundColor = Array.isArray(dataset._origBg) 
+            ? dataset._origBg.map(() => 'rgba(200, 200, 200, 0.2)') 
+            : 'rgba(200, 200, 200, 0.2)';
+          dataset.borderColor = Array.isArray(dataset._origBorder)
+            ? dataset._origBorder.map(() => 'rgba(200, 200, 200, 0.2)')
+            : 'rgba(200, 200, 200, 0.2)';
+          dataset._isDimmed = true;
+          needsUpdate = true;
+        }
       }
     });
-    chart.update();
+    if (needsUpdate) chart.update();
   }
 };
 
