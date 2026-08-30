@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { Share2, LogOut, UserCircle, Layers, Activity } from 'lucide-react';
@@ -29,10 +30,13 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           <div className="flex items-center gap-2 group">
-            <svg className="w-8 h-8 transform group-hover:scale-105 transition-transform" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="40" height="40" rx="8" fill="#111" />
-              <path d="M10 28V12L20 20L30 12V28" stroke="#bdf559" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            <Image 
+              src="/MIO.png" 
+              alt="MIO Logo" 
+              width={32} 
+              height={32} 
+              className="transform group-hover:scale-105 transition-transform rounded-md" 
+            />
             <span className="text-2xl font-extrabold text-gray-900 tracking-wide">MIO</span>
           </div>
         </Link>
