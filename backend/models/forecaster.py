@@ -108,12 +108,39 @@ def run_forecast(
         end_forecast = float(forecast["yhat"].iloc[-1])
         trend_pct = round(((end_forecast - last_actual) / max(abs(last_actual), 1)) * 100, 1)
 
-        # In-sample MAE
-        in_sample = forecast.set_index("ds")["yhat"].loc[df_agg["ds"]].values
-        mae = np.mean(np.abs(df_agg["y"].values - in_sample))
-        mape = np.mean(np.abs((df_agg["y"].values - in_sample) / (df_agg["y"].values + 0.001))) * 100
+        # Out-Of-Sample (OOS) Validation para evitar over-fitting y dar una precisión real
+        n_points = len(df_agg)
+        test_size = max(2, int(n_points * 0.15))
         
-        # Confidence logic based on data length and MAPE
+        if n_points > 15:
+            df_train = df_agg.iloc[:-test_size].copy()
+            df_test = df_agg.iloc[-test_size:].copy()
+            
+            # Eval Model
+            model_eval = Prophet(
+                yearly_seasonality=True if len(df_train) > 180 else False,
+                weekly_seasonality=True if len(df_train) > 14 else False,
+                daily_seasonality=False,
+                seasonality_mode="additive" if df_train["y"].min() <= 0 else "multiplicative",
+                interval_width=0.8,
+            )
+            model_eval.fit(df_train)
+            
+            # Predict only test periods
+            future_eval = model_eval.make_future_dataframe(periods=test_size, freq=freq)
+            forecast_eval = model_eval.predict(future_eval)
+            oos_pred = forecast_eval["yhat"].iloc[-test_size:].values
+            oos_real = df_test["y"].values
+            
+            mae = np.mean(np.abs(oos_real - oos_pred))
+            mape = np.mean(np.abs((oos_real - oos_pred) / (np.abs(oos_real) + 0.001))) * 100
+        else:
+            # Fallback a In-Sample si hay muy pocos datos
+            in_sample = forecast.set_index("ds")["yhat"].loc[df_agg["ds"]].values
+            mae = np.mean(np.abs(df_agg["y"].values - in_sample))
+            mape = np.mean(np.abs((df_agg["y"].values - in_sample) / (np.abs(df_agg["y"].values) + 0.001))) * 100
+        
+        # Confidence logic based on OOS MAPE
         confianza = "Alta"
         if len(df_agg) < 30 or mape > 25:
             confianza = "Baja"
@@ -128,7 +155,8 @@ def run_forecast(
             "motor": "Prophet (Meta AI)",
             "mae": round(mae, 2),
             "mape": round(mape, 2),
-            "confianza": confianza
+            "confianza": confianza,
+            "validacion": "Out-of-Sample (OOS)" if n_points > 15 else "In-Sample"
         }
 
         merged = pd.merge(forecast, df_agg, on='ds', how='left')
