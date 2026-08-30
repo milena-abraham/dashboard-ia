@@ -94,8 +94,23 @@ async def analyze(
         profile = profile_dataframe(df_clean)
 
         # 4. Determinar target_col
-        active_target = target_col
-        if not active_target or active_target not in profile.numeric_columns:
+        active_target = None
+        if target_col:
+            target_clean = str(target_col).strip().lower()
+            # 1. Intentar match en columnas numéricas primero
+            for col in profile.numeric_columns:
+                if str(col).strip().lower() == target_clean:
+                    active_target = col
+                    break
+            # 2. Si no es numérica, buscar en todas
+            if not active_target:
+                for col in df_clean.columns:
+                    if str(col).strip().lower() == target_clean:
+                        active_target = col
+                        break
+        
+        # Fallback if not found or empty
+        if not active_target:
             if profile.suggested_targets:
                 active_target = profile.suggested_targets[0]
             elif profile.numeric_columns:
