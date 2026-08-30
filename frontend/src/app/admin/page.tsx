@@ -8,6 +8,7 @@ import { Activity, Users, AlertCircle, Trash2, ShieldAlert, Filter, Database, Ba
 import toast from 'react-hot-toast';
 import { Bar } from 'react-chartjs-2';
 import Navbar from '@/components/Navbar';
+import LogDetailsRenderer from '@/components/LogDetailsRenderer';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -241,8 +242,8 @@ export default function AdminDashboard() {
                           {log.type.replace('_', ' ')}
                         </span>
                       </td>
-                      <td className="p-4 text-xs text-gray-600 font-mono break-all">
-                        {JSON.stringify(log, (key, val) => (key === 'type' || key === 'timestamp' || key === 'id' ? undefined : val))}
+                      <td className="p-4 text-xs">
+                        <LogDetailsRenderer log={log} />
                       </td>
                     </tr>
                   ))}
