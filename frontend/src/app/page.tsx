@@ -13,7 +13,9 @@ import {
   ShieldCheck,
   Zap,
   Github,
-  Linkedin
+  Linkedin,
+  MousePointerClick,
+  Download
 } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
@@ -156,7 +158,7 @@ function BentoGrid() {
           <div>
             <h3 className="text-xl sm:text-2xl font-black text-white mb-2 tracking-tight">IA Generativa Integrada</h3>
             <p className="text-sm sm:text-base text-gray-300 font-medium leading-relaxed max-w-md">
-              Chateá con tus datos. Gemini analiza las métricas, redacta un informe ejecutivo y redibuja los gráficos si se lo pedís.
+              Chateá con tus datos. Nuestra IA analiza las métricas, redacta un informe ejecutivo y redibuja los gráficos si se lo pedís.
             </p>
           </div>
         </motion.div>
@@ -188,6 +190,71 @@ function FormatBanner() {
         </div>
       </div>
     </div>
+  );
+}
+
+function HowItWorks() {
+  const targetRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: targetRef,
+    offset: ["start 85%", "center center"],
+  });
+
+  // Staggered parallax for steps
+  const step1Y = useTransform(scrollYProgress, [0, 1], [50, 0]);
+  const step2Y = useTransform(scrollYProgress, [0.2, 1], [50, 0]);
+  const step3Y = useTransform(scrollYProgress, [0.4, 1], [50, 0]);
+  const opacity = useTransform(scrollYProgress, [0, 0.8], [0, 1]);
+
+  return (
+    <section className="py-20 lg:py-32 bg-[#fafafc] border-t-4 border-[#111] overflow-hidden">
+      <div ref={targetRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-black text-gray-950 tracking-tighter mb-4">
+            Cómo Funciona MIO
+          </h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto font-medium">
+            Tres simples pasos para convertir datos crudos en decisiones estratégicas.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+          {/* Conector horizontal (solo desktop) */}
+          <div className="hidden md:block absolute top-12 left-1/6 right-1/6 h-1 bg-gray-200 z-0"></div>
+
+          {/* Paso 1 */}
+          <motion.div style={{ y: step1Y, opacity, willChange: "transform, opacity" }} className="relative z-10 flex flex-col items-center text-center group">
+            <div className="w-24 h-24 bg-white border-4 border-[#111] shadow-[6px_6px_0px_#111] rounded-none flex items-center justify-center mb-6 group-hover:-translate-y-2 group-hover:shadow-[8px_8px_0px_#111] transition-all">
+              <FileSpreadsheet className="w-10 h-10 text-mio-lime" strokeWidth={2.5} />
+            </div>
+            <div className="bg-mio-violet text-white text-xs font-bold px-3 py-1 border-2 border-[#111] mb-3 shadow-[2px_2px_0px_#111]">PASO 1</div>
+            <h4 className="text-xl font-black text-gray-900 mb-2">Subí tus Datos</h4>
+            <p className="text-gray-600 font-medium">Cargá tu Excel o CSV de forma segura. No requiere pre-limpieza.</p>
+          </motion.div>
+
+          {/* Paso 2 */}
+          <motion.div style={{ y: step2Y, opacity, willChange: "transform, opacity" }} className="relative z-10 flex flex-col items-center text-center group">
+            <div className="w-24 h-24 bg-mio-lime border-4 border-[#111] shadow-[6px_6px_0px_#111] rounded-none flex items-center justify-center mb-6 group-hover:-translate-y-2 group-hover:shadow-[8px_8px_0px_#111] transition-all">
+              <MousePointerClick className="w-10 h-10 text-gray-900" strokeWidth={2.5} />
+            </div>
+            <div className="bg-mio-violet text-white text-xs font-bold px-3 py-1 border-2 border-[#111] mb-3 shadow-[2px_2px_0px_#111]">PASO 2</div>
+            <h4 className="text-xl font-black text-gray-900 mb-2">Elegí el Objetivo</h4>
+            <p className="text-gray-600 font-medium">Seleccioná la columna que querés predecir o entender a fondo.</p>
+          </motion.div>
+
+          {/* Paso 3 */}
+          <motion.div style={{ y: step3Y, opacity, willChange: "transform, opacity" }} className="relative z-10 flex flex-col items-center text-center group">
+            <div className="w-24 h-24 bg-gray-900 border-4 border-[#111] shadow-[6px_6px_0px_#111] rounded-none flex items-center justify-center mb-6 group-hover:-translate-y-2 group-hover:shadow-[8px_8px_0px_#111] transition-all">
+              <Download className="w-10 h-10 text-white" strokeWidth={2.5} />
+            </div>
+            <div className="bg-mio-lime text-gray-900 text-xs font-black px-3 py-1 border-2 border-[#111] mb-3 shadow-[2px_2px_0px_#111]">PASO 3</div>
+            <h4 className="text-xl font-black text-gray-900 mb-2">Resultados Inmediatos</h4>
+            <p className="text-gray-600 font-medium">MIO limpia, entrena, y te entrega un dashboard interactivo al instante.</p>
+          </motion.div>
+
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -333,8 +400,11 @@ export default function LandingPage() {
         
       </section>
 
-      {/* CSV and Excel Banner */}
+      {/* Format Banner */}
       <FormatBanner />
+
+      {/* How It Works */}
+      <HowItWorks />
 
       {/* Bento Grid Features */}
       <BentoGrid />
