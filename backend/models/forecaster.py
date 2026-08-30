@@ -39,9 +39,10 @@ def run_forecast(
         df_agg = df_prep.groupby(date_col)[value_col].sum().reset_index()
         df_agg.columns = ["ds", "y"]
         df_agg = df_agg.sort_values("ds")
-        
-        # Downsample to weekly if too dense (prevents frontend lag and Prophet slowness)
+        # Downsample to weekly or monthly if too dense (prevents frontend lag and Prophet slowness)
         if len(df_agg) > 1000:
+            df_agg = df_agg.set_index("ds").resample("M").sum().reset_index()
+        elif len(df_agg) > 200:
             df_agg = df_agg.set_index("ds").resample("W").sum().reset_index()
 
         if len(df_agg) < 5:

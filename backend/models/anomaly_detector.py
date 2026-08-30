@@ -61,6 +61,12 @@ def run_anomaly_detection(
             normal_df = df_agg[~df_agg["_is_anomaly"]]
             anomaly_df = df_agg[df_agg["_is_anomaly"]]
 
+            # Downsample normal points for performance (leave anomalies intact)
+            if len(normal_df) > 500:
+                # keep every Nth point to roughly get 500 points
+                step = len(normal_df) // 500
+                normal_df = normal_df.iloc[::step]
+
             chart_data = {
                 "type": "timeseries",
                 "normal": {
