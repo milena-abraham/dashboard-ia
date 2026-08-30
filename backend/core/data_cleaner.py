@@ -51,8 +51,8 @@ def _clean_currency_column(series: pd.Series) -> pd.Series:
     if s.str.contains(r"\d\.\d{3}").any() and s.str.contains(r",\d{2}$").any():
         s = s.str.replace(".", "", regex=False).str.replace(",", ".", regex=False)
     # Quitar símbolos de moneda y espacios
-    s = _CURRENCY_RE.sub("", s)
-    s = _PCT_RE.sub("", s)
+    s = s.str.replace(r"[\$\€\£\¥,\s]", "", regex=True)
+    s = s.str.replace(r"%", "", regex=True)
     return pd.to_numeric(s, errors="coerce")
 
 
