@@ -238,7 +238,7 @@ function DashboardInner() {
 
       <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
         {loading ? (
-          <LoadingAnalysis />
+          <LoadingAnalysis fileSize={file?.size} />
         ) : !result ? (
           /* Estado 1: Subir Archivo */
           <div className="max-w-2xl mx-auto my-6">
