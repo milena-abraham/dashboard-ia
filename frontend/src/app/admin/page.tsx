@@ -130,13 +130,18 @@ export default function AdminDashboard() {
     };
   }, [logs]);
 
-  if (authorized === null) return <div className="min-h-screen bg-[#fafafc] flex items-center justify-center">Verificando acceso...</div>;
-  if (authorized === false) return (
-    <div className="min-h-screen bg-[#fafafc] flex flex-col items-center justify-center p-4 text-center">
-      <ShieldAlert className="w-16 h-16 text-red-500 mb-4" />
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Acceso Denegado</h1>
-    </div>
-  );
+  if (authorized === null) {
+    return <div className="min-h-screen bg-[#fafafc] flex items-center justify-center">Verificando acceso...</div>;
+  }
+  
+  if (authorized === false) {
+    return (
+      <div className="min-h-screen bg-[#fafafc] flex flex-col items-center justify-center p-4 text-center">
+        <ShieldAlert className="w-16 h-16 text-red-500 mb-4" />
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Acceso Denegado</h1>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#fafafc] flex flex-col">
@@ -248,6 +253,7 @@ export default function AdminDashboard() {
 
         </div>
       </div>
+    </div>
     </div>
   );
 }
