@@ -503,6 +503,11 @@ function DashboardInner() {
                         <p className="text-xs text-gray-500">Registros atípicos marcados para auditoría</p>
                       </div>
                       <ChartRenderer key={`anom-${result.filename}`} chartData={result.anomalies?.chart_data} height={400} />
+                      
+                      <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-500 text-xs text-blue-800">
+                        <strong>Aviso:</strong> El modelo Isolation Forest ha marcado <strong>{result.anomalies?.metrics?.n_anomalias || 0} registros atípicos</strong> ({result.anomalies?.metrics?.pct_anomalias || 0}% del total) que se desvían del patrón general. Revisa el listado inferior para auditar los casos más críticos.
+                      </div>
+
                       {result.anomalies?.metrics?.anomalias_detalle && (
                         <div className="pt-4 border-t border-[#111] border-2">
                           <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-3">

@@ -218,20 +218,19 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
                 {
                     label: 'Normal',
                     data: normalData,
-                    borderColor: '#815ae1',
-                    backgroundColor: '#815ae1',
-                    spanGaps: true,
-                    pointRadius: isDense ? 0 : 3,
-                    borderWidth: isDense ? 1 : 2
+                    backgroundColor: 'rgba(129, 90, 225, 0.3)', // Light transparent purple
+                    pointRadius: isDense ? 2 : 4,
+                    showLine: false, // CRITICAL: turns off the ugly zigzag line
+                    borderWidth: 0
                 },
                 {
                     label: 'Anomalías',
                     data: anomData,
-                    borderColor: '#fa709a',
                     backgroundColor: '#fa709a',
                     pointStyle: 'rectRot',
-                    pointRadius: isDense ? 6 : 8,
-                    showLine: false
+                    pointRadius: isDense ? 4 : 6,
+                    showLine: false,
+                    borderWidth: 0
                 }
             ]
         };
