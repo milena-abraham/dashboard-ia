@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
-import { FileSpreadsheet, Calendar, Target, Trash2, TrendingUp } from 'lucide-react';
+import { FileSpreadsheet, Calendar, Target, Trash2, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 
 interface ProjectCardProps {
   project: {
@@ -19,6 +20,7 @@ interface ProjectCardProps {
 }
 
 export default function ProjectCard({ project, index, onDelete }: ProjectCardProps) {
+  const router = useRouter();
   const date = project.created_at?.toDate
     ? project.created_at.toDate().toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })
     : 'Fecha desconocida';
@@ -73,20 +75,29 @@ export default function ProjectCard({ project, index, onDelete }: ProjectCardPro
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between border-t-2 border-[#111] pt-3 mt-auto">
+      <div className="flex items-center justify-between border-t-2 border-[#111] pt-3 mt-auto gap-2">
         <div className="flex items-center gap-1 text-[11px] text-gray-400">
           <Calendar className="w-3 h-3" />
           <span>{date}</span>
         </div>
-        {onDelete && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => onDelete(project.id)}
-            className="flex items-center gap-1 text-[11px] text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 border border-red-200 transition-colors"
+            onClick={() => router.push(`/dashboard?project=${project.id}`)}
+            className="flex items-center gap-1 text-[11px] px-3 py-1.5 bg-mio-violet text-white border-2 border-[#111] shadow-[2px_2px_0px_#111] hover:shadow-none hover:translate-y-[1px] font-bold transition-all"
           >
-            <Trash2 className="w-3 h-3" />
-            Eliminar
+            <ExternalLink className="w-3 h-3" />
+            Abrir
           </button>
-        )}
+          {onDelete && (
+            <button
+              onClick={() => onDelete(project.id)}
+              className="flex items-center gap-1 text-[11px] text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1.5 border border-red-200 transition-colors"
+            >
+              <Trash2 className="w-3 h-3" />
+              Eliminar
+            </button>
+          )}
+        </div>
       </div>
     </motion.div>
   );

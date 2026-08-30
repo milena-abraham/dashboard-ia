@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import FileUploader from '@/components/FileUploader';
 import KPICards from '@/components/KPICards';
@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { AnalysisResult } from '@/types/analysis';
 
-export default function DashboardPage() {
+function DashboardInner() {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [file, setFile] = useState<File | null>(null);
@@ -53,6 +53,7 @@ export default function DashboardPage() {
   const originalCharts = result?.charts || [];
 
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -61,6 +62,26 @@ export default function DashboardPage() {
     });
     return () => unsubscribe();
   }, []);
+
+  // Restore saved project from localStorage if ?project=ID is in the URL
+  useEffect(() => {
+    const projectId = searchParams.get('project');
+    if (projectId) {
+      try {
+        const stored = localStorage.getItem(`mio_result_${projectId}`);
+        if (stored) {
+          const parsed = JSON.parse(stored) as AnalysisResult;
+          setResult(parsed);
+          toast.success('📂 Proyecto cargado correctamente');
+        } else {
+          toast.error('No se encontraron los datos de este proyecto en este navegador.');
+        }
+      } catch (e) {
+        console.error('Error restaurando proyecto:', e);
+        toast.error('Error al restaurar el proyecto.');
+      }
+    }
+  }, [searchParams]);
 
   const handleStartAnalysis = async () => {
     if (!file) {
@@ -144,7 +165,17 @@ export default function DashboardPage() {
       const timeout = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Timeout: Firestore no respondió. Verificá los permisos en la consola de Firebase.')), 8000)
       );
-      await Promise.race([savePromise, timeout]);
+      const docRef = await Promise.race([savePromise, timeout]) as any;
+
+      // Save full result to localStorage so the project can be reopened
+      if (docRef?.id) {
+        try {
+          localStorage.setItem(`mio_result_${docRef.id}`, JSON.stringify(result));
+        } catch (storageErr) {
+          console.warn('localStorage full, skipping full result save:', storageErr);
+        }
+      }
+
       toast.success('✅ Proyecto guardado en Mis Proyectos');
     } catch (e: any) {
       console.error('Firestore save error:', e);
@@ -462,5 +493,13 @@ export default function DashboardPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#fafafc] flex items-center justify-center text-gray-400">Cargando...</div>}>
+      <DashboardInner />
+    </Suspense>
   );
 }
