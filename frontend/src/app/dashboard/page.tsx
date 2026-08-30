@@ -30,6 +30,8 @@ import {
 } from 'lucide-react';
 import { AnalysisResult } from '@/types/analysis';
 
+import { logSystemEvent } from '@/lib/logger';
+
 function DashboardInner() {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -40,6 +42,7 @@ function DashboardInner() {
   const [activeTab, setActiveTab] = useState<number>(0);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [savingProject, setSavingProject] = useState(false);
+  const [chatLogged, setChatLogged] = useState(false);
 
   // Persistent chat state (lives in parent so tab changes don't reset it)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([{
@@ -83,6 +86,14 @@ function DashboardInner() {
     }
   }, [searchParams]);
 
+  // Log chat opened
+  useEffect(() => {
+    if (activeTab === 6 && !chatLogged) {
+      logSystemEvent('chat_session_started', { uid: user?.uid });
+      setChatLogged(true);
+    }
+  }, [activeTab, chatLogged, user]);
+
   const handleStartAnalysis = async () => {
     if (!file) {
       toast.error('Por favor seleccioná un archivo primero.');
@@ -90,13 +101,16 @@ function DashboardInner() {
     }
 
     setLoading(true);
+    setChatLogged(false);
     try {
       const data = await analyzeFile(file, targetCol || undefined);
       setResult(data);
       toast.success('¡Análisis completado con éxito!');
+      logSystemEvent('analysis_success', { filename: file.name, uid: user?.uid });
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || 'Ocurrió un error al procesar el dataset.');
+      logSystemEvent('analysis_error', { filename: file.name, error: err.message, uid: user?.uid });
     } finally {
       setLoading(false);
     }
@@ -139,6 +153,7 @@ function DashboardInner() {
     setResult(null);
     setTargetCol('');
     setActiveTab(0);
+    setChatLogged(false);
     setChartOverrides({});
     setChatMessages([{
       id: '1',
@@ -176,6 +191,7 @@ function DashboardInner() {
         }
       }
 
+      logSystemEvent('project_saved', { uid: user.uid, filename: result.filename });
       toast.success('✅ Proyecto guardado en Mis Proyectos');
     } catch (e: any) {
       console.error('Firestore save error:', e);

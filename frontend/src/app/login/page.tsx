@@ -12,6 +12,7 @@ import {
 } from 'firebase/auth';
 import toast from 'react-hot-toast';
 import { BarChart3, Mail, Lock, Sparkles, ArrowRight } from 'lucide-react';
+import { logSystemEvent } from '@/lib/logger';
 
 export default function LoginPage() {
   const [isRegister, setIsRegister] = useState(false);
@@ -30,10 +31,12 @@ export default function LoginPage() {
     setLoading(true);
     try {
       if (isRegister) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCred = await createUserWithEmailAndPassword(auth, email, password);
+        logSystemEvent('auth_signup', { method: 'email', uid: userCred.user.uid, email: userCred.user.email });
         toast.success('¡Cuenta creada exitosamente!');
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        const userCred = await signInWithEmailAndPassword(auth, email, password);
+        logSystemEvent('auth_login', { method: 'email', uid: userCred.user.uid, email: userCred.user.email });
         toast.success('¡Sesión iniciada!');
       }
       router.push('/dashboard');
@@ -57,7 +60,8 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const userCred = await signInWithPopup(auth, provider);
+      logSystemEvent('auth_login', { method: 'google', uid: userCred.user.uid, email: userCred.user.email });
       toast.success('¡Autenticado con Google!');
       router.push('/dashboard');
     } catch (err: any) {
