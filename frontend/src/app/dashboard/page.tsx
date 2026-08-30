@@ -429,6 +429,10 @@ function DashboardInner() {
                     <div className="flex items-center justify-center h-48 bg-gray-50 border-2 border-dashed border-gray-300">
                       <p className="text-gray-500 font-bold">{result.forecast.metrics.error}</p>
                     </div>
+                  ) : !result.forecast?.chart_data ? (
+                    <div className="flex items-center justify-center h-48 bg-gray-50 border-2 border-dashed border-gray-300">
+                      <p className="text-gray-500 font-bold">No hay columnas de fecha en este dataset para proyectar.</p>
+                    </div>
                   ) : (
                     <>
                       <div className="flex items-center justify-between">

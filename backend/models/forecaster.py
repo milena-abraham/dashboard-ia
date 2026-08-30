@@ -80,6 +80,8 @@ def run_forecast(
                 "labels": df_agg["ds"].dt.strftime('%Y-%m-%d').tolist() + future_dates.strftime('%Y-%m-%d').tolist(),
                 "real_values": [x if not pd.isna(x) else None for x in y] + [None] * len(future_dates),
                 "forecast_values": [None] * (len(df_agg) - 1) + [y[-1]] + y_future.tolist(),
+                "upper_band": [None] * (len(df_agg) - 1) + [y[-1]] + y_future.tolist(),
+                "lower_band": [None] * (len(df_agg) - 1) + [y[-1]] + y_future.tolist(),
             }
             return None, chart_data, metrics
 
