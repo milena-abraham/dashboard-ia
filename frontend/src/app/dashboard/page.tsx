@@ -13,7 +13,7 @@ import DataQualityBadge from '@/components/DataQualityBadge';
 import { analyzeFile, exportPDF, exportPPTX } from '@/lib/api';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import {
   BarChart3,
@@ -68,25 +68,47 @@ function DashboardInner() {
     return () => unsubscribe();
   }, []);
 
-  // Restore saved project from localStorage if ?project=ID is in the URL
+  // Restore saved project from localStorage or Firebase
   useEffect(() => {
     const projectId = searchParams.get('project');
-    if (projectId) {
+    if (!projectId || result) return;
+
+    const loadProjectData = async () => {
       try {
         const stored = localStorage.getItem(`mio_result_${projectId}`);
         if (stored) {
-          const parsed = JSON.parse(stored) as AnalysisResult;
-          setResult(parsed);
-          toast.success('📂 Proyecto cargado correctamente');
+          setResult(JSON.parse(stored));
+          toast.success('📂 Proyecto restaurado al instante');
+          return;
+        }
+
+        if (authLoading) return; // Wait for Firebase Auth
+
+        if (user) {
+          setLoading(true);
+          const docRef = doc(db, 'users', user.uid, 'analyses', projectId);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists() && docSnap.data().result_data) {
+            const dataStr = docSnap.data().result_data;
+            setResult(JSON.parse(dataStr));
+            try { localStorage.setItem(`mio_result_${projectId}`, dataStr); } catch(e) {}
+            toast.success('☁️ Proyecto descargado de la nube');
+          } else {
+            toast.error('El proyecto fue eliminado o no existe en la nube.');
+          }
         } else {
-          toast.error('No se encontraron los datos de este proyecto en este navegador.');
+          toast.error('Iniciá sesión para abrir proyectos.');
         }
       } catch (e) {
-        console.error('Error restaurando proyecto:', e);
-        toast.error('Error al restaurar el proyecto.');
+        console.error('Error loading project:', e);
+        toast.error('Error al restaurar el proyecto desde la nube.');
+      } finally {
+        setLoading(false);
       }
-    }
-  }, [searchParams]);
+    };
+
+    loadProjectData();
+  }, [searchParams, user, authLoading, result]);
 
   // Log chat opened
   useEffect(() => {
