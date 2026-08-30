@@ -16,7 +16,7 @@ def chart_timeseries_monthly(df: pd.DataFrame, date_col: str, value_col: str, ti
     df_agg.columns = ["Mes", value_col]
 
     return {
-        "type": "bar",
+        "type": "line_area",
         "labels": df_agg["Mes"].tolist(),
         "datasets": [{
             "label": value_col,

@@ -1,0 +1,67 @@
+--- frontend/src/components/ChartRenderer.tsx
++++ frontend/src/components/ChartRenderer.tsx
+@@ -107,6 +107,17 @@
+     chart.update();
+   }
+ };
++
++const cartesianScales = {
++  x: {
++    grid: { display: false, drawBorder: false },
++    ticks: { font: { size: 10 } }
++  },
++  y: {
++    border: { dash: [4, 4], display: false },
++    grid: { color: '#f3f4f6' },
++    ticks: { font: { size: 10 } }
++  }
++};
+ 
+ export default function ChartRenderer({ chartData, height = 300 }: ChartRendererProps) {
+   const renderedChart = useMemo(() => {
+@@ -165,7 +176,10 @@
+           }
+         ]
+       };
+-      const options = { 
++      const options = {
+         ...chartDefaults,
++        scales: cartesianScales,
+         plugins: {
+           ...chartDefaults.plugins,
+           tooltip: {
+@@ -194,7 +208,10 @@
+       };
+-      const options = {
++      const options = {
+         ...chartDefaults,
+         scales: {
+-          x: { title: { display: true, text: chartData.x_label || 'X' } },
+-          y: { title: { display: true, text: chartData.y_label || 'Y' } }
++          x: { ...cartesianScales.x, title: { display: true, text: chartData.x_label || 'X' } },
++          y: { ...cartesianScales.y, title: { display: true, text: chartData.y_label || 'Y' } }
+         }
+       };
+       return <Scatter data={data} options={options} />;
+@@ -236,7 +253,10 @@
+             ]
+         };
+-        const options = { 
++        const options = {
+             ...chartDefaults,
++            scales: cartesianScales,
+             plugins: {
+                 ...chartDefaults.plugins,
+                 tooltip: {
+@@ -311,6 +331,10 @@
+         ]
+       };
+       if (chartData.type === 'bar' || chartData.type === 'bar_horizontal') {
+-        const options = {
++        const options = {
+           ...chartDefaults,
++          scales: {
++             x: chartData.type === 'bar_horizontal' ? cartesianScales.y : cartesianScales.x,
++             y: chartData.type === 'bar_horizontal' ? cartesianScales.x : cartesianScales.y
++          },
+           indexAxis: chartData.type === 'bar_horizontal' ? 'y' : 'x',

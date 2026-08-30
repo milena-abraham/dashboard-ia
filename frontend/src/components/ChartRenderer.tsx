@@ -39,19 +39,35 @@ const COLORS = [
   "#613eb5", "#92d433", "#c6b0f7"
 ];
 
+ChartJS.defaults.font.family = "'Inter', system-ui, sans-serif";
+ChartJS.defaults.color = '#4b5563';
+
 // PATRON 1: chartDefaults shared config
 const chartDefaults: any = {
   responsive: true,
   maintainAspectRatio: false,
-  animation: { duration: 500 }, // Reduce animation time for performance
+  animation: { duration: 600, easing: 'easeOutQuart' }, 
   plugins: {
     legend: {
       position: 'bottom' as const,
+      labels: {
+        usePointStyle: true,
+        padding: 20,
+        font: { weight: 'bold', size: 11 }
+      }
     },
     tooltip: {
       // Default tooltips work best across mixed chart types
       intersect: true,
-      mode: 'nearest'
+      mode: 'nearest',
+      backgroundColor: '#111111',
+      titleFont: { size: 13, weight: 'bold' },
+      bodyFont: { size: 12 },
+      padding: 12,
+      cornerRadius: 0, // Neo-brutalist sharp edges
+      boxPadding: 4,
+      borderColor: 'rgba(255,255,255,0.1)',
+      borderWidth: 1
     }
   },
   // PATRON 2: Hover dimming effect
@@ -98,6 +114,18 @@ const chartDefaults: any = {
       }
     });
     if (needsUpdate) chart.update();
+  }
+};
+
+const cartesianScales = {
+  x: {
+    grid: { display: false, drawBorder: false },
+    ticks: { font: { size: 10 } }
+  },
+  y: {
+    border: { dash: [4, 4], display: false },
+    grid: { color: '#f3f4f6' },
+    ticks: { font: { size: 10 } }
   }
 };
 
@@ -153,6 +181,7 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
       };
       const options = { 
         ...chartDefaults,
+        scales: cartesianScales,
         plugins: {
           ...chartDefaults.plugins,
           tooltip: {
@@ -178,8 +207,8 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
       const options = {
         ...chartDefaults,
         scales: {
-          x: { title: { display: true, text: chartData.x_label || 'X' } },
-          y: { title: { display: true, text: chartData.y_label || 'Y' } }
+          x: { ...cartesianScales.x, title: { display: true, text: chartData.x_label || 'X' } },
+          y: { ...cartesianScales.y, title: { display: true, text: chartData.y_label || 'Y' } }
         }
       };
       return <Scatter data={data} options={options} />;
@@ -202,7 +231,7 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
           }
         ]
       };
-      const options = { ...chartDefaults, scales: { x: { title: { display: true, text: chartData.x_label } }, y: { title: { display: true, text: chartData.y_label } } } };
+      const options = { ...chartDefaults, scales: { x: { ...cartesianScales.x, title: { display: true, text: chartData.x_label } }, y: { ...cartesianScales.y, title: { display: true, text: chartData.y_label } } } };
       return <Scatter data={data} options={options} />;
     }
 
@@ -315,21 +344,49 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
         labels: chartData.labels,
         datasets: chartData.datasets.map((ds: any, i: number) => ({
           ...ds,
-          backgroundColor: chartData.type === 'doughnut' ? COLORS : COLORS[i % COLORS.length]
+          backgroundColor: chartData.type === 'doughnut' ? COLORS : COLORS[i % COLORS.length],
+          borderRadius: chartData.type !== 'doughnut' ? 4 : 0
         }))
       };
 
       const options = { ...chartDefaults };
 
       if (chartData.type === 'bar_horizontal') {
-        options.indexAxis = 'y';
-        return <Bar data={data} options={options} />;
+        const hOptions = { 
+            ...chartDefaults,
+            indexAxis: 'y',
+            scales: { x: cartesianScales.y, y: cartesianScales.x }
+        };
+        return <Bar data={data} options={hOptions} />;
       }
       if (chartData.type === 'doughnut') {
-        options.cutout = '70%';
-        return <Doughnut data={data} options={options} />;
+        const dOptions = { ...chartDefaults, cutout: '70%' };
+        return <Doughnut data={data} options={dOptions} />;
       }
-      return <Bar data={data} options={options} />;
+      if (chartData.type === 'line_area') {
+        // Line chart with gradient fill
+        const lData = {
+          labels: chartData.labels,
+          datasets: chartData.datasets.map((ds: any, i: number) => ({
+            ...ds,
+            borderColor: COLORS[i % COLORS.length],
+            backgroundColor: 'rgba(129, 90, 225, 0.15)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }))
+        };
+        const lOptions = { 
+            ...chartDefaults, 
+            scales: cartesianScales,
+            plugins: { ...chartDefaults.plugins, tooltip: { mode: 'index', intersect: false } }
+        };
+        return <Line data={lData} options={lOptions} />;
+      }
+      
+      const bOptions = { ...chartDefaults, scales: cartesianScales };
+      return <Bar data={data} options={bOptions} />;
     }
 
     return null;
