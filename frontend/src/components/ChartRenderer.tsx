@@ -44,14 +44,14 @@ const chartDefaults: any = {
   responsive: true,
   maintainAspectRatio: false,
   animation: { duration: 500 }, // Reduce animation time for performance
-  normalized: true, // Huge performance boost for Chart.js
   plugins: {
     legend: {
       position: 'bottom' as const,
     },
     tooltip: {
-      mode: 'index',
-      intersect: false,
+      // Default tooltips work best across mixed chart types
+      intersect: true,
+      mode: 'nearest'
     }
   },
   // PATRON 2: Hover dimming effect
@@ -151,7 +151,16 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
           }
         ]
       };
-      const options = { ...chartDefaults };
+      const options = { 
+        ...chartDefaults,
+        plugins: {
+          ...chartDefaults.plugins,
+          tooltip: {
+            mode: 'index',
+            intersect: false
+          }
+        }
+      };
       return <Line data={data} options={options} />;
     }
 
@@ -234,7 +243,17 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
                 }
             ]
         };
-        return <Line data={data} options={{ ...chartDefaults }} />;
+        const options = { 
+            ...chartDefaults,
+            plugins: {
+                ...chartDefaults.plugins,
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            }
+        };
+        return <Line data={data} options={options} />;
     }
 
     // Format: Radar
