@@ -7,6 +7,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { Activity, Users, AlertCircle, Trash2, ShieldAlert, Filter, Database, BarChart3, Bot, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Bar } from 'react-chartjs-2';
+import Navbar from '@/components/Navbar';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -138,8 +139,10 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-[#fafafc] p-6 lg:p-12">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-[#fafafc] flex flex-col">
+      <Navbar />
+      <div className="flex-1 p-6 lg:p-12">
+        <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 border-2 border-[#111] shadow-[6px_6px_0px_#111]">
