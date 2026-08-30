@@ -17,7 +17,7 @@ def run_anomaly_detection(
     numeric_cols: List[str],
     target_col: Optional[str] = None,
     date_col: Optional[str] = None,
-    contamination: float = 0.05,
+    contamination: str = 'auto',
 ) -> Tuple[pd.DataFrame, Optional[dict], dict]:
     """
     Detecta anomalias usando Isolation Forest.
