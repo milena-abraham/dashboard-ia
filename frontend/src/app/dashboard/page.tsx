@@ -73,22 +73,6 @@ export default function DashboardPage() {
       const data = await analyzeFile(file, targetCol || undefined);
       setResult(data);
       toast.success('¡Análisis completado con éxito!');
-
-      if (user) {
-        try {
-          // Fire and forget so we don't block the UI if Firebase is not configured properly
-          addDoc(collection(db, 'users', user.uid, 'analyses'), {
-            filename: data.filename || 'dataset',
-            target_col: data.target_col || data.target_column || '',
-            kpis: data.kpis || {},
-            quality_score: data.profile?.quality_score ?? 0,
-            narrative_text: data.narrative?.text || '',
-            created_at: serverTimestamp(),
-          });
-        } catch (firestoreErr) {
-          console.warn('No se pudo guardar en Firestore (permisos o config):', firestoreErr);
-        }
-      }
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || 'Ocurrió un error al procesar el dataset.');
@@ -143,21 +127,34 @@ export default function DashboardPage() {
   };
 
   const handleSaveProject = async () => {
-    if (!result || !user) return;
+    if (!result || !user) {
+      toast.error('Necesitás estar logueado para guardar proyectos.');
+      return;
+    }
     setSavingProject(true);
     try {
-      await addDoc(collection(db, 'users', user.uid, 'analyses'), {
+      const savePromise = addDoc(collection(db, 'users', user.uid, 'analyses'), {
         filename: result.filename || 'dataset',
-        target_col: result.target_col || result.target_column || '',
+        target_col: result.target_col || (result as any).target_column || '',
         kpis: result.kpis || {},
         quality_score: result.profile?.quality_score ?? 0,
-        narrative_text: result.narrative?.text || '',
+        narrative_text: result.narrative?.text?.slice(0, 500) || '',
         created_at: serverTimestamp(),
       });
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout: Firestore no respondió. Verificá los permisos en la consola de Firebase.')), 8000)
+      );
+      await Promise.race([savePromise, timeout]);
       toast.success('✅ Proyecto guardado en Mis Proyectos');
-    } catch (e) {
-      console.error(e);
-      toast.error('No se pudo guardar el proyecto.');
+    } catch (e: any) {
+      console.error('Firestore save error:', e);
+      if (e.message?.includes('Timeout')) {
+        toast.error('⏱ Tiempo de espera agotado. Verificá los permisos de Firestore.');
+      } else if (e.code === 'permission-denied') {
+        toast.error('🔒 Sin permiso de escritura en Firestore. Actualizá las Rules en Firebase Console.');
+      } else {
+        toast.error(`Error: ${e.message || 'No se pudo guardar el proyecto.'}`);
+      }
     } finally {
       setSavingProject(false);
     }
