@@ -12,6 +12,8 @@ import {
   ArrowRight,
   ShieldCheck,
   Zap,
+  Github,
+  Linkedin
 } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
@@ -31,15 +33,15 @@ function HeroMockup() {
     <motion.div 
       ref={targetRef} 
       style={{ scale, opacity, y, rotateX, willChange: "transform, opacity" }}
-      className="mt-20 relative z-0 max-w-5xl mx-auto w-full border-4 border-[#111] shadow-[12px_12px_0px_#111] bg-white aspect-[16/10] sm:aspect-video flex items-center justify-center overflow-hidden"
+      className="mt-16 sm:mt-24 relative z-0 max-w-5xl mx-auto w-full border-4 border-[#111] shadow-[8px_8px_0px_#111] sm:shadow-[16px_16px_0px_#111] bg-white aspect-[4/3] sm:aspect-video flex items-center justify-center overflow-hidden"
     >
       <div className="absolute inset-0 bg-gray-50 flex flex-col pointer-events-none">
         {/* Fake Browser Header */}
-        <div className="h-12 border-b-4 border-[#111] bg-white flex items-center px-4 gap-3">
-           <div className="w-4 h-4 rounded-full bg-red-400 border-2 border-[#111]" />
-           <div className="w-4 h-4 rounded-full bg-yellow-400 border-2 border-[#111]" />
-           <div className="w-4 h-4 rounded-full bg-mio-lime border-2 border-[#111]" />
-           <div className="ml-4 h-6 w-1/3 bg-gray-100 border-2 border-[#111]" />
+        <div className="h-10 sm:h-12 border-b-4 border-[#111] bg-white flex items-center px-4 gap-2 sm:gap-3">
+           <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-red-400 border-2 border-[#111]" />
+           <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-yellow-400 border-2 border-[#111]" />
+           <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-mio-lime border-2 border-[#111]" />
+           <div className="ml-2 sm:ml-4 h-4 sm:h-6 w-1/3 bg-gray-100 border-2 border-[#111]" />
         </div>
         {/* Fake Dashboard Body */}
         <div className="flex-1 p-4 sm:p-8 flex gap-4 sm:gap-6">
@@ -52,19 +54,19 @@ function HeroMockup() {
            
            {/* Main Content */}
            <div className="flex-1 flex flex-col gap-4 sm:gap-6">
-              <div className="flex gap-4 sm:gap-6 h-1/3">
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 h-1/2 sm:h-1/3">
                  <div className="flex-1 bg-mio-lime border-4 border-[#111] shadow-[4px_4px_0px_#111] p-4 flex flex-col justify-end">
                     <span className="font-bold text-xl sm:text-3xl text-gray-900 block border-b-4 border-[#111] w-1/2 mb-2"></span>
                  </div>
                  <div className="flex-1 bg-mio-violet text-white border-4 border-[#111] shadow-[4px_4px_0px_#111] p-4 flex flex-col justify-end">
                  </div>
               </div>
-              <div className="flex-1 bg-white border-4 border-[#111] shadow-[4px_4px_0px_#111] flex items-end p-4 gap-4">
-                 <div className="w-1/6 h-full bg-gray-200 border-2 border-[#111]"></div>
-                 <div className="w-1/6 h-3/4 bg-gray-300 border-2 border-[#111]"></div>
-                 <div className="w-1/6 h-1/2 bg-gray-400 border-2 border-[#111]"></div>
-                 <div className="w-1/6 h-5/6 bg-mio-violet border-2 border-[#111]"></div>
-                 <div className="w-1/6 h-full bg-mio-lime border-2 border-[#111]"></div>
+              <div className="flex-1 bg-white border-4 border-[#111] shadow-[4px_4px_0px_#111] flex items-end p-4 gap-2 sm:gap-4 overflow-hidden">
+                 <div className="flex-1 h-1/4 bg-gray-200 border-2 border-[#111]"></div>
+                 <div className="flex-1 h-3/4 bg-gray-300 border-2 border-[#111]"></div>
+                 <div className="flex-1 h-1/2 bg-gray-400 border-2 border-[#111]"></div>
+                 <div className="flex-1 h-5/6 bg-mio-violet border-2 border-[#111]"></div>
+                 <div className="flex-1 h-full bg-mio-lime border-2 border-[#111]"></div>
               </div>
            </div>
         </div>
@@ -80,36 +82,36 @@ function BentoGrid() {
     offset: ["start 90%", "end center"],
   });
 
-  const y1 = useTransform(scrollYProgress, [0, 1], [150, 0]);
-  const y2 = useTransform(scrollYProgress, [0.1, 1], [180, 0]);
-  const y3 = useTransform(scrollYProgress, [0.2, 1], [210, 0]);
-  const y4 = useTransform(scrollYProgress, [0.3, 1], [240, 0]);
+  const y1 = useTransform(scrollYProgress, [0, 1], [80, 0]);
+  const y2 = useTransform(scrollYProgress, [0.1, 1], [100, 0]);
+  const y3 = useTransform(scrollYProgress, [0.2, 1], [120, 0]);
+  const y4 = useTransform(scrollYProgress, [0.3, 1], [140, 0]);
   const opacity = useTransform(scrollYProgress, [0, 0.5], [0, 1]);
 
   return (
-    <div ref={targetRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
-      <div className="text-center mb-16">
-        <h2 className="text-4xl md:text-5xl font-extrabold text-gray-950 tracking-tighter mb-4">
+    <div ref={targetRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
+      <div className="text-center mb-12 sm:mb-16">
+        <h2 className="text-4xl md:text-5xl font-black text-gray-950 tracking-tighter mb-4">
           Una suite analítica en un solo click.
         </h2>
-        <p className="text-lg text-gray-500 max-w-2xl mx-auto font-medium">
+        <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto font-medium">
           Robusto como una herramienta corporativa, simple como un chat.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[280px]">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-auto md:auto-rows-[280px]">
         
         {/* Card 1: Large Feature */}
         <motion.div 
           style={{ y: y1, opacity, willChange: "transform, opacity" }}
-          className="md:col-span-2 bg-white border-4 border-[#111] shadow-[8px_8px_0px_#111] p-8 flex flex-col justify-between group hover:shadow-none hover:translate-y-2 hover:translate-x-2 transition-all duration-300"
+          className="md:col-span-2 bg-white border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between group hover:shadow-none hover:translate-y-2 hover:translate-x-2 transition-all duration-300"
         >
-          <div className="w-16 h-16 bg-mio-violet text-white flex items-center justify-center border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6">
-            <BrainCircuit className="w-8 h-8" />
+          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-mio-violet text-white flex items-center justify-center border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6">
+            <BrainCircuit className="w-6 h-6 sm:w-8 sm:h-8" />
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">Motores Predictivos (AutoML)</h3>
-            <p className="text-gray-600 font-medium leading-relaxed max-w-md">
+            <h3 className="text-xl sm:text-2xl font-black text-gray-900 mb-2 tracking-tight">Motores Predictivos (AutoML)</h3>
+            <p className="text-sm sm:text-base text-gray-600 font-medium leading-relaxed max-w-md">
               MIO entrena modelos de Forecasting, Detección de Anomalías y Segmentación K-Means sin que escribas una sola línea de código Python.
             </p>
           </div>
@@ -118,42 +120,42 @@ function BentoGrid() {
         {/* Card 2: Small Feature */}
         <motion.div 
           style={{ y: y2, opacity, willChange: "transform, opacity" }}
-          className="bg-mio-lime border-4 border-[#111] shadow-[8px_8px_0px_#111] p-8 flex flex-col justify-between group hover:shadow-none hover:translate-y-2 hover:translate-x-2 transition-all duration-300"
+          className="bg-mio-lime border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between group hover:shadow-none hover:translate-y-2 hover:translate-x-2 transition-all duration-300"
         >
-          <div className="w-16 h-16 bg-white text-gray-900 flex items-center justify-center border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6">
-            <Zap className="w-8 h-8" />
+          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white text-gray-900 flex items-center justify-center border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6">
+            <Zap className="w-6 h-6 sm:w-8 sm:h-8" />
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">Velocidad</h3>
-            <p className="text-gray-800 font-medium">Auto-limpieza de datos y generación de dashboard en menos de 60 segundos.</p>
+            <h3 className="text-xl sm:text-2xl font-black text-gray-900 mb-2 tracking-tight">Velocidad</h3>
+            <p className="text-sm sm:text-base text-gray-800 font-bold">Limpieza y dashboard en menos de 60s.</p>
           </div>
         </motion.div>
 
         {/* Card 3: Small Feature */}
         <motion.div 
           style={{ y: y3, opacity, willChange: "transform, opacity" }}
-          className="bg-white border-4 border-[#111] shadow-[8px_8px_0px_#111] p-8 flex flex-col justify-between group hover:shadow-none hover:translate-y-2 hover:translate-x-2 transition-all duration-300"
+          className="bg-white border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between group hover:shadow-none hover:translate-y-2 hover:translate-x-2 transition-all duration-300"
         >
-          <div className="w-16 h-16 bg-red-400 text-white flex items-center justify-center border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6">
-            <ShieldCheck className="w-8 h-8" />
+          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-red-400 text-white flex items-center justify-center border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6">
+            <ShieldCheck className="w-6 h-6 sm:w-8 sm:h-8" />
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">Privacidad Total</h3>
-            <p className="text-gray-600 font-medium">Tus CSVs crudos nunca se guardan. Solo extraemos agregados estadísticos.</p>
+            <h3 className="text-xl sm:text-2xl font-black text-gray-900 mb-2 tracking-tight">Privacidad</h3>
+            <p className="text-sm sm:text-base text-gray-600 font-medium">Tus CSVs crudos nunca se guardan.</p>
           </div>
         </motion.div>
 
         {/* Card 4: Large Feature */}
         <motion.div 
           style={{ y: y4, opacity, willChange: "transform, opacity" }}
-          className="md:col-span-2 bg-gray-900 text-white border-4 border-[#111] shadow-[8px_8px_0px_#111] p-8 flex flex-col justify-between group hover:shadow-none hover:translate-y-2 hover:translate-x-2 transition-all duration-300"
+          className="md:col-span-2 bg-gray-900 text-white border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between group hover:shadow-none hover:translate-y-2 hover:translate-x-2 transition-all duration-300"
         >
-          <div className="w-16 h-16 bg-mio-violet flex items-center justify-center border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6">
-            <Sparkles className="w-8 h-8 text-white" />
+          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-mio-violet flex items-center justify-center border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6">
+            <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">IA Generativa Integrada</h3>
-            <p className="text-gray-300 font-medium leading-relaxed max-w-md">
+            <h3 className="text-xl sm:text-2xl font-black text-white mb-2 tracking-tight">IA Generativa Integrada</h3>
+            <p className="text-sm sm:text-base text-gray-300 font-medium leading-relaxed max-w-md">
               Chateá con tus datos. Gemini analiza las métricas, redacta un informe ejecutivo y redibuja los gráficos si se lo pedís.
             </p>
           </div>
@@ -164,8 +166,91 @@ function BentoGrid() {
   );
 }
 
+function FormatBanner() {
+  return (
+    <div className="w-full bg-[#111] text-white py-6 border-y-4 border-gray-900 overflow-hidden relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <FileSpreadsheet className="w-8 h-8 text-mio-lime" />
+          <div>
+            <h4 className="text-lg font-black tracking-tight">Carga de Datos Universal</h4>
+            <p className="text-xs text-gray-400">Compatible con archivos .CSV y .XLSX (Excel)</p>
+          </div>
+        </div>
+        
+        <div className="flex gap-3">
+          <div className="bg-white/10 px-4 py-2 border-2 border-white/20 font-mono text-sm font-bold flex items-center gap-2">
+            <span className="text-green-400">.xlsx</span>
+          </div>
+          <div className="bg-white/10 px-4 py-2 border-2 border-white/20 font-mono text-sm font-bold flex items-center gap-2">
+            <span className="text-mio-lime">.csv</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AboutUs() {
+  return (
+    <section className="py-20 lg:py-32 bg-white border-t-4 border-[#111]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-black text-gray-950 tracking-tighter mb-4">
+            Quiénes Somos
+          </h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto font-medium">
+            Estudiantes con la visión de democratizar la analítica de datos avanzada para emprendedores y PyMEs.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          {/* Tadeo */}
+          <div className="bg-[#fafafc] border-4 border-[#111] shadow-[8px_8px_0px_#111] p-8 flex flex-col items-center text-center">
+            <div className="w-24 h-24 bg-mio-violet rounded-full border-4 border-[#111] mb-6 flex items-center justify-center text-white text-3xl font-black">
+              T
+            </div>
+            <h3 className="text-2xl font-black text-gray-900 mb-1">Tadeo Muñoz Garcés</h3>
+            <p className="text-gray-500 font-bold text-sm mb-4">Co-Founder & Developer</p>
+            <p className="text-gray-600 text-sm font-medium mb-6">
+              Pasión por la arquitectura de software, inteligencia artificial y en crear experiencias Neo-Brutalistas que rompen el molde.
+            </p>
+            <div className="flex gap-4 mt-auto">
+              <a href="#" className="w-10 h-10 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center hover:translate-y-1 hover:shadow-none transition-all">
+                <Github className="w-5 h-5 text-gray-900" />
+              </a>
+              <a href="#" className="w-10 h-10 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center hover:translate-y-1 hover:shadow-none transition-all">
+                <Linkedin className="w-5 h-5 text-blue-600" />
+              </a>
+            </div>
+          </div>
+
+          {/* Milena */}
+          <div className="bg-[#fafafc] border-4 border-[#111] shadow-[8px_8px_0px_#111] p-8 flex flex-col items-center text-center">
+            <div className="w-24 h-24 bg-mio-lime rounded-full border-4 border-[#111] mb-6 flex items-center justify-center text-black text-3xl font-black">
+              M
+            </div>
+            <h3 className="text-2xl font-black text-gray-900 mb-1">Milena Abraham</h3>
+            <p className="text-gray-500 font-bold text-sm mb-4">Co-Founder & Data Specialist</p>
+            <p className="text-gray-600 text-sm font-medium mb-6">
+              Especialista en análisis de datos, modelos predictivos y en extraer valor de negocios a partir de la entropía.
+            </p>
+            <div className="flex gap-4 mt-auto">
+              <a href="#" className="w-10 h-10 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center hover:translate-y-1 hover:shadow-none transition-all">
+                <Github className="w-5 h-5 text-gray-900" />
+              </a>
+              <a href="#" className="w-10 h-10 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center hover:translate-y-1 hover:shadow-none transition-all">
+                <Linkedin className="w-5 h-5 text-blue-600" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function LandingPage() {
-  // Hero text word-by-word animation
   const titleText = "Decisiones inteligentes.";
   const titleWords = titleText.split(" ");
 
@@ -190,16 +275,16 @@ export default function LandingPage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative pt-20 pb-10 lg:pt-32 lg:pb-16 overflow-hidden" style={{ perspective: '1200px' }}>
+      <section className="relative pt-16 sm:pt-24 pb-10 lg:pt-32 lg:pb-16 overflow-hidden" style={{ perspective: '1200px' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white border-4 border-[#111] text-mio-violet text-sm font-bold mb-10 shadow-[4px_4px_0px_#111]"
+            className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-white border-2 sm:border-4 border-[#111] text-mio-violet text-xs sm:text-sm font-bold mb-6 sm:mb-10 shadow-[2px_2px_0px_#111] sm:shadow-[4px_4px_0px_#111]"
           >
-            <Sparkles className="w-4 h-4" />
+            <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
             <span>Inteligencia Artificial para Negocios</span>
           </motion.div>
 
@@ -207,11 +292,11 @@ export default function LandingPage() {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="text-5xl sm:text-7xl lg:text-8xl font-black text-gray-950 tracking-tighter max-w-5xl mx-auto leading-[1.05] mb-8"
+            className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-gray-950 tracking-tighter max-w-5xl mx-auto leading-[1.05] mb-6 sm:mb-8"
           >
             Convertí planillas de datos en <br className="hidden md:block" />
             {titleWords.map((word, i) => (
-              <motion.span key={i} variants={wordVariants} className="inline-block mr-3 text-transparent bg-clip-text bg-gradient-to-r from-mio-lime to-[#815ae1]">
+              <motion.span key={i} variants={wordVariants} className="inline-block mr-2 sm:mr-3 text-transparent bg-clip-text bg-gradient-to-r from-mio-lime to-[#815ae1]">
                 {word}
               </motion.span>
             ))}
@@ -221,7 +306,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.5 }}
-            className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto mb-12 font-medium leading-relaxed"
+            className="text-base sm:text-xl text-gray-600 max-w-2xl mx-auto mb-10 sm:mb-12 font-medium leading-relaxed"
           >
             Subí un CSV. MIO limpia los datos, corre modelos de Machine Learning y arma tu dashboard ejecutivo en 60 segundos.
           </motion.p>
@@ -230,11 +315,11 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8, duration: 0.5 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-6"
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6"
           >
             <Link
               href="/login"
-              className="w-full sm:w-auto px-10 py-5 bg-mio-lime text-gray-950 font-black text-lg border-4 border-[#111] shadow-[6px_6px_0px_#111] hover:shadow-none hover:translate-y-[6px] hover:translate-x-[6px] transition-all flex items-center justify-center gap-3"
+              className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-mio-lime text-gray-950 font-black text-base sm:text-lg border-4 border-[#111] shadow-[4px_4px_0px_#111] sm:shadow-[6px_6px_0px_#111] hover:shadow-none hover:translate-y-[4px] hover:translate-x-[4px] sm:hover:translate-y-[6px] sm:hover:translate-x-[6px] transition-all flex items-center justify-center gap-3"
             >
               <span>Comenzar Gratis</span>
               <ArrowRight className="w-5 h-5" strokeWidth={3} />
@@ -248,12 +333,18 @@ export default function LandingPage() {
         
       </section>
 
-      {/* Bento Grid Features with Scroll Scrubbing */}
+      {/* CSV and Excel Banner */}
+      <FormatBanner />
+
+      {/* Bento Grid Features */}
       <BentoGrid />
 
+      {/* About Us */}
+      <AboutUs />
+
       {/* Footer */}
-      <footer className="mt-auto py-12 bg-white border-t-4 border-[#111] text-center text-sm font-bold text-gray-500">
-        <p>© 2026 MIO. Neo-Brutal Analytics.</p>
+      <footer className="py-12 bg-white border-t-4 border-[#111] text-center text-sm font-bold text-gray-500">
+        <p>© 2026 MIO. Neo-Brutal Analytics. Creado con ❤️ en Argentina.</p>
       </footer>
     </div>
   );
