@@ -415,7 +415,7 @@ export default function LandingPage() {
             transition={{ delay: 0.2, duration: 0.8, type: 'spring', damping: 12, stiffness: 100 }}
             className="text-4xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black text-gray-950 tracking-tighter max-w-6xl mx-auto leading-[1.1] sm:leading-[1.05]  mb-6 sm:mb-8"
           >
-            Convertí planillas de datos en <span className="text-mio-lime">decisiones</span> <span className="text-mio-violet">inteligentes.</span>
+            Convertí planillas de datos en <span style={{ backgroundImage: "linear-gradient(to right, #bdf559 45%, #815ae1 55%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>decisiones inteligentes.</span>
           </motion.h1>
 
           <motion.p 
