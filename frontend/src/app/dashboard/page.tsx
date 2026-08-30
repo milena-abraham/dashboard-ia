@@ -126,7 +126,6 @@ function DashboardInner() {
       // AUTO SAVE PROJECT
       if (user) {
         try {
-          const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
           const savePromise = addDoc(collection(db, 'users', user.uid, 'analyses'), {
             filename: data.filename || 'dataset',
             target_col: data.target_col || data.target_column || '',
