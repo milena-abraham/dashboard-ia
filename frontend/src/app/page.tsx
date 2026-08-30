@@ -227,67 +227,85 @@ function HowItWorks() {
   const targetRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: targetRef,
-    offset: ["start 85%", "center center"],
+    offset: ["start start", "end end"],
   });
 
-  // Staggered parallax for steps
-  const step1Y = useTransform(scrollYProgress, [0, 1], [50, 0]);
-  const step2Y = useTransform(scrollYProgress, [0.2, 1], [50, 0]);
-  const step3Y = useTransform(scrollYProgress, [0.4, 1], [50, 0]);
-  const opacity = useTransform(scrollYProgress, [0, 0.8], [0, 1]);
+  const section1Opacity = useTransform(scrollYProgress, [0, 0.25, 0.35], [1, 1, 0]);
+  const section2Opacity = useTransform(scrollYProgress, [0.3, 0.4, 0.6, 0.7], [0, 1, 1, 0]);
+  const section3Opacity = useTransform(scrollYProgress, [0.65, 0.75, 1], [0, 1, 1]);
+  
+  const section1Scale = useTransform(scrollYProgress, [0, 0.35], [1, 0.8]);
+  const section2Scale = useTransform(scrollYProgress, [0.3, 0.4, 0.6, 0.7], [0.8, 1, 1, 0.8]);
+  const section3Scale = useTransform(scrollYProgress, [0.65, 0.75, 1], [0.8, 1, 1]);
 
   return (
-    <section className="py-20 lg:py-32 bg-[#fafafc] border-t-4 border-[#111] overflow-hidden">
-      <div ref={targetRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-black text-gray-950 tracking-tighter mb-4">
+    <section ref={targetRef} className="relative bg-[#fafafc] border-y-4 border-[#111]" style={{ height: '300vh' }}>
+      <div className="sticky top-0 h-screen flex flex-col justify-center overflow-hidden">
+        
+        <div className="text-center absolute top-10 md:top-20 left-0 right-0 z-10">
+          <h2 className="text-4xl md:text-6xl font-black text-gray-950 tracking-tighter mb-4 px-4">
             Cómo Funciona MIO
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto font-medium">
-            Tres simples pasos para convertir datos crudos en decisiones estratégicas.
-          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-          {/* Conector horizontal (solo desktop) */}
-          <div className="hidden md:block absolute top-12 left-1/6 right-1/6 h-1 bg-gray-200 z-0"></div>
+        <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center mt-20">
+          
+          {/* Left Text */}
+          <div className="relative h-48 md:h-96 w-full flex items-center">
+            <motion.div style={{ opacity: section1Opacity, willChange: 'opacity' }} className="absolute inset-0 flex flex-col justify-center pointer-events-none">
+              <div className="w-12 h-12 md:w-16 md:h-16 bg-blue-100 border-4 border-[#111] shadow-[4px_4px_0px_#111] flex items-center justify-center mb-4 md:mb-6">
+                <FileSpreadsheet className="w-6 h-6 md:w-8 md:h-8 text-blue-600" />
+              </div>
+              <h2 className="text-3xl md:text-5xl font-black text-gray-950 tracking-tighter mb-2 md:mb-4">1. Subí tu CSV</h2>
+              <p className="text-lg md:text-xl text-gray-600 font-medium">Soltá tu archivo crudo. No importa qué tan sucio esté, MIO se encarga de limpiar nulos y duplicados al instante.</p>
+            </motion.div>
+            
+            <motion.div style={{ opacity: section2Opacity, willChange: 'opacity' }} className="absolute inset-0 flex flex-col justify-center pointer-events-none">
+              <div className="w-12 h-12 md:w-16 md:h-16 bg-mio-lime border-4 border-[#111] shadow-[4px_4px_0px_#111] flex items-center justify-center mb-4 md:mb-6">
+                <BrainCircuit className="w-6 h-6 md:w-8 md:h-8 text-gray-900" />
+              </div>
+              <h2 className="text-3xl md:text-5xl font-black text-gray-950 tracking-tighter mb-2 md:mb-4">2. Magia Neuronal</h2>
+              <p className="text-lg md:text-xl text-gray-600 font-medium">Modelos matemáticos escanean tus datos buscando anomalías ocultas y proyectando el futuro sin que toques un botón.</p>
+            </motion.div>
 
-          {/* Paso 1 */}
-          <motion.div style={{ y: step1Y, opacity, willChange: "transform, opacity" }} className="relative z-10 flex flex-col items-center text-center group">
-            <div className="w-24 h-24 bg-white border-4 border-[#111] shadow-[6px_6px_0px_#111] rounded-none flex items-center justify-center mb-6 group-hover:-translate-y-2 group-hover:shadow-[8px_8px_0px_#111] transition-all">
-              <FileSpreadsheet className="w-10 h-10 text-mio-lime" strokeWidth={2.5} />
-            </div>
-            <div className="bg-mio-violet text-white text-xs font-bold px-3 py-1 border-2 border-[#111] mb-3 shadow-[2px_2px_0px_#111]">PASO 1</div>
-            <h4 className="text-xl font-black text-gray-900 mb-2">Subí tus Datos</h4>
-            <p className="text-gray-600 font-medium">Cargá tu Excel o CSV de forma segura. No requiere pre-limpieza.</p>
-          </motion.div>
+            <motion.div style={{ opacity: section3Opacity, willChange: 'opacity' }} className="absolute inset-0 flex flex-col justify-center pointer-events-none">
+              <div className="w-12 h-12 md:w-16 md:h-16 bg-mio-violet border-4 border-[#111] shadow-[4px_4px_0px_#111] flex items-center justify-center mb-4 md:mb-6">
+                <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-white" />
+              </div>
+              <h2 className="text-3xl md:text-5xl font-black text-gray-950 tracking-tighter mb-2 md:mb-4">3. Decisión Rápida</h2>
+              <p className="text-lg md:text-xl text-gray-600 font-medium">Llevate un reporte ejecutivo narrado por IA y listo para exportar a PDF para tu próxima reunión estratégica.</p>
+            </motion.div>
+          </div>
 
-          {/* Paso 2 */}
-          <motion.div style={{ y: step2Y, opacity, willChange: "transform, opacity" }} className="relative z-10 flex flex-col items-center text-center group">
-            <div className="w-24 h-24 bg-mio-lime border-4 border-[#111] shadow-[6px_6px_0px_#111] rounded-none flex items-center justify-center mb-6 group-hover:-translate-y-2 group-hover:shadow-[8px_8px_0px_#111] transition-all">
-              <MousePointerClick className="w-10 h-10 text-gray-900" strokeWidth={2.5} />
-            </div>
-            <div className="bg-mio-violet text-white text-xs font-bold px-3 py-1 border-2 border-[#111] mb-3 shadow-[2px_2px_0px_#111]">PASO 2</div>
-            <h4 className="text-xl font-black text-gray-900 mb-2">Elegí el Objetivo</h4>
-            <p className="text-gray-600 font-medium">Seleccioná la columna que querés predecir o entender a fondo.</p>
-          </motion.div>
+          {/* Right Visualizer */}
+          <div className="relative h-64 md:h-[30rem] w-full flex items-center justify-center">
+             <div className="w-full h-full max-w-sm md:max-w-md bg-white border-4 border-[#111] shadow-[8px_8px_0px_#111] md:shadow-[16px_16px_0px_#111] overflow-hidden relative flex items-center justify-center pointer-events-none">
+                
+                <motion.div style={{ opacity: section1Opacity, scale: section1Scale }} className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-blue-50/20">
+                   <div className="w-3/4 h-8 md:h-10 bg-white border-2 border-[#111] animate-pulse"></div>
+                   <div className="w-2/3 h-8 md:h-10 bg-white border-2 border-[#111] animate-pulse" style={{ animationDelay: '200ms' }}></div>
+                   <div className="w-3/4 h-8 md:h-10 bg-white border-2 border-[#111] animate-pulse" style={{ animationDelay: '400ms' }}></div>
+                </motion.div>
 
-          {/* Paso 3 */}
-          <motion.div style={{ y: step3Y, opacity, willChange: "transform, opacity" }} className="relative z-10 flex flex-col items-center text-center group">
-            <div className="w-24 h-24 bg-gray-900 border-4 border-[#111] shadow-[6px_6px_0px_#111] rounded-none flex items-center justify-center mb-6 group-hover:-translate-y-2 group-hover:shadow-[8px_8px_0px_#111] transition-all">
-              <Download className="w-10 h-10 text-white" strokeWidth={2.5} />
-            </div>
-            <div className="bg-mio-lime text-gray-900 text-xs font-black px-3 py-1 border-2 border-[#111] mb-3 shadow-[2px_2px_0px_#111]">PASO 3</div>
-            <h4 className="text-xl font-black text-gray-900 mb-2">Resultados Inmediatos</h4>
-            <p className="text-gray-600 font-medium">MIO limpia, entrena, y te entrega un dashboard interactivo al instante.</p>
-          </motion.div>
+                <motion.div style={{ opacity: section2Opacity, scale: section2Scale }} className="absolute inset-0 flex items-center justify-center bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-mio-lime/20">
+                   <div className="relative w-32 h-32 md:w-48 md:h-48 bg-white border-4 border-[#111] rounded-full flex items-center justify-center shadow-[4px_4px_0px_#111]">
+                     <BrainCircuit className="w-16 h-16 md:w-24 md:h-24 text-gray-900 animate-pulse" />
+                   </div>
+                </motion.div>
+
+                <motion.div style={{ opacity: section3Opacity, scale: section3Scale }} className="absolute inset-0 flex flex-col justify-end gap-2 p-6 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-purple-50/50">
+                   <div className="w-full h-1/3 bg-mio-violet border-2 border-[#111] shadow-[4px_4px_0px_#111]"></div>
+                   <div className="w-full h-1/2 bg-mio-lime border-2 border-[#111] shadow-[4px_4px_0px_#111]"></div>
+                </motion.div>
+
+             </div>
+          </div>
 
         </div>
       </div>
     </section>
   );
 }
-
 function AboutUs() {
   return (
     <section className="py-20 lg:py-32 bg-white border-t-4 border-[#111]">
