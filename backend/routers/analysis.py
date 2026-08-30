@@ -8,6 +8,12 @@ from typing import Optional, Dict, Any
 import pandas as pd
 import io
 import json
+import asyncio
+import hashlib
+from cachetools import TTLCache
+
+ANALYSIS_CACHE = TTLCache(maxsize=50, ttl=3600)
+
 
 from core.data_cleaner import clean_dataframe
 from core.data_profiler import profile_dataframe
@@ -38,13 +44,25 @@ def format_number(n, prefix=""):
 
 
 @router.post("/analyze")
-async def analyze(
-    file: UploadFile = File(...),
-    target_col: Optional[str] = Form(None),
-):
+async def analyze(file: UploadFile = File(...), target_col: Optional[str] = Form(None)):
+    # contents given as arg
+    # filename given as arg
+    h = hashlib.sha256(contents).hexdigest()
+    t = str(target_col).lower() if target_col else "none"
+    cache_key = f"{h}_{t}"
+    if cache_key in ANALYSIS_CACHE:
+        return ANALYSIS_CACHE[cache_key]
     try:
-        contents = await file.read()
-        filename = file.filename or "dataset"
+        res = await asyncio.to_thread(_analyze_sync, contents, filename, target_col)
+        ANALYSIS_CACHE[cache_key] = res
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+def _analyze_sync(contents: bytes, filename: str, target_col: Optional[str]):
+    try:
+        # contents given as arg
+        # filename given as arg
         fname_lower = filename.lower()
 
         # 1. Leer archivo

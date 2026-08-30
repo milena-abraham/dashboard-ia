@@ -28,8 +28,11 @@ export default function Navbar() {
     <nav className="w-full bg-white border-b-2 border-[#111] sticky top-0 z-50 backdrop-blur-md bg-white/95">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex items-center gap-2">
-            <Share2 className="w-6 h-6 text-mio-violet" strokeWidth={2.5} />
+          <div className="flex items-center gap-2 group">
+            <svg className="w-8 h-8 transform group-hover:scale-105 transition-transform" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="40" height="40" rx="8" fill="#111" />
+              <path d="M10 28V12L20 20L30 12V28" stroke="#bdf559" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
             <span className="text-2xl font-extrabold text-gray-900 tracking-wide">MIO</span>
           </div>
         </Link>
