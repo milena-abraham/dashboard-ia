@@ -366,6 +366,9 @@ function DashboardInner() {
     toast.success(`✏️ Gráfico ${index + 1} actualizado por el Asistente IA`);
   };
 
+  const ADMIN_EMAILS = ['tadeomunozgarces@gmail.com', 'milenapabraham@gmail.com'];
+  const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
+
   const tabs = [
     { label: 'Visualizaciones', icon: BarChart3 },
     { label: 'Proyecciones', icon: TrendingUp },
@@ -373,7 +376,7 @@ function DashboardInner() {
     { label: 'Anomalías', icon: AlertTriangle },
     { label: 'Factores Clave', icon: Target },
     { label: 'Informe IA', icon: FileText },
-    { id: 'chat', label: 'Asistente IA', icon: Bot, hidden: true },
+    { id: 'chat', label: 'Asistente IA', icon: Bot, hidden: !isAdmin },
   ];
 
   return (
