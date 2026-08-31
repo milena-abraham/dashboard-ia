@@ -11,7 +11,7 @@ const MESSAGES = [
   'Finalizando predicciones en milisegundos...',
 ];
 
-export default function LoadingAnalysis({ fileSize = 1000000 }: { fileSize?: number }) {
+export default function LoadingAnalysis({ fileSize = 1000000, isUploading = false, uploadProgress = 0, currentFile = 1, totalFiles = 1 }: { fileSize?: number, isUploading?: boolean, uploadProgress?: number, currentFile?: number, totalFiles?: number }) {
   const [msgIndex, setMsgIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
@@ -58,19 +58,19 @@ export default function LoadingAnalysis({ fileSize = 1000000 }: { fileSize?: num
         </div>
       </div>
 
-      <h3 className="text-xl font-bold text-gray-900 mb-2">Procesando tus datos</h3>
+      <h3 className="text-xl font-bold text-gray-900 mb-2">Procesando {totalFiles > 1 ? `archivo ${currentFile} de ${totalFiles}` : "tus datos"}</h3>
       <p className="text-sm text-mio-violet font-medium h-6 transition-all duration-300">
-        {MESSAGES[msgIndex]}
+        {isUploading ? `Subiendo a la nube de manera segura...` : MESSAGES[msgIndex]}
       </p>
 
       <div className="w-full bg-gray-100 h-3 rounded-none mt-6 overflow-hidden border border-[#111] shadow-[2px_2px_0px_#111]">
         <div 
           className="bg-mio-lime h-full transition-all duration-100 ease-linear rounded-none border-r border-[#111]" 
-          style={{ width: `${progress}%` }}
+          style={{ width: `${isUploading ? uploadProgress : progress}%` }}
         />
       </div>
       <div className="mt-2 flex justify-between w-full text-[10px] text-gray-500 font-bold uppercase tracking-wider">
-        <span>{Math.floor(progress)}% Completado</span>
+        <span>{isUploading ? Math.floor(uploadProgress) : Math.floor(progress)}% Completado</span>
         <span>Est. ~{Math.ceil(timeLeft)}s restantes</span>
       </div>
     </div>

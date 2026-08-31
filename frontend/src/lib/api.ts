@@ -3,11 +3,23 @@ import { AnalysisResult } from '@/types/analysis';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://dashboard-ia-1.onrender.com';
 
 export async function analyzeFile(
-  file: File,
+  file: File | null,
+  fileUrl?: string,
+  filenameOverride?: string,
   targetCol?: string
 ): Promise<AnalysisResult> {
   const formData = new FormData();
-  formData.append('file', file);
+  if (file) {
+    formData.append('file', file);
+  } else if (fileUrl) {
+    formData.append('file_url', fileUrl);
+    if (filenameOverride) {
+      formData.append('filename_override', filenameOverride);
+    }
+  } else {
+    throw new Error('Debe proveer un archivo o una URL');
+  }
+
   if (targetCol) {
     formData.append('target_col', targetCol);
   }
@@ -23,6 +35,20 @@ export async function analyzeFile(
   }
 
   return response.json() as Promise<AnalysisResult>;
+}
+
+export async function generateNarrative(data: any): Promise<{text: string, source: string}> {
+  const response = await fetch(`${API_URL}/api/narrative`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error al generar narrativa: HTTP ${response.status}`);
+  }
+
+  return response.json();
 }
 
 export async function exportPDF(data: any): Promise<Blob> {
@@ -68,18 +94,4 @@ export async function exportPPTX(data: any): Promise<Blob> {
   }
 
   return await response.blob();
-}
-
-export async function generateNarrative(data: any): Promise<{text: string, source: string}> {
-  const response = await fetch(`${API_URL}/api/narrative`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Error al generar narrativa: HTTP ${response.status}`);
-  }
-
-  return response.json();
 }

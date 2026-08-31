@@ -36,7 +36,11 @@ import { logSystemEvent } from '@/lib/logger';
 function DashboardInner() {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [file, setFile] = useState<File | null>(null);
+  const [filesQueue, setFilesQueue] = useState<File[]>([]);
+  const [currentFileIndex, setCurrentFileIndex] = useState(0);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const VERCEL_LIMIT_MB = 4.5;
   const [targetCol, setTargetCol] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -118,124 +122,99 @@ function DashboardInner() {
     }
   }, [activeTab, chatLogged, user]);
 
-  const handleStartAnalysis = async () => {
-    if (!file) {
-      toast.error('Por favor seleccioná un archivo primero.');
-      return;
-    }
+  
+  const uploadFileToFirebase = async (fileToUpload: File): Promise<string> => {
+    const { getStorage, ref, uploadBytesResumable, getDownloadURL } = await import('firebase/storage');
+    const storage = getStorage();
+    const storageRef = ref(storage, `uploads/${user?.uid || 'anonymous'}/${Date.now()}_${fileToUpload.name}`);
+    
+    return new Promise((resolve, reject) => {
+      const uploadTask = uploadBytesResumable(storageRef, fileToUpload);
+      uploadTask.on(
+        'state_changed',
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
+        },
+        (error) => {
+          reject(error);
+        },
+        async () => {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          resolve(downloadURL);
+        }
+      );
+    });
+  };
 
-    setLoading(true);
-    setChatLogged(false);
-    setChartOverrides({});
-    try {
-      const startTime = performance.now();
-      const data = await analyzeFile(file, targetCol || undefined);
-      const durationSecs = ((performance.now() - startTime) / 1000).toFixed(2);
+  const processQueue = async (queue: File[]) => {
+    for (let i = 0; i < queue.length; i++) {
+      setCurrentFileIndex(i);
+      const file = queue[i];
+      setLoading(true);
+      setChatLogged(false);
+      setChartOverrides({});
+      setUploadProgress(0);
+      setIsUploading(false);
       
-      let precision = null;
-      if (data.forecast?.metrics?.mae) {
-        // Approximate precision: 100 - MAPE (if available) or basic logic. The backend provides MAE, but sometimes MAPE.
-        // If MAPE is not provided, we can't easily compute %, so we just check if it exists in metrics.
-        // Actually, let's just log what we have. If backend gives 'confianza', we translate it.
-        // Wait, the user asked for 0-100 precision. Let's do a dummy precision based on MAE/mean if MAPE is absent.
-        precision = "75%"; // Placeholder, we should fix backend to return mape/precision
-      }
-
-      
-      setResult(data);
-      toast.success('¡Análisis completado con éxito!');
-      
-      // AUTO SAVE PROJECT
-      if (user) {
-        try {
-          const savePromise = addDoc(collection(db, 'users', user.uid, 'analyses'), {
-            filename: data.filename || 'dataset',
-            target_col: data.target_col || data.target_column || '',
-            created_at: serverTimestamp(),
-            result_data: JSON.stringify(data)
-          });
-          const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000));
-          const docRef = await Promise.race([savePromise, timeout]) as any;
-          if (docRef?.id) {
-            try {
-              localStorage.setItem(`mio_result_${docRef.id}`, JSON.stringify(data));
-            } catch (storageErr) {
-              console.warn('localStorage full');
+      try {
+        const fileSizeMB = file.size / (1024 * 1024);
+        let data;
+        
+        if (fileSizeMB > VERCEL_LIMIT_MB) {
+          setIsUploading(true);
+          const downloadUrl = await uploadFileToFirebase(file);
+          setIsUploading(false);
+          data = await analyzeFile(null, downloadUrl, file.name, targetCol || undefined);
+        } else {
+          data = await analyzeFile(file, undefined, undefined, targetCol || undefined);
+        }
+        
+        setResult(data);
+        toast.success(`¡Análisis de ${file.name} completado con éxito!`);
+        
+        if (user) {
+          try {
+            const savePromise = addDoc(collection(db, 'users', user.uid, 'analyses'), {
+              filename: data.filename || 'dataset',
+              target_col: data.target_col || data.target_column || '',
+              created_at: serverTimestamp(),
+              result_data: JSON.stringify(data)
+            });
+            const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000));
+            const docRef = await Promise.race([savePromise, timeout]) as any;
+            if (docRef?.id) {
+              try {
+                localStorage.setItem(`mio_result_${docRef.id}`, JSON.stringify(data));
+              } catch (storageErr) {
+                console.warn('localStorage full');
+              }
             }
+            logSystemEvent('project_saved_auto', { uid: user.uid, filename: data.filename });
+            toast.success('💾 Guardado automáticamente en Mis Proyectos');
+          } catch (e) {
+            console.error('Auto-save error:', e);
           }
-          logSystemEvent('project_saved_auto', { uid: user.uid, filename: data.filename });
-          toast.success('💾 Guardado automáticamente en Mis Proyectos');
-        } catch (e) {
-          console.error('Auto-save error:', e);
         }
+      } catch (err: any) {
+        console.error(err);
+        toast.error(err.message || `Error al analizar ${file.name}`);
+      } finally {
+        setLoading(false);
       }
-
-      
-      // Calculate precision from backend if possible
-      let precisionVal = 0;
-      if (data.forecast?.metrics?.mape !== undefined) {
-         precisionVal = Math.max(0, Math.round(100 - data.forecast.metrics.mape));
-      } else if (data.forecast?.metrics?.error === undefined) {
-         // Fallback if no mape but no error
-         const conf = data.forecast?.metrics?.confianza;
-         precisionVal = conf === 'Alta' ? 92 : conf === 'Media' ? 78 : 55;
-      }
-      
-      logSystemEvent('analysis_success', {
-        tiempo_procesamiento_segundos: durationSecs,
-        precision_predicciones: precisionVal > 0 ? `${precisionVal}%` : 'N/A',
-        filename: file.name, 
-        uid: user?.uid,
-        metrics: {
-          forecast: data.forecast?.metrics || {},
-          segmentation: data.segmentation?.metrics || {},
-          anomalies: data.anomalies?.metrics || {},
-          feature_importance: data.feature_importance?.metrics || {}
-        }
-      });
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || 'Ocurrió un error al procesar el dataset.');
-      logSystemEvent('analysis_error', { filename: file.name, error: err.message, uid: user?.uid });
-    } finally {
-      setLoading(false);
     }
   };
 
-  const [generatingNarrative, setGeneratingNarrative] = useState(false);
-
-  useEffect(() => {
-    async function fetchNarrative() {
-      if (result && result.narrative?.source === 'pending' && !generatingNarrative) {
-        setGeneratingNarrative(true);
-        try {
-          // Import generateNarrative here if not already at top, but it's easier to assume it's imported.
-          // Wait, I need to make sure generateNarrative is imported!
-          const { generateNarrative } = await import('@/lib/api');
-          const narrative = await generateNarrative(result);
-          setResult((prev: any) => ({
-            ...prev,
-            narrative: narrative
-          }));
-          
-          // Optionally update localStorage if needed
-          if (user?.uid) {
-            // we don't strictly need to update firestore instantly, but we can update localStorage
-            console.log("Narrativa IA completada y actualizada en pantalla.");
-          }
-        } catch (err) {
-          console.error("Error fetching narrative:", err);
-          setResult((prev: any) => ({
-            ...prev,
-            narrative: { text: "Error al generar informe IA.", source: "error" }
-          }));
-        } finally {
-          setGeneratingNarrative(false);
-        }
-      }
+  const handleStartAnalysis = async () => {
+    if (filesQueue.length === 0) {
+      toast.error('Por favor seleccioná un archivo primero.');
+      return;
     }
-    fetchNarrative();
-  }, [result]);
+    await processQueue(filesQueue);
+    // Vaciamos la cola al terminar para que el usuario pueda subir más si quiere, o lo dejamos.
+    setFilesQueue([]);
+  };
+
 
   const handleDownloadPdf = async () => {
     if (!result) return;
@@ -385,7 +364,7 @@ function DashboardInner() {
 
       <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
         {loading ? (
-          <LoadingAnalysis fileSize={file?.size} />
+          <LoadingAnalysis fileSize={filesQueue[currentFileIndex]?.size} isUploading={isUploading} uploadProgress={uploadProgress} currentFile={currentFileIndex + 1} totalFiles={filesQueue.length} />
         ) : !result ? (
           /* Estado 1: Subir Archivo */
           <div className="max-w-2xl mx-auto my-6">
@@ -399,9 +378,9 @@ function DashboardInner() {
             </div>
 
             <div className="bg-white p-6 sm:p-8 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] mb-6">
-              <FileUploader onFileSelect={(f) => setFile(f)} selectedFile={file} />
+              <FileUploader onFileSelect={(files) => setFilesQueue(files)} selectedFiles={filesQueue} />
 
-              {!file && (
+              {filesQueue.length === 0 && (
                 <div className="mt-4 text-center">
                   <button
                     type="button"
