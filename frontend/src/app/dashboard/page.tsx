@@ -282,7 +282,7 @@ function DashboardInner() {
   };
 
   const handleReset = () => {
-    setFile(null);
+    setFilesQueue([]);
     setResult(null);
     setTargetCol('');
     setActiveTab(0);
@@ -403,7 +403,7 @@ function DashboardInner() {
 2024-01-15,35000,280,Electrónica,5000,20`;
                       const blob = new Blob([sampleCsv], { type: 'text/csv' });
                       const sampleFile = new File([blob], 'ventas_retail_ejemplo.csv', { type: 'text/csv' });
-                      setFile(sampleFile);
+                      setFilesQueue([sampleFile]);
                       setTargetCol('ventas');
                       toast.success('Dataset de ejemplo cargado');
                     }}
