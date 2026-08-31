@@ -69,3 +69,17 @@ export async function exportPPTX(data: any): Promise<Blob> {
 
   return await response.blob();
 }
+
+export async function generateNarrative(data: any): Promise<{text: string, source: string}> {
+  const response = await fetch(`${API_URL}/api/narrative`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error al generar narrativa: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}

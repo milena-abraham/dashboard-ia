@@ -202,6 +202,41 @@ function DashboardInner() {
     }
   };
 
+  const [generatingNarrative, setGeneratingNarrative] = useState(false);
+
+  useEffect(() => {
+    async function fetchNarrative() {
+      if (result && result.narrative?.source === 'pending' && !generatingNarrative) {
+        setGeneratingNarrative(true);
+        try {
+          // Import generateNarrative here if not already at top, but it's easier to assume it's imported.
+          // Wait, I need to make sure generateNarrative is imported!
+          const { generateNarrative } = await import('@/lib/api');
+          const narrative = await generateNarrative(result);
+          setResult((prev: any) => ({
+            ...prev,
+            narrative: narrative
+          }));
+          
+          // Optionally update localStorage if needed
+          if (user?.uid) {
+            // we don't strictly need to update firestore instantly, but we can update localStorage
+            console.log("Narrativa IA completada y actualizada en pantalla.");
+          }
+        } catch (err) {
+          console.error("Error fetching narrative:", err);
+          setResult((prev: any) => ({
+            ...prev,
+            narrative: { text: "Error al generar informe IA.", source: "error" }
+          }));
+        } finally {
+          setGeneratingNarrative(false);
+        }
+      }
+    }
+    fetchNarrative();
+  }, [result]);
+
   const handleDownloadPdf = async () => {
     if (!result) return;
     setDownloadingPdf(true);

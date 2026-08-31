@@ -282,25 +282,12 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
 
         logger.info(f"[Etapa 5] Machine Learning (Paralelizado) completado en {time.time()-t_ml:.2f}s")
 
-        # 7. NARRATIVA IA
-        # Idealmente esto se resolvería vía SSE (Server-Sent Events) en otro endpoint para no bloquear la UI.
-        # Por mantener el contrato actual del JSON, esperamos a que termine, 
-        # pero como el ML fue más rápido, el tiempo total será mucho menor.
-        t_nar = time.time()
-        narrative_res = generate_narrative(
-            df=df_clean,
-            profile=profile,
-            target_col=active_target,
-            kpis=kpis,
-            anomaly_metrics=anomaly_res.get("metrics", {}),
-            forecast_metrics=forecast_res.get("metrics", {}),
-            segmentation_metrics=seg_res.get("metrics", {}),
-            feature_metrics=feature_res.get("metrics", {}),
-            filename=filename,
-        )
-        if narrative_res.get("source") == "heuristic":
-            logger.warning("Gemini falló o no está configurado. Se usó narrativa heurística (fallback).")
-        logger.info(f"[Etapa 6] Narrativa IA completada en {time.time()-t_nar:.2f}s")
+        # 7. NARRATIVA IA (Moviendo a endpoint asíncrono)
+        logger.info(f"[Etapa 6] Narrativa IA delegada a endpoint secundario para no bloquear UI")
+        narrative_res = {
+            "text": "Generando informe avanzado con IA...",
+            "source": "pending"
+        }
 
         return {
             "filename": filename,
