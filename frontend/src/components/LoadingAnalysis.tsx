@@ -4,13 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { Loader2, Sparkles } from 'lucide-react';
 
 const MESSAGES = [
-  'Leyendo y estructurando el archivo...',
-  'Ejecutando pipeline de auto-limpieza...',
-  'Calculando profiling estadístico...',
-  'Entrenando modelos de Machine Learning...',
-  'Detectando patrones y anomalías...',
-  'Sintetizando informe ejecutivo con IA...',
-  'Preparando visualizaciones...',
+  'Leyendo archivo optimizado (C Engine)...',
+  'Limpieza veloz y pre-procesamiento...',
+  'Generando profiling y gráficos...',
+  'Ejecutando Modelos ML Paralelizados...',
+  'Finalizando predicciones en milisegundos...',
 ];
 
 export default function LoadingAnalysis({ fileSize = 1000000 }: { fileSize?: number }) {
@@ -18,8 +16,8 @@ export default function LoadingAnalysis({ fileSize = 1000000 }: { fileSize?: num
   const [progress, setProgress] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
 
-  // Estimación básica: ~12 seg base + 1 seg cada 200KB (max 45 seg)
-  const estimatedTotalSeconds = Math.min(45, Math.max(12, 12 + (fileSize / 200000)));
+  // Estimación brutalmente optimizada: ~2 seg base + 1 seg cada 5MB (max 10 seg)
+  const estimatedTotalSeconds = Math.min(10, Math.max(2, 2 + (fileSize / 5_000_000)));
 
   useEffect(() => {
     const startTime = Date.now();
