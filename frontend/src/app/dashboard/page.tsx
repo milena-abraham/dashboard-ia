@@ -415,7 +415,7 @@ function DashboardInner() {
                 </div>
               )}
 
-              {file && (
+              {filesQueue.length > 0 && (
                 <div className="mt-6 pt-6 border-t border-[#111] border-2 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="w-full sm:w-auto">
                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
