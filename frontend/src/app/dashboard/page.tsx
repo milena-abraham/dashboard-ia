@@ -40,7 +40,9 @@ function DashboardInner() {
   const [currentFileIndex, setCurrentFileIndex] = useState(0);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
-  const VERCEL_LIMIT_MB = 4.5;
+  // En desarrollo local (Render/FastAPI directo), podemos subir archivos gigantes sin problema.
+  // Solo aplicamos el límite de Vercel en producción.
+  const VERCEL_LIMIT_MB = process.env.NODE_ENV === 'production' ? 4.5 : 500;
   const [targetCol, setTargetCol] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
