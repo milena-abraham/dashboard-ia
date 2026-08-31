@@ -31,14 +31,28 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
+    let isMounted = true;
     const unsubAuth = onAuthStateChanged(auth, (user) => {
+      if (!isMounted) return;
       if (user?.email && ADMIN_EMAILS.includes(user.email)) {
         setAuthorized(true);
       } else {
         setAuthorized(false);
       }
     });
-    return () => unsubAuth();
+
+    // Fallback de seguridad por si Firebase tarda demasiado en responder o está bloqueado
+    const timeout = setTimeout(() => {
+      if (isMounted) {
+        setAuthorized((prev) => (prev === null ? false : prev));
+      }
+    }, 2500);
+
+    return () => {
+      isMounted = false;
+      unsubAuth();
+      clearTimeout(timeout);
+    };
   }, []);
 
   useEffect(() => {
