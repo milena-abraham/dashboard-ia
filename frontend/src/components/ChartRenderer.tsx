@@ -14,7 +14,9 @@ import {
   Legend,
   Filler
 } from 'chart.js';
-import { Line, Bar, Doughnut, Radar, Scatter } from 'react-chartjs-2';
+import { Chart, Line, Bar, Doughnut, Radar, Scatter } from 'react-chartjs-2';
+
+import { BoxPlotController, BoxAndWiskers } from '@sgratzl/chartjs-chart-boxplot';
 
 ChartJS.register(
   CategoryScale,
@@ -26,7 +28,9 @@ ChartJS.register(
   RadialLinearScale,
   Tooltip,
   Legend,
-  Filler
+  Filler,
+  BoxPlotController,
+  BoxAndWiskers
 );
 
 interface ChartRendererProps {
