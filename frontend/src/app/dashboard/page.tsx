@@ -40,9 +40,7 @@ function DashboardInner() {
   const [currentFileIndex, setCurrentFileIndex] = useState(0);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
-  // En desarrollo local (Render/FastAPI directo), podemos subir archivos gigantes sin problema.
-  // Solo aplicamos el límite de Vercel en producción.
-  const VERCEL_LIMIT_MB = process.env.NODE_ENV === 'production' ? 4.5 : 500;
+
   const [targetCol, setTargetCol] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -125,29 +123,8 @@ function DashboardInner() {
   }, [activeTab, chatLogged, user]);
 
   
-  const uploadFileToFirebase = async (fileToUpload: File): Promise<string> => {
-    const { getStorage, ref, uploadBytesResumable, getDownloadURL } = await import('firebase/storage');
-    const storage = getStorage();
-    const storageRef = ref(storage, `uploads/${user?.uid || 'anonymous'}/${Date.now()}_${fileToUpload.name}`);
-    
-    return new Promise((resolve, reject) => {
-      const uploadTask = uploadBytesResumable(storageRef, fileToUpload);
-      uploadTask.on(
-        'state_changed',
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(progress);
-        },
-        (error) => {
-          reject(error);
-        },
-        async () => {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          resolve(downloadURL);
-        }
-      );
-    });
-  };
+
+
 
   const processQueue = async (queue: File[]) => {
     for (let i = 0; i < queue.length; i++) {
@@ -160,17 +137,7 @@ function DashboardInner() {
       setIsUploading(false);
       
       try {
-        const fileSizeMB = file.size / (1024 * 1024);
-        let data;
-        
-        if (fileSizeMB > VERCEL_LIMIT_MB) {
-          setIsUploading(true);
-          const downloadUrl = await uploadFileToFirebase(file);
-          setIsUploading(false);
-          data = await analyzeFile(null, downloadUrl, file.name, targetCol || undefined);
-        } else {
-          data = await analyzeFile(file, undefined, undefined, targetCol || undefined);
-        }
+        let data = await analyzeFile(file, undefined, undefined, targetCol || undefined);
         
         setResult(data);
         toast.success(`¡Análisis de ${file.name} completado con éxito!`);
@@ -206,7 +173,6 @@ function DashboardInner() {
       }
     }
   };
-
   const handleStartAnalysis = async () => {
     if (filesQueue.length === 0) {
       toast.error('Por favor seleccioná un archivo primero.');
