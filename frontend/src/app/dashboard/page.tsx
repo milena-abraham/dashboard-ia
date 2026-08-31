@@ -141,7 +141,13 @@ function DashboardInner() {
         
         setResult(data);
         toast.success(`¡Análisis de ${file.name} completado con éxito!`);
-        logSystemEvent('analysis_success', { filename: file.name, uid: user?.uid });
+        const metricsPayload = {
+          forecast: data.forecast?.metrics || {},
+          anomalies: data.anomalies?.metrics || {},
+          features: data.feature_importance?.metrics || {},
+          segmentation: data.segmentation?.metrics || {}
+        };
+        logSystemEvent('analysis_success', { filename: file.name, uid: user?.uid, metrics: metricsPayload });
         
         if (user) {
           try {
