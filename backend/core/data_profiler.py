@@ -197,7 +197,7 @@ def _suggest_targets(cols: List[ColumnProfile]) -> List[str]:
             
         # Priority 2: High cardinality/variance (proxy using unique values vs missing)
         # We give a slight boost based on unique values so it's deterministic and prefers continuous variables
-        unique_ratio = col.unique_values / max(1, (col.unique_values + col.missing_values))
+        unique_ratio = col.n_unique / max(1, (col.n_unique + col.null_count))
         score += unique_ratio
         
         # Priority 3: Alphabetical fallback for absolute determinism if everything is equal
