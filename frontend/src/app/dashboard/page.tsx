@@ -141,6 +141,7 @@ function DashboardInner() {
         
         setResult(data);
         toast.success(`¡Análisis de ${file.name} completado con éxito!`);
+        logSystemEvent('analysis_success', { filename: file.name, uid: user?.uid });
         
         if (user) {
           try {
@@ -167,6 +168,7 @@ function DashboardInner() {
         }
       } catch (err: any) {
         console.error(err);
+        logSystemEvent('analysis_error', { filename: file.name, error: err.message, uid: user?.uid });
         toast.error(err.message || `Error al analizar ${file.name}`);
       } finally {
         setLoading(false);
