@@ -222,12 +222,17 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
             label: 'Normal',
             data: chartData.normal.x.map((xVal: any, idx: number) => ({ x: xVal, y: chartData.normal.y[idx] })),
             backgroundColor: '#815ae1',
+            pointRadius: 3,
+            borderWidth: 1,
+            borderColor: '#fff',
           },
           {
             label: 'Anomalías',
             data: chartData.anomalies.x.map((xVal: any, idx: number) => ({ x: xVal, y: chartData.anomalies.y[idx] })),
             backgroundColor: '#fa709a',
-            pointRadius: 4,
+            pointRadius: 8,
+            borderWidth: 2,
+            borderColor: '#111',
           }
         ]
       };
@@ -266,9 +271,10 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
                     data: anomData,
                     backgroundColor: '#fa709a',
                     pointStyle: 'rectRot',
-                    pointRadius: isDense ? 3 : 5,
+                    pointRadius: isDense ? 6 : 10,
                     showLine: false,
-                    borderWidth: 0
+                    borderWidth: 2,
+                    borderColor: '#111',
                 }
             ]
         };
