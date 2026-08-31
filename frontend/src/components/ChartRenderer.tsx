@@ -218,24 +218,27 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
       return <Scatter data={data} options={options} />;
     }
     
-    // Format: Scatter anomalies
+    // Format: Scatter anomalies / trends
     if (chartData.type === 'scatter' && chartData.normal) {
-      const data = {
-        datasets: [
-          {
-            label: 'Normal',
-            data: chartData.normal.x.map((xVal: any, idx: number) => ({ x: xVal, y: chartData.normal.y[idx] })),
-            backgroundColor: '#815ae1',
-            pointRadius: 4,
-          },
-          {
-            label: 'Anomalías',
-            data: chartData.anomalies.x.map((xVal: any, idx: number) => ({ x: xVal, y: chartData.anomalies.y[idx] })),
-            backgroundColor: '#fa709a',
-            pointRadius: 5,
-          }
-        ]
-      };
+      const datasets: any[] = [
+        {
+          label: 'Normal',
+          data: chartData.normal.x.map((xVal: any, idx: number) => ({ x: xVal, y: chartData.normal.y[idx] })),
+          backgroundColor: '#815ae1',
+          pointRadius: 4,
+        }
+      ];
+      
+      if (chartData.anomalies) {
+        datasets.push({
+          label: 'Anomalías',
+          data: chartData.anomalies.x.map((xVal: any, idx: number) => ({ x: xVal, y: chartData.anomalies.y[idx] })),
+          backgroundColor: '#fa709a',
+          pointRadius: 5,
+        });
+      }
+
+      const data = { datasets };
       const options = { ...chartDefaults, scales: { x: { ...cartesianScales.x, title: { display: true, text: chartData.x_label } }, y: { ...cartesianScales.y, title: { display: true, text: chartData.y_label } } } };
       return <Scatter data={data} options={options} />;
     }
