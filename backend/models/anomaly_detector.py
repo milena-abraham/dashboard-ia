@@ -60,25 +60,33 @@ def run_anomaly_detection(
         if target_col and target_col in df_out.columns and date_col and date_col in df_out.columns:
             df_plot = df_out.copy()
             df_plot[date_col] = pd.to_datetime(df_plot[date_col], errors="coerce")
-            df_agg = df_plot.groupby([date_col, "_is_anomaly"])[target_col].sum().reset_index()
+            
+            # Remove NaNs in target or date
+            df_plot = df_plot.dropna(subset=[date_col, target_col])
 
-            normal_df = df_agg[~df_agg["_is_anomaly"]]
-            anomaly_df = df_agg[df_agg["_is_anomaly"]]
+            normal_df = df_plot[~df_plot["_is_anomaly"]]
+            anomaly_df = df_plot[df_plot["_is_anomaly"]]
 
-            # Downsample normal points for performance (leave anomalies intact)
-            if len(normal_df) > 500:
-                # keep every Nth point to roughly get 500 points
-                step = len(normal_df) // 500
-                normal_df = normal_df.iloc[::step]
+            # Downsample normal points for frontend performance
+            if len(normal_df) > 1500:
+                normal_df = normal_df.sample(1500, random_state=42)
+                
+            # Limit anomalies to prevent massive payload if contamination is high
+            if len(anomaly_df) > 500:
+                anomaly_df = anomaly_df.sample(500, random_state=42)
+                
+            # Sort by date
+            normal_df = normal_df.sort_values(by=date_col)
+            anomaly_df = anomaly_df.sort_values(by=date_col)
 
             chart_data = {
                 "type": "timeseries",
                 "normal": {
-                    "x": normal_df[date_col].dt.strftime('%Y-%m-%d').tolist(),
+                    "x": normal_df[date_col].dt.strftime('%Y-%m-%d %H:%M').tolist(),
                     "y": normal_df[target_col].tolist(),
                 },
                 "anomalies": {
-                    "x": anomaly_df[date_col].dt.strftime('%Y-%m-%d').tolist(),
+                    "x": anomaly_df[date_col].dt.strftime('%Y-%m-%d %H:%M').tolist(),
                     "y": anomaly_df[target_col].tolist(),
                 },
                 "x_label": date_col,
