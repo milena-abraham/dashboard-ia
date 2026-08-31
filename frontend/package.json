@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@sgratzl/chartjs-chart-boxplot": "^4.4.5",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

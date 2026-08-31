@@ -339,6 +339,30 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
       return <Radar data={data} options={options} />;
     }
 
+
+    // Format: Boxplot
+    if (chartData.type === 'boxplot') {
+      const data = {
+        labels: chartData.labels,
+        datasets: chartData.datasets.map((ds: any) => ({
+          ...ds,
+          backgroundColor: 'rgba(200, 255, 106, 0.8)',
+          borderColor: '#111',
+          borderWidth: 2,
+          itemBackgroundColor: '#815ae1'
+        }))
+      };
+      
+      const options = {
+        ...chartDefaults,
+        scales: cartesianScales
+      };
+      // @sgratzl/chartjs-chart-boxplot can be rendered via generic Chart component or typed if available
+      // However, react-chartjs-2 provides <Chart type="boxplot" ... /> for custom controllers
+      // Need to import Chart from react-chartjs-2
+      return <Chart type="boxplot" data={data as any} options={options} />;
+    }
+
     // Standard Bars/Doughnuts
     if (chartData.labels && chartData.datasets) {
       const data = {

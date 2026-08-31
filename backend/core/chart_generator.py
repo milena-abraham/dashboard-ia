@@ -102,116 +102,156 @@ def chart_heatmap_corr(df: pd.DataFrame, title: str = "Mapa de Correlación") ->
         "title": title
     }
 
+
+def chart_boxplot(df: pd.DataFrame, cat_col: str, value_col: str, title: str = "") -> dict:
+    df_clean = df.dropna(subset=[cat_col, value_col])
+    
+    # Top 5 categorias
+    top_cats = df_clean[cat_col].value_counts().head(5).index
+    df_filt = df_clean[df_clean[cat_col].isin(top_cats)]
+    
+    # Calcular stats
+    labels = []
+    data_arrays = []
+    
+    for cat in top_cats:
+        series = df_filt[df_filt[cat_col] == cat][value_col]
+        if len(series) < 5:
+            continue
+        q1 = series.quantile(0.25)
+        med = series.median()
+        q3 = series.quantile(0.75)
+        iqr = q3 - q1
+        
+        # Whiskers with 1.5 IQR
+        min_val = max(series.min(), q1 - 1.5 * iqr)
+        max_val = min(series.max(), q3 + 1.5 * iqr)
+        
+        labels.append(str(cat))
+        # Format for @sgratzl/chartjs-chart-boxplot is [min, q1, median, q3, max]
+        data_arrays.append([min_val, q1, med, q3, max_val])
+        
+    if not labels:
+        raise ValueError("Sin datos para boxplot")
+
+    return {
+        "type": "boxplot",
+        "labels": labels,
+        "datasets": [{
+            "label": value_col,
+            "data": data_arrays,
+            "backgroundColor": "rgba(200, 255, 106, 0.6)",
+            "borderColor": "#111",
+            "borderWidth": 2,
+            "itemBackgroundColor": "#815ae1"
+        }],
+        "title": title
+    }
+
+def chart_scatter_trend(df: pd.DataFrame, x_col: str, y_col: str, title: str = "") -> dict:
+    df_clean = df.dropna(subset=[x_col, y_col])
+    if len(df_clean) > 1000:
+        df_clean = df_clean.sample(1000, random_state=42)
+        
+    return {
+        "type": "scatter",
+        "normal": {
+            "x": df_clean[x_col].tolist(),
+            "y": df_clean[y_col].tolist(),
+        },
+        "x_label": x_col,
+        "y_label": y_col,
+        "title": title
+    }
+
 def auto_charts(df: pd.DataFrame, profile, target_col: str) -> List[Dict[str, Any]]:
-    """Genera lista de graficos en formato dict con chart_data (raw data JSON)."""
+    """Genera lista de graficos garantizando un mínimo de 4 visualizaciones ricas."""
     charts = []
     date_cols = profile.date_columns
     cat_cols = profile.categorical_columns
     num_cols = profile.numeric_columns
 
     if target_col not in num_cols:
-        # Generar gráficos de frecuencia para variables categóricas
-        try:
-            val_counts = df[target_col].value_counts().head(15)
-            charts.append({
-                "title": f"Distribución de {target_col}",
-                "chart_data": {
-                    "type": "bar_horizontal",
-                    "labels": val_counts.index.astype(str).tolist(),
-                    "datasets": [{
-                        "label": "Cantidad",
-                        "data": val_counts.values.tolist(),
-                    }],
-                    "title": f"Frecuencia de {target_col}"
-                },
-                "description": f"Ranking de los valores más comunes en la columna {target_col}."
-            })
-        except Exception:
-            pass
-            
-        try:
-            if len(df[target_col].unique()) <= 8:
-                val_counts = df[target_col].value_counts()
-                charts.append({
-                    "title": f"Composición de {target_col}",
-                    "chart_data": {
-                        "type": "doughnut",
-                        "labels": val_counts.index.astype(str).tolist(),
-                        "datasets": [{
-                            "label": "Cantidad",
-                            "data": val_counts.values.tolist(),
-                        }],
-                        "title": f"Composición de {target_col}"
-                    },
-                    "description": f"Porcentaje de participación de cada valor en {target_col}."
-                })
-        except Exception:
-            pass
-
+        # Fallback if categorical target
+        val_counts = df[target_col].value_counts().head(15)
+        charts.append({
+            "title": f"Distribución de {target_col}",
+            "chart_data": {
+                "type": "bar_horizontal",
+                "labels": val_counts.index.astype(str).tolist(),
+                "datasets": [{"label": "Cantidad", "data": val_counts.values.tolist()}],
+            },
+            "description": f"Ranking de los valores más comunes en la columna {target_col}."
+        })
         return charts
-    # 1. Serie temporal
+
+    # 1. Timeseries (if dates exist)
     if date_cols:
         dc = date_cols[0]
         try:
-            cdata = chart_timeseries_monthly(df, dc, target_col, title=f"Evolución mensual de {target_col}")
             charts.append({
                 "title": f"Evolución mensual de {target_col}",
-                "chart_data": cdata,
-                "description": f"Muestra cómo evolucionó {target_col} a lo largo del tiempo agrupado por mes."
+                "chart_data": chart_timeseries_monthly(df, dc, target_col),
+                "description": f"Muestra cómo evolucionó {target_col} a lo largo del tiempo."
             })
-        except Exception:
-            pass
+        except Exception: pass
 
-    # 2. Barras por categoria
-    for cc in cat_cols[:3]:
-        if df[cc].nunique() > 25:
-            continue
-        try:
-            cdata = chart_bar_category(df, cc, target_col, title=f"{target_col} por {cc}")
-            charts.append({
-                "title": f"{target_col} por {cc}",
-                "chart_data": cdata,
-                "description": f"Ranking de {target_col} por cada categoría de {cc}."
-            })
-        except Exception:
-            pass
-
-    # 3. Donut de composicion
+    # 2. Boxplot (Data Science Dispersión)
     if cat_cols:
         cc = cat_cols[0]
-        if df[cc].nunique() <= 8:
-            try:
-                cdata = chart_pie(df, cc, target_col, title=f"Composición de {target_col} por {cc}")
-                charts.append({
-                    "title": f"Composición de {target_col} por {cc}",
-                    "chart_data": cdata,
-                    "description": f"Proporción del total de {target_col} aportado por cada {cc}."
-                })
-            except Exception:
-                pass
+        try:
+            charts.append({
+                "title": f"Dispersión de {target_col} por {cc}",
+                "chart_data": chart_boxplot(df, cc, target_col),
+                "description": f"Diagrama de caja mostrando mínimos, máximos y promedios de {target_col}."
+            })
+        except Exception: pass
 
-    # 4. Histograma
-    try:
-        cdata = chart_histogram(df, target_col, title=f"Distribución de {target_col}")
-        charts.append({
-            "title": f"Distribución de {target_col}",
-            "chart_data": cdata,
-            "description": f"Distribución de frecuencia de los valores de {target_col}."
-        })
-    except Exception:
-        pass
+    # 3. Scatter Trend (if another numeric exists)
+    other_nums = [c for c in num_cols if c != target_col]
+    if other_nums:
+        nc = other_nums[0]
+        try:
+            charts.append({
+                "title": f"Correlación: {target_col} vs {nc}",
+                "chart_data": chart_scatter_trend(df, nc, target_col),
+                "description": f"Análisis bivariado para detectar si {nc} empuja a {target_col}."
+            })
+        except Exception: pass
 
-    # 5. Heatmap de correlacion (convertido a radar)
+    # 4. Heatmap/Radar de correlación (if >= 3 numerics)
     if len(num_cols) >= 3:
         try:
-            cdata = chart_heatmap_corr(df.select_dtypes(include=[float, int]))
+            cdata = chart_heatmap_corr(df)
             if cdata:
                 charts.append({
-                    "title": "Mapa de Correlación",
+                    "title": "Red de Correlación",
                     "chart_data": cdata,
-                    "description": "Correlación estadística entre las variables numéricas principales."
+                    "description": "Fuerza estadística entre las variables numéricas."
                 })
-        except Exception:
-            pass
+        except Exception: pass
+
+    # Fill up to 4 charts using alternative columns
+    if len(charts) < 4:
+        # Histograma
+        try:
+            charts.append({
+                "title": f"Distribución de {target_col}",
+                "chart_data": chart_histogram(df, target_col),
+                "description": f"Campana de distribución de frecuencias."
+            })
+        except Exception: pass
+        
+    if len(charts) < 4 and cat_cols:
+        for cc in cat_cols[1:4]:
+            if len(charts) >= 4: break
+            if df[cc].nunique() > 25: continue
+            try:
+                charts.append({
+                    "title": f"{target_col} agrupado por {cc}",
+                    "chart_data": chart_bar_category(df, cc, target_col),
+                    "description": f"Ranking horizontal."
+                })
+            except Exception: pass
 
     return charts

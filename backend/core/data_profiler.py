@@ -175,24 +175,39 @@ def _compute_quality_score(df: pd.DataFrame, cols: List[ColumnProfile]) -> Tuple
 # ─────────────────────────────────────────────────────────────
 
 def _suggest_targets(cols: List[ColumnProfile]) -> List[str]:
-    """Sugiere columnas objetivo para el análisis."""
+    """Sugiere columnas objetivo determinísticamente usando scoring (keywords + estadísticos)."""
     target_keywords = [
         "venta", "ingreso", "revenue", "monto", "total", "precio",
         "margen", "ganancia", "beneficio", "cantidad", "units",
         "churn", "baja", "cancelacion", "score", "valor",
     ]
-    suggestions = []
-
+    
+    scored_cols = []
+    
     for col in cols:
         if col.inferred_type != COLUMN_TYPE_NUMERIC:
             continue
+            
+        score = 0
         name_lower = col.name.lower()
+        
+        # Priority 1: Keywords (+100 points)
         if any(kw in name_lower for kw in target_keywords):
-            suggestions.insert(0, col.name)
-        else:
-            suggestions.append(col.name)
+            score += 100
+            
+        # Priority 2: High cardinality/variance (proxy using unique values vs missing)
+        # We give a slight boost based on unique values so it's deterministic and prefers continuous variables
+        unique_ratio = col.unique_values / max(1, (col.unique_values + col.missing_values))
+        score += unique_ratio
+        
+        # Priority 3: Alphabetical fallback for absolute determinism if everything is equal
+        # Handled by sorting tuple
+        scored_cols.append((score, col.name))
+        
+    # Sort by score descending, then by name ascending (for ties)
+    scored_cols.sort(key=lambda x: (-x[0], x[1]))
 
-    return suggestions[:5]  # máximo 5 sugerencias
+    return [c[1] for c in scored_cols][:5]
 
 
 # ─────────────────────────────────────────────────────────────
