@@ -290,7 +290,6 @@ def auto_charts(df: pd.DataFrame, profile, target_col: str) -> List[Dict[str, An
 
     # Fill up to 4 charts using alternative columns
     if len(charts) < 4:
-        # Histograma
         try:
             charts.append({
                 "title": f"Distribución de {target_col}",
@@ -300,15 +299,28 @@ def auto_charts(df: pd.DataFrame, profile, target_col: str) -> List[Dict[str, An
         except Exception: pass
         
     if len(charts) < 4 and cat_cols:
-        for cc in cat_cols[1:4]:
+        for cc in cat_cols:
             if len(charts) >= 4: break
             if df[cc].nunique() > 25: continue
             try:
                 charts.append({
                     "title": f"{target_col} agrupado por {cc}",
                     "chart_data": chart_bar_category(df, cc, target_col),
-                    "description": f"Ranking horizontal."
+                    "description": f"Ranking de categorías por sumatoria."
                 })
             except Exception: pass
+            
+    # ABSOLUTE GUARANTEE: Si a pesar de todo faltan graficos (dataset pobre), metemos placeholders vacios de KPIs
+    while len(charts) < 4:
+        dummy_num = num_cols[0] if num_cols else target_col
+        charts.append({
+            "title": f"Métrica Extra: {dummy_num}",
+            "chart_data": {
+                "type": "bar_horizontal",
+                "labels": ["General"],
+                "datasets": [{"label": dummy_num, "data": [df[dummy_num].mean() if pd.api.types.is_numeric_dtype(df[dummy_num]) else len(df)]}],
+            },
+            "description": f"Visualización de soporte extra generada por el motor para asegurar consistencia del layout."
+        })
 
     return charts

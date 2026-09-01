@@ -497,35 +497,41 @@ function DashboardInner() {
 
             {/* Tab Contents */}
             <div className="pt-2">
-              {/* Tab 0: Visualizaciones */}
+              {/* Tab 0: Visualizaciones (Bento Layout) */}
               {activeTab === 0 && (
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                   {result.charts && result.charts.length > 0 ? (
                     result.charts.map((c, i) => {
                       const isOverridden = !!chartOverrides[i];
                       const activeChartData = isOverridden ? chartOverrides[i] : c.chart_data;
+                      // Bento Grid logic: first chart is large, next are regular
+                      const spanClass = i === 0 ? "md:col-span-12 lg:col-span-8" : 
+                                      i === 1 ? "md:col-span-12 lg:col-span-4" : 
+                                      "md:col-span-6 lg:col-span-4";
                       return (
-                        <div key={i} className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
-                          <div className="flex items-center justify-between mb-1">
-                            <h4 className="text-base font-bold text-gray-900">{isOverridden ? (activeChartData.title || c.title) : c.title}</h4>
+                        <div key={i} className={`bg-white p-6 flex flex-col rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_#111] ${spanClass}`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-lg font-black tracking-tight text-gray-900 leading-tight uppercase">{isOverridden ? (activeChartData.title || c.title) : c.title}</h4>
                             {isOverridden && (
                               <button
                                 onClick={() => setChartOverrides(prev => { const n = {...prev}; delete n[i]; return n; })}
-                                className="flex items-center gap-1 text-[11px] px-2 py-1 border border-gray-300 text-gray-500 hover:border-mio-violet hover:text-mio-violet transition-colors"
+                                className="flex items-center gap-1 text-[11px] px-2 py-1 bg-gray-900 text-white hover:bg-mio-violet transition-colors"
                                 title="Restaurar gráfico original"
                               >
                                 <RotateCcw className="w-3 h-3" /> Reset
                               </button>
                             )}
                           </div>
-                          <p className="text-xs text-gray-400 mb-4">{isOverridden ? '✏️ Modificado por Asistente IA' : c.description}</p>
-                          <ChartErrorBoundary><ChartRenderer key={result.filename + i} chartData={activeChartData} /></ChartErrorBoundary>
+                          <p className="text-sm text-gray-500 mb-6 flex-1 font-medium">{isOverridden ? '✏️ Modificado por Asistente IA' : c.description}</p>
+                          <div className="mt-auto relative w-full flex-1 min-h-[250px]">
+                              <ChartErrorBoundary><ChartRenderer key={result.filename + i} chartData={activeChartData} height={i === 0 ? 350 : 250} /></ChartErrorBoundary>
+                          </div>
                         </div>
                       );
                     })
                   ) : (
-                    <div className="col-span-2 text-center py-12 text-gray-400">
-                      No se encontraron gráficos automáticos para esta configuración.
+                    <div className="col-span-12 text-center py-16 border-2 border-dashed border-gray-300">
+                      <p className="text-gray-500 font-bold uppercase tracking-widest">No se encontraron gráficos automáticos</p>
                     </div>
                   )}
                 </div>
@@ -638,20 +644,41 @@ function DashboardInner() {
 
               {/* Tab 4: Factores Clave */}
               {activeTab === 4 && (
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="bg-white p-0 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] overflow-hidden flex flex-col lg:flex-row min-h-[500px]">
                   {result.feature_importance?.metrics?.error ? (
-                    <div className="col-span-2 flex items-center justify-center h-48 bg-gray-50 border-2 border-dashed border-gray-300">
-                      <p className="text-gray-500 font-bold">{result.feature_importance.metrics.error}</p>
+                    <div className="flex-1 flex items-center justify-center p-12 bg-gray-50">
+                      <p className="text-red-500 font-bold uppercase tracking-wide">Error en Modelado: {result.feature_importance.metrics.error}</p>
                     </div>
                   ) : (
                     <>
-                      <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
-                        <h4 className="text-base font-bold text-gray-900 mb-2">Impacto de Variables (LightGBM)</h4>
-                        <ChartErrorBoundary><ChartRenderer key={`feat-imp-${result.filename}`} chartData={result.feature_importance?.chart_importance} /></ChartErrorBoundary>
+                      {/* Sidebar */}
+                      <div className="lg:w-1/3 bg-gray-50 border-b lg:border-b-0 lg:border-r border-[#111] p-6 sm:p-8 flex flex-col">
+                        <div>
+                            <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter leading-none mb-2">Atribución SHAP</h3>
+                            <p className="text-sm text-gray-600 font-medium mb-8">Factores clave extraídos vía Gradient Boosting</p>
+                            
+                            <div className="bg-white border border-[#111] p-4 shadow-[2px_2px_0px_#111] mb-6">
+                                <p className="text-xs text-gray-500 font-bold uppercase mb-4">Top Factores de Impacto Absoluto</p>
+                                <ul className="space-y-3">
+                                    {result.feature_importance?.metrics?.top_features?.slice(0,3).map((feat: any, idx: number) => (
+                                        <li key={idx} className="flex justify-between items-center text-sm">
+                                            <span className="font-bold text-gray-900 truncate pr-2 max-w-[150px]">{feat.feature}</span>
+                                            <span className="bg-gray-100 text-gray-600 px-2 py-0.5 text-xs font-mono border border-gray-200">
+                                                {(feat.importance).toFixed(3)}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                        <div className="mt-auto p-4 bg-[#bdf559] text-gray-900 text-xs font-medium border border-[#111] shadow-[2px_2px_0px_#111]">
+                            <strong>Direccionalidad:</strong> Barras hacia la derecha (verdes) indican que al subir esta variable, sube tu objetivo. Hacia la izquierda (rojas), indica un impacto inversamente proporcional.
+                        </div>
                       </div>
-                      <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
-                        <h4 className="text-base font-bold text-gray-900 mb-2">Explicabilidad SHAP</h4>
-                        <ChartErrorBoundary><ChartRenderer key={`feat-shap-${result.filename}`} chartData={result.feature_importance?.chart_shap} /></ChartErrorBoundary>
+                      
+                      {/* Canvas */}
+                      <div className="lg:w-2/3 p-6 sm:p-8">
+                          <ChartErrorBoundary><ChartRenderer key={`feat-shap-${result.filename}`} chartData={result.feature_importance?.chart_shap || result.feature_importance?.chart_importance} height={420} /></ChartErrorBoundary>
                       </div>
                     </>
                   )}
