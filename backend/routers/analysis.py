@@ -8,6 +8,20 @@ from typing import Optional, Dict, Any
 import pandas as pd
 import io
 import json
+import math
+import pandas as pd
+
+def clean_json_nans(obj):
+    if isinstance(obj, dict):
+        return {k: clean_json_nans(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [clean_json_nans(v) for v in obj]
+    elif isinstance(obj, float):
+        if pd.isna(obj) or math.isnan(obj) or math.isinf(obj):
+            return None
+        return obj
+    return obj
+
 import asyncio
 import hashlib
 import time
@@ -336,6 +350,11 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
             "feature_importance": feature_res,
             "narrative": narrative_res,
         }
+        
+        # Filtro final anti-crashes (reemplaza NaN y Float infs por None para que fastapi jsonable_encoder no explote)
+        final_response = clean_json_nans(final_response)
+        
+        return final_response
 
     except HTTPException:
         raise

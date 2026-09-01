@@ -119,12 +119,19 @@ def _profile_column(series: pd.Series) -> ColumnProfile:
     stats: Dict = {}
     if inferred == COLUMN_TYPE_NUMERIC:
         desc = series.describe()
+        def _safe_float(v):
+            import math
+            import pandas as pd
+            if pd.isna(v) or math.isnan(v) or math.isinf(v):
+                return None
+            return round(float(v), 2)
+            
         stats = {
-            "min":    round(float(desc["min"]), 2),
-            "max":    round(float(desc["max"]), 2),
-            "mean":   round(float(desc["mean"]), 2),
-            "median": round(float(series.median()), 2),
-            "std":    round(float(desc["std"]), 2),
+            "min":    _safe_float(desc.get("min")),
+            "max":    _safe_float(desc.get("max")),
+            "mean":   _safe_float(desc.get("mean")),
+            "median": _safe_float(series.median()),
+            "std":    _safe_float(desc.get("std")),
         }
 
     return ColumnProfile(
