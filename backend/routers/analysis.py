@@ -232,13 +232,7 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
         t_prof = time.time()
         profile = profile_dataframe(df_clean)
 
-        # Muestreo Inteligente para Machine Learning
-        # Pandas/Profiling corren en los 2 millones de filas para dar KPIs reales
-        # Pero Prophet, KMeans y LightGBM no necesitan 2 millones para converger.
         df_ml = df_clean
-        if len(df_clean) > 150000:
-            logger.info("Dataset masivo detectado. Muestreando a 150k filas para modelos pesados.")
-            df_ml = df_clean.sample(150000, random_state=42)
 
         active_target = None
         if target_col:

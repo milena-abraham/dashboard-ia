@@ -36,7 +36,7 @@ def run_forecast(
         if len(df_prep) < 2:
             return None, None, {"error": "Se requieren al menos 2 fechas válidas con datos numéricos."}
 
-        df_agg = df_prep.groupby(date_col)[value_col].sum().reset_index()
+        df_agg = df_prep.groupby(date_col)[value_col].mean().reset_index()
         df_agg.columns = ["ds", "y"]
         df_agg = df_agg.sort_values("ds")
         # Only downsample if extremely dense (e.g. hourly data)
