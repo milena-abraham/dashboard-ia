@@ -17,6 +17,7 @@ import {
 import { Chart, Line, Bar, Doughnut, Radar, Scatter } from 'react-chartjs-2';
 
 import { BoxPlotController, BoxAndWiskers } from '@sgratzl/chartjs-chart-boxplot';
+import { formatNumber } from '@/lib/formatters';
 
 ChartJS.register(
   CategoryScale,
@@ -71,7 +72,17 @@ const chartDefaults: any = {
       cornerRadius: 0, // Neo-brutalist sharp edges
       boxPadding: 4,
       borderColor: 'rgba(255,255,255,0.1)',
-      borderWidth: 1
+      borderWidth: 1,
+      callbacks: {
+        label: function(ctx: any) {
+          const val = ctx.raw;
+          if (typeof val === 'number') return ` ${ctx.dataset.label || ''}: ${formatNumber(val)}`;
+          if (val && typeof val === 'object' && val.median !== undefined) {
+             return ` ${ctx.dataset.label || ''}: Min: ${formatNumber(val.min)}, Q1: ${formatNumber(val.q1)}, Med: ${formatNumber(val.median)}, Q3: ${formatNumber(val.q3)}, Max: ${formatNumber(val.max)}`;
+          }
+          return ` ${ctx.dataset.label || ''}: ${val}`;
+        }
+      }
     }
   },
   // PATRON 2: Hover dimming effect
@@ -129,13 +140,24 @@ const cartesianScales = {
   y: {
     border: { dash: [4, 4], display: false },
     grid: { color: '#f3f4f6' },
-    ticks: { font: { size: 10 } }
+    ticks: { 
+      font: { size: 10 },
+      callback: function(value: any) { return formatNumber(value); }
+    }
   }
 };
 
 export default function ChartRenderer({ chartData, height = 300 }: ChartRendererProps) {
   const renderedChart = useMemo(() => {
     if (!chartData) return null;
+    
+    // Check if chartData represents "No data" state
+    if (
+        (Array.isArray(chartData.labels) && chartData.labels.length === 0) ||
+        (Array.isArray(chartData.datasets) && chartData.datasets.length === 0)
+    ) {
+        return null;
+    }
 
     // Format: Forecast
     if (chartData.forecast_values) {
@@ -299,8 +321,10 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
       
       const datasets = Object.keys(chartData.datasets).map((key, i) => {
           let rawData = [];
+          let realData = null;
           if (Array.isArray(chartData.datasets)) {
               rawData = chartData.datasets[i].data;
+              realData = chartData.datasets[i].real_data;
           } else {
               rawData = chartData.datasets[key];
           }
@@ -311,7 +335,8 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
             data: rawData,
             borderColor: COLORS[i % COLORS.length],
             backgroundColor: COLORS[i % COLORS.length] + '40', // 25% opacity
-            _raw: rawData // PATRON 4: Guardamos datos originales
+            _raw: rawData, // PATRON 4: Guardamos datos originales
+            _realData: realData
           };
       });
 
@@ -325,8 +350,8 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
           tooltip: {
             callbacks: {
               label: function(ctx: any) {
-                const val = ctx.raw;
-                return ` ${ctx.dataset.label}: ${val}`;
+                const val = ctx.dataset._realData ? ctx.dataset._realData[ctx.dataIndex] : ctx.raw;
+                return ` ${ctx.dataset.label}: ${formatNumber(val)}`;
               }
             }
           },

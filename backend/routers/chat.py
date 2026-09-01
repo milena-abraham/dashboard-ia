@@ -10,6 +10,27 @@ from typing import Dict, Any, List, Optional
 import os
 import json
 import re
+from enum import Enum
+
+class SupportedChartType(str, Enum):
+    bar = "bar"
+    bar_horizontal = "bar_horizontal"
+    doughnut = "doughnut"
+    line_area = "line_area"
+
+class ChartDataset(BaseModel):
+    label: str
+    data: List[float]
+
+class ChartDataDef(BaseModel):
+    type: SupportedChartType
+    labels: List[str]
+    datasets: List[ChartDataset]
+    title: Optional[str] = None
+
+class ChartOverrideDef(BaseModel):
+    index: int
+    chart_data: ChartDataDef
 
 try:
     import google.generativeai as genai
@@ -81,7 +102,7 @@ async def chat_with_data(request: ChatRequest):
             chart_override_instruction = """
 Si el usuario pide modificar un gráfico específico, responde en este formato JSON exacto al FINAL de tu respuesta (después de tu texto normal), encerrado entre <CHART_OVERRIDE> y </CHART_OVERRIDE>:
 <CHART_OVERRIDE>
-{"index": <número_de_gráfico>, "chart_data": {"type": "<bar|bar_horizontal|line|doughnut|scatter>", "labels": [...], "datasets": [{"label": "...", "data": [...]}], "title": "..."}}
+{"index": <número_de_gráfico>, "chart_data": {"type": "<bar|bar_horizontal|line_area|doughnut>", "labels": [...], "datasets": [{"label": "...", "data": [...]}], "title": "..."}}
 </CHART_OVERRIDE>
 
 Si no hay suficiente información para generar datos exactos del gráfico, no incluyas el bloque CHART_OVERRIDE.
@@ -111,11 +132,23 @@ Si el usuario pregunta algo que no está en el contexto, indícale que con los d
         override_match = re.search(r'<CHART_OVERRIDE>(.*?)</CHART_OVERRIDE>', raw_text, re.DOTALL)
         if override_match:
             try:
-                chart_override = json.loads(override_match.group(1).strip())
-                # Eliminar el bloque del texto de respuesta
+                raw_json = json.loads(override_match.group(1).strip())
+                validated_override = ChartOverrideDef(**raw_json)
+                
+                is_valid = True
+                for ds in validated_override.chart_data.datasets:
+                    if len(ds.data) != len(validated_override.chart_data.labels):
+                        is_valid = False
+                        break
+                        
+                if is_valid:
+                    chart_override = raw_json
+                else:
+                    print("Invalid chart_override: labels length and data length mismatch.")
                 raw_text = raw_text.replace(override_match.group(0), '').strip()
-            except json.JSONDecodeError:
-                pass
+            except Exception as e:
+                print(f"Invalid chart_override discarded: {e}")
+                raw_text = raw_text.replace(override_match.group(0), '').strip()
 
         return {
             "response": raw_text,

@@ -63,8 +63,13 @@ def chart_pie(df: pd.DataFrame, cat_col: str, value_col: str, title: str = "") -
     }
 
 def chart_histogram(df: pd.DataFrame, value_col: str, title: str = "") -> dict:
+    # Dynamic bin calculation (sqrt rule bounded 5-40)
+    import math
+    n = len(df[value_col].dropna())
+    bins = max(5, min(40, int(math.ceil(math.sqrt(n)))))
+    
     # Manual histogram binning for Chart.js
-    counts, bin_edges = pd.cut(df[value_col], bins=25, retbins=True)
+    counts, bin_edges = pd.cut(df[value_col], bins=bins, retbins=True)
     df_hist = counts.value_counts().sort_index()
     
     labels = [f"{round(b.left, 2)} - {round(b.right, 2)}" for b in df_hist.index]
@@ -128,8 +133,14 @@ def chart_boxplot(df: pd.DataFrame, cat_col: str, value_col: str, title: str = "
         max_val = min(series.max(), q3 + 1.5 * iqr)
         
         labels.append(str(cat))
-        # Format for @sgratzl/chartjs-chart-boxplot is [min, q1, median, q3, max]
-        data_arrays.append([float(min_val) if not pd.isna(min_val) else None, float(q1) if not pd.isna(q1) else None, float(med) if not pd.isna(med) else None, float(q3) if not pd.isna(q3) else None, float(max_val) if not pd.isna(max_val) else None])
+        # Format for @sgratzl/chartjs-chart-boxplot is {min, q1, median, q3, max}
+        data_arrays.append({
+            "min": float(min_val) if not pd.isna(min_val) else None,
+            "q1": float(q1) if not pd.isna(q1) else None,
+            "median": float(med) if not pd.isna(med) else None,
+            "q3": float(q3) if not pd.isna(q3) else None,
+            "max": float(max_val) if not pd.isna(max_val) else None
+        })
         
     if not labels:
         raise ValueError("Sin datos para boxplot")
@@ -172,7 +183,7 @@ def auto_charts(df: pd.DataFrame, profile, target_col: str) -> List[Dict[str, An
     num_cols = profile.numeric_columns
 
     if target_col not in num_cols:
-        # Fallback if categorical target
+        # 1. Bar horizontal (Distribución)
         val_counts = df[target_col].value_counts().head(15)
         charts.append({
             "title": f"Distribución de {target_col}",
@@ -183,6 +194,49 @@ def auto_charts(df: pd.DataFrame, profile, target_col: str) -> List[Dict[str, An
             },
             "description": f"Ranking de los valores más comunes en la columna {target_col}."
         })
+        
+        # 2. Pie chart (Composición)
+        if len(val_counts) <= 8 and len(val_counts) > 1:
+            charts.append({
+                "title": f"Composición de {target_col}",
+                "chart_data": {
+                    "type": "doughnut",
+                    "labels": val_counts.index.astype(str).tolist(),
+                    "datasets": [{"label": "Cantidad", "data": val_counts.values.tolist()}],
+                },
+                "description": f"Proporción de los valores en la columna {target_col}."
+            })
+            
+        # 3. Boxplots con columnas numéricas
+        if num_cols:
+            for nc in num_cols:
+                if len(charts) >= 4: break
+                try:
+                    charts.append({
+                        "title": f"Dispersión de {nc} por {target_col}",
+                        "chart_data": chart_boxplot(df, target_col, nc),
+                        "description": f"Distribución de {nc} según cada categoría de {target_col}."
+                    })
+                except Exception: pass
+                
+        # 4. Otras distribuciones categóricas si aún faltan
+        other_cats = [c for c in cat_cols if c != target_col]
+        for cc in other_cats:
+            if len(charts) >= 4: break
+            if df[cc].nunique() > 15: continue
+            try:
+                cc_counts = df[cc].value_counts().head(10)
+                charts.append({
+                    "title": f"Distribución de {cc}",
+                    "chart_data": {
+                        "type": "bar",
+                        "labels": cc_counts.index.astype(str).tolist(),
+                        "datasets": [{"label": "Frecuencia", "data": cc_counts.values.tolist()}],
+                    },
+                    "description": f"Frecuencia de las categorías en {cc}."
+                })
+            except Exception: pass
+            
         return charts
 
     # 1. Timeseries (if dates exist)
@@ -210,13 +264,16 @@ def auto_charts(df: pd.DataFrame, profile, target_col: str) -> List[Dict[str, An
     # 3. Scatter Trend (if another numeric exists)
     other_nums = [c for c in num_cols if c != target_col]
     if other_nums:
-        nc = other_nums[0]
         try:
-            charts.append({
-                "title": f"Correlación: {target_col} vs {nc}",
-                "chart_data": chart_scatter_trend(df, nc, target_col),
-                "description": f"Análisis bivariado para detectar si {nc} empuja a {target_col}."
-            })
+            corrs = df[[target_col] + other_nums].corr(method='spearman')[target_col].drop(target_col)
+            best_col = corrs.abs().idxmax()
+            best_corr = corrs[best_col]
+            if pd.notna(best_col):
+                charts.append({
+                    "title": f"Correlación: {target_col} vs {best_col}",
+                    "chart_data": chart_scatter_trend(df, best_col, target_col),
+                    "description": f"Análisis bivariado para detectar relación. Correlación de Spearman: {round(best_corr, 2)}."
+                })
         except Exception: pass
 
     # 4. Heatmap/Radar de correlación (if >= 3 numerics)

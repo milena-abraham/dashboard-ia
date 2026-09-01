@@ -122,14 +122,34 @@ def run_clustering(
 
         df_profile = pd.DataFrame(profile_data)
         
+        col_stats = {}
+        for c in numeric_cols:
+            c_min = df_profile[c].min()
+            c_max = df_profile[c].max()
+            col_stats[c] = (c_min, c_max)
+            
         radar_data = {
             "type": "radar",
             "metrics": numeric_cols,
-            "datasets": {}
+            "datasets": []
         }
         for _, row in df_profile.iterrows():
             seg = row["Segmento"]
-            radar_data["datasets"][seg] = [row[c] for c in numeric_cols]
+            norm_values = []
+            real_values = []
+            for c in numeric_cols:
+                c_min, c_max = col_stats[c]
+                if c_max > c_min:
+                    norm = (row[c] - c_min) / (c_max - c_min)
+                else:
+                    norm = 0.5
+                norm_values.append(round(float(norm), 3))
+                real_values.append(row[c])
+            radar_data["datasets"].append({
+                "label": seg,
+                "data": norm_values,
+                "real_data": real_values
+            })
 
         metrics = {
             "k": k,

@@ -68,6 +68,9 @@ def run_forecast(
             # Pseudo-MAE (In-sample)
             y_pred_in_sample = p(x)
             mae = np.mean(np.abs(y - y_pred_in_sample))
+            mse = np.mean((y - y_pred_in_sample)**2)
+            std_err = np.sqrt(mse) if len(y) > 2 else 0
+            margin = 1.96 * std_err
 
             metrics = {
                 "ultimo_valor_real": round(last_val, 2),
@@ -79,12 +82,15 @@ def run_forecast(
                 "confianza": "Baja (pocos datos o modelo base)"
             }
             
+            upper_future = y_future + margin
+            lower_future = y_future - margin
+            
             chart_data = {
                 "labels": df_agg["ds"].dt.strftime('%Y-%m-%d').tolist() + future_dates.strftime('%Y-%m-%d').tolist(),
                 "real_values": [x if not pd.isna(x) else None for x in y] + [None] * len(future_dates),
                 "forecast_values": [None] * (len(df_agg) - 1) + [y[-1]] + y_future.tolist(),
-                "upper_band": [None] * (len(df_agg) - 1) + [y[-1]] + y_future.tolist(),
-                "lower_band": [None] * (len(df_agg) - 1) + [y[-1]] + y_future.tolist(),
+                "upper_band": [None] * (len(df_agg) - 1) + [y[-1]] + upper_future.tolist(),
+                "lower_band": [None] * (len(df_agg) - 1) + [y[-1]] + lower_future.tolist(),
             }
             return None, chart_data, metrics
 

@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import FileUploader from '@/components/FileUploader';
 import KPICards from '@/components/KPICards';
 import ChartRenderer from '@/components/ChartRenderer';
+import ChartErrorBoundary from '@/components/ChartErrorBoundary';
 import InsightPanel from '@/components/InsightPanel';
 import DataChatbot, { Message as ChatMessage } from '@/components/DataChatbot';
 import LoadingAnalysis from '@/components/LoadingAnalysis';
@@ -317,6 +318,10 @@ function DashboardInner() {
   };
 
   const handleChartOverride = (index: number, chartData: any) => {
+    if (!result || !result.charts || index < 0 || index >= result.charts.length) {
+      toast.error('Asistente IA: No pude identificar ese gráfico.');
+      return;
+    }
     setChartOverrides(prev => ({ ...prev, [index]: chartData }));
     toast.success(`✏️ Gráfico ${index + 1} actualizado por el Asistente IA`);
   };
@@ -514,7 +519,7 @@ function DashboardInner() {
                             )}
                           </div>
                           <p className="text-xs text-gray-400 mb-4">{isOverridden ? '✏️ Modificado por Asistente IA' : c.description}</p>
-                          <ChartRenderer key={result.filename + i} chartData={activeChartData} />
+                          <ChartErrorBoundary><ChartRenderer key={result.filename + i} chartData={activeChartData} /></ChartErrorBoundary>
                         </div>
                       );
                     })
@@ -561,7 +566,7 @@ function DashboardInner() {
                           )}
                         </div>
                       </div>
-                      <ChartRenderer key={`forecast-${result.filename}`} chartData={result.forecast?.chart_data} height={420} />
+                      <ChartErrorBoundary><ChartRenderer key={`forecast-${result.filename}`} chartData={result.forecast?.chart_data} height={420} /></ChartErrorBoundary>
                       <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-500 text-xs text-blue-800">
                         <strong>Aviso:</strong> Esta proyección se basa exclusivamente en el comportamiento histórico de tus datos usando el modelo {result.forecast?.metrics?.motor || 'Predictivo'} y no es una garantía del futuro. 
                         {result.forecast?.metrics?.mae !== undefined && ` Margen de error histórico (MAE): ${result.forecast.metrics.mae}`}
@@ -582,11 +587,11 @@ function DashboardInner() {
                     <>
                       <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
                         <h4 className="text-base font-bold text-gray-900 mb-2">Mapa de Segmentación 2D (PCA)</h4>
-                        <ChartRenderer key={`seg-scatter-${result.filename}`} chartData={result.segmentation?.scatter_data} />
+                        <ChartErrorBoundary><ChartRenderer key={`seg-scatter-${result.filename}`} chartData={result.segmentation?.scatter_data} /></ChartErrorBoundary>
                       </div>
                       <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
                         <h4 className="text-base font-bold text-gray-900 mb-2">Perfil Promedio por Segmento</h4>
-                        <ChartRenderer key={`seg-radar-${result.filename}`} chartData={result.segmentation?.radar_data} />
+                        <ChartErrorBoundary><ChartRenderer key={`seg-radar-${result.filename}`} chartData={result.segmentation?.radar_data} /></ChartErrorBoundary>
                       </div>
                     </>
                   )}
@@ -606,7 +611,7 @@ function DashboardInner() {
                         <h3 className="text-lg font-bold text-gray-900">Detección de Anomalías (Isolation Forest)</h3>
                         <p className="text-xs text-gray-500">Registros atípicos marcados para auditoría</p>
                       </div>
-                      <ChartRenderer key={`anom-${result.filename}`} chartData={result.anomalies?.chart_data} height={400} />
+                      <ChartErrorBoundary><ChartRenderer key={`anom-${result.filename}`} chartData={result.anomalies?.chart_data} height={400} /></ChartErrorBoundary>
                       
                       <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-500 text-xs text-blue-800">
                         <strong>Aviso:</strong> El modelo Isolation Forest ha marcado <strong>{result.anomalies?.metrics?.n_anomalias || 0} registros atípicos</strong> ({result.anomalies?.metrics?.pct_anomalias || 0}% del total) que se desvían del patrón general. Revisa el listado inferior para auditar los casos más críticos.
@@ -642,11 +647,11 @@ function DashboardInner() {
                     <>
                       <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
                         <h4 className="text-base font-bold text-gray-900 mb-2">Impacto de Variables (LightGBM)</h4>
-                        <ChartRenderer key={`feat-imp-${result.filename}`} chartData={result.feature_importance?.chart_importance} />
+                        <ChartErrorBoundary><ChartRenderer key={`feat-imp-${result.filename}`} chartData={result.feature_importance?.chart_importance} /></ChartErrorBoundary>
                       </div>
                       <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
                         <h4 className="text-base font-bold text-gray-900 mb-2">Explicabilidad SHAP</h4>
-                        <ChartRenderer key={`feat-shap-${result.filename}`} chartData={result.feature_importance?.chart_shap} />
+                        <ChartErrorBoundary><ChartRenderer key={`feat-shap-${result.filename}`} chartData={result.feature_importance?.chart_shap} /></ChartErrorBoundary>
                       </div>
                     </>
                   )}
