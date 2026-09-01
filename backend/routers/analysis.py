@@ -232,6 +232,14 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
         t_prof = time.time()
         profile = profile_dataframe(df_clean)
 
+        # Muestreo Inteligente para Machine Learning
+        # Pandas/Profiling corren en los 2 millones de filas para dar KPIs reales
+        # Pero Prophet, KMeans y LightGBM no necesitan 2 millones para converger.
+        df_ml = df_clean
+        if len(df_clean) > 150000:
+            logger.info("Dataset masivo detectado. Muestreando a 150k filas para modelos pesados.")
+            df_ml = df_clean.sample(150000, random_state=42)
+
         active_target = None
         if target_col:
             target_clean = str(target_col).strip().lower()
@@ -275,21 +283,21 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
             fut_forecast, fut_feature, fut_anomaly, fut_segmentation = None, None, None, None
             
             if profile.date_columns and active_target in profile.numeric_columns:
-                fut_forecast = executor.submit(run_forecast, df_clean, date_col=profile.date_columns[0], value_col=active_target, periods=60)
+                fut_forecast = executor.submit(run_forecast, df_ml, date_col=profile.date_columns[0], value_col=active_target, periods=60)
             
             if active_target in profile.numeric_columns:
                 feats = [c for c in profile.numeric_columns if c != active_target]
-                fut_feature = executor.submit(run_feature_importance, df_clean, active_target, feats, categorical_cols=profile.categorical_columns)
+                fut_feature = executor.submit(run_feature_importance, df_ml, active_target, feats, categorical_cols=profile.categorical_columns)
                 
             fut_anomaly = executor.submit(
-                run_anomaly_detection, df_clean, numeric_cols=profile.numeric_columns, 
+                run_anomaly_detection, df_ml, numeric_cols=profile.numeric_columns, 
                 target_col=active_target if active_target in profile.numeric_columns else None, 
                 date_col=profile.date_columns[0] if profile.date_columns else None
             )
             
             if len(profile.numeric_columns) >= 2:
                 label_c = profile.categorical_columns[0] if profile.categorical_columns else None
-                fut_segmentation = executor.submit(run_clustering, df_clean, numeric_cols=profile.numeric_columns[:6], label_col=label_c)
+                fut_segmentation = executor.submit(run_clustering, df_ml, numeric_cols=profile.numeric_columns[:6], label_col=label_c)
                 
             if fut_forecast:
                 try:
