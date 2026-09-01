@@ -523,8 +523,8 @@ function DashboardInner() {
                             )}
                           </div>
                           <p className="text-sm text-gray-500 mb-6 flex-1 font-medium">{isOverridden ? '✏️ Modificado por Asistente IA' : c.description}</p>
-                          <div className="mt-auto relative w-full flex-1 min-h-[250px]">
-                              <ChartErrorBoundary><ChartRenderer key={result.filename + i} chartData={activeChartData} height={i === 0 ? 350 : 250} /></ChartErrorBoundary>
+                          <div className="mt-auto relative w-full flex-1 min-h-[300px]">
+                              <ChartErrorBoundary><ChartRenderer key={result.filename + i} chartData={activeChartData} height="100%" /></ChartErrorBoundary>
                           </div>
                         </div>
                       );
@@ -646,8 +646,8 @@ function DashboardInner() {
               {activeTab === 4 && (
                 <div className="bg-white p-0 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] overflow-hidden flex flex-col lg:flex-row min-h-[500px]">
                   {result.feature_importance?.metrics?.error ? (
-                    <div className="flex-1 flex items-center justify-center p-12 bg-gray-50">
-                      <p className="text-red-500 font-bold uppercase tracking-wide">Error en Modelado: {result.feature_importance.metrics.error}</p>
+                    <div className="flex-1 flex items-center justify-center p-12 bg-gray-50 border-2 border-dashed border-gray-300">
+                      <p className="text-gray-500 font-bold uppercase tracking-wide">Análisis No Aplicable: {result.feature_importance.metrics.error}</p>
                     </div>
                   ) : (
                     <>

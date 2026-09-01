@@ -36,7 +36,7 @@ ChartJS.register(
 
 interface ChartRendererProps {
   chartData: any;
-  height?: number;
+  height?: number | string;
 }
 
 const COLORS = [
@@ -468,7 +468,18 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
         return <Bar data={data} options={hOptions as any} />;
       }
       if (chartData.type === 'doughnut') {
-        const dOptions = { ...chartDefaults, cutout: '70%' };
+        const dOptions = { 
+            ...chartDefaults, 
+            cutout: '70%',
+            plugins: {
+                ...chartDefaults.plugins,
+                legend: {
+                    ...chartDefaults.plugins.legend,
+                    position: chartData.labels.length > 5 ? 'right' : 'bottom',
+                    display: chartData.labels.length <= 15 // Ocultar si hay demasiadas leyendas
+                }
+            }
+        };
         return <Doughnut data={data} options={dOptions} />;
       }
       if (chartData.type === 'line_area') {
@@ -509,7 +520,7 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
   }
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: `${height}px` }}>
+    <div style={{ position: 'relative', width: '100%', height: height === '100%' ? '100%' : `${height}px`, minHeight: '300px' }}>
       {renderedChart}
     </div>
   );
