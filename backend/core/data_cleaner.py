@@ -58,7 +58,7 @@ def _clean_currency_column(series: pd.Series) -> pd.Series:
 
 def _detect_currency_like(series: pd.Series) -> bool:
     """Detecta si una columna object es en realidad un número con formato de moneda."""
-    if series.dtype != object:
+    if not (series.dtype == object or pd.api.types.is_string_dtype(series)):
         return False
     sample = series.dropna().head(30).astype(str)
     has_symbol = sample.str.contains(r"[\$\€\£\¥]").any()
@@ -163,7 +163,7 @@ def clean_dataframe(df: pd.DataFrame) -> Tuple[pd.DataFrame, CleaningReport]:
 
     # 7. Parsear columnas de fecha detectadas como texto
     for col in df.columns:
-        if type_map.get(col) == COLUMN_TYPE_DATE and df[col].dtype == object:
+        if type_map.get(col) == COLUMN_TYPE_DATE and (df[col].dtype == object or pd.api.types.is_string_dtype(df[col])):
             try:
                 # Use cache=True to speed up parsing of repeated dates, drop infer_datetime_format as it's deprecated
                 df[col] = pd.to_datetime(df[col], errors="coerce", format="mixed")
@@ -179,7 +179,7 @@ def clean_dataframe(df: pd.DataFrame) -> Tuple[pd.DataFrame, CleaningReport]:
 
     # 8. Convertir numéricas detectadas que siguen como object
     for col in df.columns:
-        if type_map.get(col) == COLUMN_TYPE_NUMERIC and df[col].dtype == object:
+        if type_map.get(col) == COLUMN_TYPE_NUMERIC and (df[col].dtype == object or pd.api.types.is_string_dtype(df[col])):
             converted = pd.to_numeric(df[col], errors="coerce")
             if converted.notna().sum() / max(len(converted), 1) > 0.7:
                 df[col] = converted

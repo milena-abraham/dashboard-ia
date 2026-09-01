@@ -80,8 +80,8 @@ def _infer_column_type(series: pd.Series) -> str:
     if pd.api.types.is_datetime64_any_dtype(series):
         return COLUMN_TYPE_DATE
 
-    # Intentar parsear como fecha si es object
-    if series.dtype == object:
+    # Intentar parsear como fecha si es object o string
+    if series.dtype == object or pd.api.types.is_string_dtype(series):
         sample = series.dropna().head(20)
         try:
             try:
