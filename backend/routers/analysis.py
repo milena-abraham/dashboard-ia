@@ -310,7 +310,18 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
             "source": "pending"
         }
 
-        return {
+        import math
+        def sanitize_for_json(obj):
+            if isinstance(obj, dict):
+                return {k: sanitize_for_json(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [sanitize_for_json(v) for v in obj]
+            elif isinstance(obj, float):
+                if math.isnan(obj) or math.isinf(obj):
+                    return None
+            return obj
+
+        return sanitize_for_json({
             "filename": filename,
             "target_col": active_target,
             "profile": {
@@ -335,7 +346,7 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
             "anomalies": anomaly_res,
             "feature_importance": feature_res,
             "narrative": narrative_res,
-        }
+        })
 
     except HTTPException:
         raise

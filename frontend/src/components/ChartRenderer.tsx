@@ -342,9 +342,17 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
 
       const data = { labels, datasets };
       
+      const hasNegative = datasets.some(ds => ds.data.some((v: number) => v < 0));
+      
       // PATRON 3 & 4
       const options = {
         ...chartDefaults,
+        scales: {
+          r: {
+            min: hasNegative ? -1 : 0,
+            max: 1
+          }
+        },
         plugins: {
           ...chartDefaults.plugins,
           tooltip: {

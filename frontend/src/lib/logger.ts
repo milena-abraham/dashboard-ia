@@ -8,7 +8,8 @@ export type SystemEventType =
   | 'analysis_success'
   | 'analysis_error'
   | 'chat_session_started'
-  | 'project_saved';
+  | 'project_saved'
+  | 'project_saved_auto';
 
 export function logSystemEvent(type: SystemEventType, metadata: Record<string, any> = {}) {
   // Fire and forget

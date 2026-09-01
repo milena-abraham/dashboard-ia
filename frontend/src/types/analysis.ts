@@ -21,15 +21,16 @@ export interface KPIs {
 
 export interface Chart {
   title: string;
-  fig_json: string;
+  chart_data: any;
   description?: string;
 }
 
 export interface MLModelResult {
-  fig_json?: string | null;
-  scatter_json?: string | null;
-  profile_json?: string | null;
-  shap_json?: string | null;
+  chart_data?: any | null;
+  scatter_data?: any | null;
+  radar_data?: any | null;
+  chart_importance?: any | null;
+  chart_shap?: any | null;
   metrics: Record<string, any>;
 }
 
