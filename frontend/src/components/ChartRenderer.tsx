@@ -242,12 +242,14 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
     
     // Format: Scatter anomalies / trends
     if (chartData.type === 'scatter' && chartData.normal) {
+      const isDense = chartData.normal.x.length > 500;
       const datasets: any[] = [
         {
           label: 'Normal',
           data: chartData.normal.x.map((xVal: any, idx: number) => ({ x: xVal, y: chartData.normal.y[idx] })),
-          backgroundColor: '#815ae1',
-          pointRadius: 4,
+          backgroundColor: 'rgba(129, 90, 225, 0.4)', // Baja opacidad anti-overplotting
+          pointRadius: isDense ? 2 : 4,
+          borderWidth: 0,
         }
       ];
       
@@ -255,8 +257,10 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
         datasets.push({
           label: 'Anomalías',
           data: chartData.anomalies.x.map((xVal: any, idx: number) => ({ x: xVal, y: chartData.anomalies.y[idx] })),
-          backgroundColor: '#fa709a',
-          pointRadius: 5,
+          backgroundColor: '#fa709a', // Color sólido para anomalías (destacan)
+          pointRadius: isDense ? 3 : 5,
+          borderWidth: 1,
+          borderColor: '#fff'
         });
       }
 
@@ -267,16 +271,18 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
 
     // Format: Timeseries (from anomalies)
     if (chartData.type === 'timeseries' && chartData.normal) {
-        const labels = Array.from(new Set([...chartData.normal.x, ...chartData.anomalies.x])).sort() as string[];
+        const normalX = chartData.normal.x || [];
+        const anomX = chartData.anomalies?.x || [];
+        const labels = Array.from(new Set([...normalX, ...anomX])).sort() as string[];
         const isDense = labels.length > 200;
         
         // Map data to full timeline
         const normalData = labels.map(l => {
-            const idx = chartData.normal.x.indexOf(l);
+            const idx = normalX.indexOf(l);
             return idx !== -1 ? chartData.normal.y[idx] : null;
         });
         const anomData = labels.map(l => {
-            const idx = chartData.anomalies.x.indexOf(l);
+            const idx = anomX.indexOf(l);
             return idx !== -1 ? chartData.anomalies.y[idx] : null;
         });
 
@@ -342,7 +348,6 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
 
       const data = { labels, datasets };
       
-      // PATRON 3 & 4
       const options = {
         ...chartDefaults,
         plugins: {
@@ -356,19 +361,25 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
             }
           },
           legend: {
-            position: 'bottom',
-            onClick: function(e: any, legendItem: any, legend: any) {
-              const index = legendItem.datasetIndex;
-              const chart = legend.chart;
-              chart.isDatasetVisible(index) ? chart.hide(index) : chart.show(index);
-              
-              // Renormalización omitida aquí para simplificar, pero se podría agregar
-              chart.update();
-            }
+            display: false // Usamos leyenda HTML externa
           }
         }
       };
-      return <Radar data={data} options={options} />;
+      return (
+        <div className="flex flex-col h-full">
+            <div className="flex-1 min-h-0 relative">
+                <Radar data={data} options={options} />
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2 justify-center">
+                {datasets.map((ds: any, i: number) => (
+                    <div key={i} className="flex items-center text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded-sm border border-gray-100">
+                        <span className="w-3 h-3 inline-block mr-2 rounded-full" style={{backgroundColor: ds.borderColor}}></span>
+                        {ds.label}
+                    </div>
+                ))}
+            </div>
+        </div>
+      );
     }
 
 
@@ -408,13 +419,53 @@ export default function ChartRenderer({ chartData, height = 300 }: ChartRenderer
 
       const options = { ...chartDefaults };
 
-      if (chartData.type === 'bar_horizontal') {
+      if (chartData.type === 'bar_horizontal' || chartData.type === 'tornado') {
+        const isTornado = chartData.type === 'tornado';
+        
+        // For tornado, make positive green/purple and negative red/orange
+        if (isTornado) {
+            data.datasets[0].backgroundColor = data.datasets[0].data.map((val: number) => 
+                val >= 0 ? '#bdf559' : '#fa709a'
+            );
+            data.datasets[0].borderColor = '#111';
+            data.datasets[0].borderWidth = 1;
+        }
+
         const hOptions = { 
             ...chartDefaults,
             indexAxis: 'y',
-            scales: { x: cartesianScales.y, y: cartesianScales.x }
+            scales: { 
+                x: cartesianScales.y, 
+                y: {
+                    ...cartesianScales.x,
+                    ticks: {
+                        ...cartesianScales.x.ticks,
+                        // Truncado algoritmico en el eje Y
+                        callback: function(value: any, index: number, ticks: any) {
+                            const label = this.getLabelForValue(value);
+                            return label.length > 15 ? label.substring(0, 15) + '...' : label;
+                        }
+                    }
+                }
+            },
+            plugins: {
+                ...chartDefaults.plugins,
+                tooltip: {
+                    callbacks: {
+                        // Rescata el nombre completo en el tooltip
+                        title: function(ctx: any) {
+                            return ctx[0].label;
+                        },
+                        label: function(ctx: any) {
+                            const val = ctx.raw;
+                            const prefix = isTornado ? (val >= 0 ? 'Impacto Positivo: ' : 'Impacto Negativo: ') : 'Valor: ';
+                            return ` ${prefix}${formatNumber(val)}`;
+                        }
+                    }
+                }
+            }
         };
-        return <Bar data={data} options={hOptions} />;
+        return <Bar data={data} options={hOptions as any} />;
       }
       if (chartData.type === 'doughnut') {
         const dOptions = { ...chartDefaults, cutout: '70%' };

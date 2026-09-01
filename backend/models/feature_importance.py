@@ -101,20 +101,28 @@ def run_feature_importance(
                 X_sample = X.sample(min(2000, len(X)), random_state=42)
                 shap_values = explainer.shap_values(X_sample)
                 mean_shap = np.abs(shap_values).mean(axis=0)
+                
+                # Calcular direccionalidad (positivo/negativo)
+                signed_shap = []
+                for i, col in enumerate(available):
+                    corr = np.corrcoef(X_sample[col], shap_values[:, i])[0, 1]
+                    direction = np.sign(corr) if not pd.isna(corr) else 1
+                    signed_shap.append(mean_shap[i] * direction)
 
                 shap_df = pd.DataFrame({
                     "feature": available,
-                    "shap_importance": mean_shap,
-                }).sort_values("shap_importance", ascending=True).tail(15)
+                    "shap_importance": signed_shap,
+                    "abs_importance": mean_shap
+                }).sort_values("abs_importance", ascending=True).tail(15)
 
                 chart_shap = {
-                    "type": "bar_horizontal",
+                    "type": "tornado",
                     "labels": shap_df["feature"].tolist(),
                     "datasets": [{
-                        "label": "Impacto SHAP",
+                        "label": "Impacto Promedio (SHAP)",
                         "data": shap_df["shap_importance"].tolist()
                     }],
-                    "title": f"Impacto Real SHAP en {target_col}"
+                    "title": f"Factores de Atribución (SHAP) en {target_col}"
                 }
                 shap_summary = {feat: round(float(val), 4) for feat, val in zip(available, mean_shap)}
             except Exception:
