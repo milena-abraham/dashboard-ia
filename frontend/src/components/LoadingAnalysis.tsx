@@ -18,9 +18,9 @@ export default function LoadingAnalysis({ fileSize = 1000000, isUploading = fals
 
   // Estimación Data-Driven (Basada en benchmarks del backend V2):
   // Test real: 20.3MB (85k filas) tardó 3.94s en procesarse (aprox 0.2s por MB).
-  // Fórmula: 1s base (latencia red/Vercel) + 0.2s por MB. Tope máximo de 20s.
+  // Fórmula ajustada: 1s base + 0.4s por MB (para archivos gigantes con Prophet pesado). Tope máximo de 300s.
   const fileSizeInMB = fileSize / (1024 * 1024);
-  const estimatedTotalSeconds = Math.min(20, Math.max(1.5, 1 + (fileSizeInMB * 0.2)));
+  const estimatedTotalSeconds = Math.min(300, Math.max(1.5, 1 + (fileSizeInMB * 0.45)));
 
   useEffect(() => {
     const startTime = Date.now();
