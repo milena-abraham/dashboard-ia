@@ -129,7 +129,7 @@ def chart_boxplot(df: pd.DataFrame, cat_col: str, value_col: str, title: str = "
         
         labels.append(str(cat))
         # Format for @sgratzl/chartjs-chart-boxplot is [min, q1, median, q3, max]
-        data_arrays.append([min_val, q1, med, q3, max_val])
+        data_arrays.append([float(min_val) if not pd.isna(min_val) else None, float(q1) if not pd.isna(q1) else None, float(med) if not pd.isna(med) else None, float(q3) if not pd.isna(q3) else None, float(max_val) if not pd.isna(max_val) else None])
         
     if not labels:
         raise ValueError("Sin datos para boxplot")
@@ -156,8 +156,8 @@ def chart_scatter_trend(df: pd.DataFrame, x_col: str, y_col: str, title: str = "
     return {
         "type": "scatter",
         "normal": {
-            "x": df_clean[x_col].tolist(),
-            "y": df_clean[y_col].tolist(),
+            "x": [float(v) if not pd.isna(v) else None for v in df_clean[x_col].tolist()],
+            "y": [float(v) if not pd.isna(v) else None for v in df_clean[y_col].tolist()],
         },
         "x_label": x_col,
         "y_label": y_col,
