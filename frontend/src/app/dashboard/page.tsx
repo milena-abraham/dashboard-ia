@@ -660,7 +660,7 @@ function DashboardInner() {
                             <div className="bg-white border border-[#111] p-4 shadow-[2px_2px_0px_#111] mb-6">
                                 <p className="text-xs text-gray-500 font-bold uppercase mb-4">Top Factores de Impacto Absoluto</p>
                                 <ul className="space-y-3">
-                                    {result.feature_importance?.metrics?.top_features?.slice(0,3).map((feat: any, idx: number) => (
+                                    {result.feature_importance?.metrics?.top_features?.slice(0,3)?.map((feat: any, idx: number) => (
                                         <li key={idx} className="flex justify-between items-center text-sm">
                                             <span className="font-bold text-gray-900 truncate pr-2 max-w-[150px]">{feat.feature}</span>
                                             <span className="bg-gray-100 text-gray-600 px-2 py-0.5 text-xs font-mono border border-gray-200">
