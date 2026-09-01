@@ -56,19 +56,24 @@ def _infer_column_type(series: pd.Series) -> str:
     """Infiere el tipo semántico de una columna."""
     name_lower = series.name.lower()
 
-    # Identificadores: columnas con nombres típicos de ID o cardinalidad alta entera
+    # Identificadores: columnas con nombres típicos de ID o secuencias monótonas
     n_unique = series.nunique()
     n_rows = len(series)
     id_keywords = ["id", "cod", "código", "code", "key", "uuid", "numero", "número"]
     has_id_keyword = any(kw in name_lower for kw in id_keywords)
     
-    is_high_cardinality = n_unique / max(n_rows, 1) > 0.95
+    is_all_unique = (n_unique == n_rows) and n_rows > 0
     is_integer = pd.api.types.is_integer_dtype(series)
-    if not is_integer and pd.api.types.is_numeric_dtype(series):
-        # Check if float values are actually integers
-        is_integer = (series.dropna() % 1 == 0).all()
+    
+    # Check if it's a perfect sequence like 1, 2, 3, 4...
+    is_sequence = False
+    if is_integer and is_all_unique:
+        min_val = series.min()
+        max_val = series.max()
+        if max_val - min_val + 1 == n_rows:
+            is_sequence = True
 
-    if (has_id_keyword and n_unique == n_rows) or (is_high_cardinality and is_integer):
+    if (has_id_keyword and is_all_unique) or (is_integer and is_sequence and has_id_keyword):
         return COLUMN_TYPE_ID
 
     # Fechas
