@@ -1,3 +1,4 @@
+import { Message as ChatMessage } from '@/components/DataChatbot';
 import { useState, useEffect } from 'react';
 import { AnalysisResponseSchema } from '@/types/analysis';
 import { analyzeFile, generateNarrative } from '@/lib/api';
@@ -10,7 +11,7 @@ export function useDashboardState() {
   const [result, setResult] = useState<AnalysisResponseSchema | null>(null);
   const [isNarrativeExpanded, setIsNarrativeExpanded] = useState(true);
   const [generatingNarrative, setGeneratingNarrative] = useState(false);
-  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
   useEffect(() => {
     async function fetchNarrative() {
