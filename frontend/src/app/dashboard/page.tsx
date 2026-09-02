@@ -599,10 +599,17 @@ function DashboardInner() {
                  </div>
               </div>
             )}
-}
           </div>
         )}
       </main>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#fafafc] flex items-center justify-center text-gray-400">Cargando...</div>}>
+      <DashboardInner />
+    </Suspense>
   );
 }
