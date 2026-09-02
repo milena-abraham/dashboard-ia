@@ -14,11 +14,11 @@ from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_score
 
 SEGMENT_LABELS = [
-    "Segmento Estrella ⭐",
-    "Segmento Activo 🟢",
-    "Segmento Ocasional 🟡",
-    "Segmento Dormido 🔴",
-    "Segmento Nuevo 🆕",
+    "Segmento Estrella",
+    "Segmento Activo",
+    "Segmento Ocasional",
+    "Segmento Dormido",
+    "Segmento Nuevo",
     "Segmento Fiel 💙",
     "Segmento en Riesgo ⚠️",
 ]
