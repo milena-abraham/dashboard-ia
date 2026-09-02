@@ -200,7 +200,14 @@ export default function AdminDashboard() {
                         name: d.label,
                         type: 'bar',
                         data: d.data,
-                        itemStyle: { color: d.backgroundColor }
+                        itemStyle: { 
+                            color: (params: any) => {
+                                const colors = Array.isArray(d.backgroundColor) ? d.backgroundColor : [d.backgroundColor];
+                                return colors[params.dataIndex % colors.length];
+                            },
+                            borderColor: d.borderColor || '#111',
+                            borderWidth: d.borderWidth || 2
+                        }
                     }))
                 }}
                 style={{ height: '300px', width: '100%' }}
