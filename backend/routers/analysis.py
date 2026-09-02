@@ -12,21 +12,30 @@ import math
 import pandas as pd
 
 import numpy as np
+import math
+import pandas as pd
+
 def clean_json_nans(obj):
     if isinstance(obj, dict):
         return {k: clean_json_nans(v) for k, v in obj.items()}
-    elif isinstance(obj, list) or isinstance(obj, tuple) or isinstance(obj, set) or isinstance(obj, np.ndarray):
+    elif isinstance(obj, (list, tuple, set, np.ndarray, pd.Series, pd.Index)):
         return [clean_json_nans(v) for v in obj]
-    elif isinstance(obj, float) or isinstance(obj, np.floating):
+    elif isinstance(obj, (float, np.floating)):
         if pd.isna(obj) or math.isnan(obj) or math.isinf(obj):
             return None
         return float(obj)
-    elif isinstance(obj, np.integer):
+    elif isinstance(obj, (int, np.integer)):
         return int(obj)
-    elif isinstance(obj, np.bool_):
+    elif type(obj).__name__ == 'bool' or isinstance(obj, bool) or isinstance(obj, np.bool_):
         return bool(obj)
     elif pd.isna(obj):
         return None
+    # For any other object that might have a tolist or item
+    elif hasattr(obj, 'item') and callable(getattr(obj, 'item')):
+        try:
+            return clean_json_nans(obj.item())
+        except:
+            pass
     return obj
 
 import asyncio
