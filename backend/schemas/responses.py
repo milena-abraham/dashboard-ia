@@ -79,7 +79,7 @@ class SegmentationSchema(BaseSchema):
 class AnomalyMetricsSchema(BaseSchema):
     n_anomalias: Optional[int] = None
     pct_anomalias: Optional[float] = None
-    anomalias_detalle: Optional[List[Dict[str, Any]]] = None
+    anomalias_detalle: Optional[List[str]] = None
     error: Optional[str] = None
 
 class AnomaliesSchema(BaseSchema):

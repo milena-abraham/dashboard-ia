@@ -78,7 +78,7 @@ export interface SegmentationSchema {
 export interface AnomalyMetricsSchema {
   nAnomalias?: number;
   pctAnomalias?: number;
-  anomaliasDetalle?: Record<string, any>[];
+  anomaliasDetalle?: string[];
   error?: string;
 }
 
