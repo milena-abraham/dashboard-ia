@@ -85,12 +85,21 @@ def run_forecast(
             upper_future = y_future + margin
             lower_future = y_future - margin
             
+            dates = df_agg["ds"].dt.strftime('%Y-%m-%d').tolist() + future_dates.strftime('%Y-%m-%d').tolist()
+            reals = [x if not pd.isna(x) else None for x in y] + [None] * len(future_dates)
+            fores = [None] * (len(df_agg) - 1) + [y[-1]] + y_future.tolist()
+            ups = [None] * (len(df_agg) - 1) + [y[-1]] + upper_future.tolist()
+            downs = [None] * (len(df_agg) - 1) + [y[-1]] + lower_future.tolist()
+            
+            source = []
+            for i in range(len(dates)):
+                source.append({"date": dates[i], "historical": reals[i], "forecast": fores[i], "upper": ups[i], "lower": downs[i]})
+                
             chart_data = {
-                "labels": df_agg["ds"].dt.strftime('%Y-%m-%d').tolist() + future_dates.strftime('%Y-%m-%d').tolist(),
-                "real_values": [x if not pd.isna(x) else None for x in y] + [None] * len(future_dates),
-                "forecast_values": [None] * (len(df_agg) - 1) + [y[-1]] + y_future.tolist(),
-                "upper_band": [None] * (len(df_agg) - 1) + [y[-1]] + upper_future.tolist(),
-                "lower_band": [None] * (len(df_agg) - 1) + [y[-1]] + lower_future.tolist(),
+                "chart_id": "forecast",
+                "metadata": {"title": f"Proyección a {periods} períodos", "insight_subtitle": f"Tendencia del {trend_pct}%", "source_metric": value_col},
+                "layout_directives": {"chart_type": "FanChart", "x_axis_type": "time", "y_axis_type": "value", "is_log_scale": False, "has_time_gaps": False, "high_cardinality": False, "show_confidence_bands": True},
+                "dataset": {"dimensions": ["date", "historical", "forecast", "upper", "lower"], "source": source}
             }
             return None, chart_data, metrics
 
@@ -168,12 +177,21 @@ def run_forecast(
         def to_list_clean(series):
             return [x if not pd.isna(x) else None for x in series]
 
+        dates = merged['ds'].dt.strftime('%Y-%m-%d').tolist()
+        reals = to_list_clean(merged['y'])
+        fores = to_list_clean(merged['yhat'])
+        ups = to_list_clean(merged['yhat_upper'])
+        downs = to_list_clean(merged['yhat_lower'])
+        
+        source = []
+        for i in range(len(dates)):
+            source.append({"date": dates[i], "historical": reals[i], "forecast": fores[i], "upper": ups[i], "lower": downs[i]})
+
         chart_data = {
-            "labels": merged['ds'].dt.strftime('%Y-%m-%d').tolist(),
-            "real_values": to_list_clean(merged['y']),
-            "forecast_values": to_list_clean(merged['yhat']),
-            "upper_band": to_list_clean(merged['yhat_upper']),
-            "lower_band": to_list_clean(merged['yhat_lower']),
+            "chart_id": "forecast",
+            "metadata": {"title": f"Proyección a {periods} períodos", "insight_subtitle": f"Tendencia del {trend_pct}%", "source_metric": value_col},
+            "layout_directives": {"chart_type": "FanChart", "x_axis_type": "time", "y_axis_type": "value", "is_log_scale": False, "has_time_gaps": False, "high_cardinality": False, "show_confidence_bands": True},
+            "dataset": {"dimensions": ["date", "historical", "forecast", "upper", "lower"], "source": source}
         }
 
         return forecast, chart_data, metrics

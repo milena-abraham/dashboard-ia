@@ -79,18 +79,18 @@ def run_anomaly_detection(
             normal_df = normal_df.sort_values(by=date_col)
             anomaly_df = anomaly_df.sort_values(by=date_col)
 
+            import pandas as pd
+            df_plot = pd.concat([normal_df, anomaly_df])
+            df_plot["_anomaly"] = df_plot["_is_anomaly"].map({True: -1, False: 1})
+            df_plot[date_col] = df_plot[date_col].dt.strftime('%Y-%m-%d %H:%M')
+            
+            source = df_plot[[date_col, target_col, "_anomaly"]].copy().to_dict(orient="records")
+            
             chart_data = {
-                "type": "timeseries",
-                "normal": {
-                    "x": normal_df[date_col].dt.strftime('%Y-%m-%d %H:%M').tolist(),
-                    "y": normal_df[target_col].tolist(),
-                },
-                "anomalies": {
-                    "x": anomaly_df[date_col].dt.strftime('%Y-%m-%d %H:%M').tolist(),
-                    "y": anomaly_df[target_col].tolist(),
-                },
-                "x_label": date_col,
-                "y_label": target_col,
+                "chart_id": "anom_time",
+                "metadata": {"title": "Detección de Anomalías", "insight_subtitle": f"Sobre la serie temporal de {target_col}", "source_metric": target_col},
+                "layout_directives": {"chart_type": "Scatter", "x_axis_type": "category", "y_axis_type": "value", "is_log_scale": False, "has_time_gaps": False, "high_cardinality": False, "show_confidence_bands": False},
+                "dataset": {"dimensions": [date_col, target_col, "_anomaly"], "source": source}
             }
 
         elif len(numeric_cols) >= 2:
@@ -108,18 +108,17 @@ def run_anomaly_detection(
             def to_list_clean(series):
                 return [x if not pd.isna(x) else None for x in series]
 
+            import pandas as pd
+            df_plot = pd.concat([df_normal, df_anomalies])
+            df_plot["_anomaly"] = df_plot["_is_anomaly"].map({True: -1, False: 1})
+            
+            source = df_plot[[x_col, y_col, "_anomaly"]].copy().to_dict(orient="records")
+            
             chart_data = {
-                "type": "scatter",
-                "normal": {
-                    "x": to_list_clean(df_normal[x_col]),
-                    "y": to_list_clean(df_normal[y_col]),
-                },
-                "anomalies": {
-                    "x": to_list_clean(df_anomalies[x_col]),
-                    "y": to_list_clean(df_anomalies[y_col]),
-                },
-                "x_label": x_col,
-                "y_label": y_col,
+                "chart_id": "anom_scatter",
+                "metadata": {"title": "Detección de Anomalías", "insight_subtitle": f"Dispersión {x_col} vs {y_col}", "source_metric": y_col},
+                "layout_directives": {"chart_type": "Scatter", "x_axis_type": "value", "y_axis_type": "value", "is_log_scale": False, "has_time_gaps": False, "high_cardinality": False, "show_confidence_bands": False},
+                "dataset": {"dimensions": [x_col, y_col, "_anomaly"], "source": source}
             }
 
         anomaly_descriptions = []

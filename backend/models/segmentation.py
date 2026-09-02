@@ -95,20 +95,17 @@ def run_clustering(
         else:
             df_plot = df_out
 
-        # Preparar data de scatter para Chart.js
-        scatter_data = {
-            "type": "scatter",
-            "segments": {}
-        }
+        source = df_plot[["_segment", "_pca1", "_pca2"]].copy()
+        for c in source.columns:
+            if c not in ["_segment", "_pca1", "_pca2"]:
+                source = source.drop(columns=[c])
         
-        for segment in df_plot["_segment"].unique():
-            seg_df = df_plot[df_plot["_segment"] == segment]
-            scatter_data["segments"][segment] = {
-                "x": seg_df["_pca1"].tolist(),
-                "y": seg_df["_pca2"].tolist(),
-            }
-            if label_col and label_col in seg_df.columns:
-                scatter_data["segments"][segment]["labels"] = seg_df[label_col].tolist()
+        scatter_data = {
+            "chart_id": "seg_scatter",
+            "metadata": {"title": "Distribución de Segmentos", "insight_subtitle": f"Agrupación por PCA en {k} clusters", "source_metric": "_segment"},
+            "layout_directives": {"chart_type": "Scatter", "x_axis_type": "value", "y_axis_type": "value", "is_log_scale": False, "has_time_gaps": False, "high_cardinality": False, "show_confidence_bands": False},
+            "dataset": {"dimensions": ["_pca1", "_pca2", "_segment"], "source": source.to_dict(orient="records")}
+        }
 
         # Preparar data de perfil para Radar/Bar Chart.js
         profile_data = []
@@ -123,33 +120,20 @@ def run_clustering(
         df_profile = pd.DataFrame(profile_data)
         
         col_stats = {}
-        for c in numeric_cols:
-            c_min = df_profile[c].min()
-            c_max = df_profile[c].max()
-            col_stats[c] = (c_min, c_max)
-            
-        radar_data = {
-            "type": "radar",
-            "metrics": numeric_cols,
-            "datasets": []
-        }
+        source_radar = []
         for _, row in df_profile.iterrows():
             seg = row["Segmento"]
-            norm_values = []
-            real_values = []
+            d = {"_segment": seg}
             for c in numeric_cols:
-                c_min, c_max = col_stats[c]
-                if c_max > c_min:
-                    norm = (row[c] - c_min) / (c_max - c_min)
-                else:
-                    norm = 0.5
-                norm_values.append(round(float(norm), 3))
-                real_values.append(row[c])
-            radar_data["datasets"].append({
-                "label": seg,
-                "data": norm_values,
-                "real_data": real_values
-            })
+                d[c] = row[c]
+            source_radar.append(d)
+            
+        radar_data = {
+            "chart_id": "seg_radar",
+            "metadata": {"title": "Perfil de los Segmentos", "insight_subtitle": "Comparación de características", "source_metric": "_segment"},
+            "layout_directives": {"chart_type": "Radar", "x_axis_type": "category", "y_axis_type": "value", "is_log_scale": False, "has_time_gaps": False, "high_cardinality": False, "show_confidence_bands": False},
+            "dataset": {"dimensions": ["_segment"] + numeric_cols, "source": source_radar}
+        }
 
         metrics = {
             "k": k,

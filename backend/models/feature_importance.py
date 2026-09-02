@@ -82,14 +82,12 @@ def run_feature_importance(
             "importance": model.feature_importances_,
         }).sort_values("importance", ascending=True).tail(15)
 
+        source_imp = importance_df[["feature", "importance"]].copy().to_dict(orient="records")
         chart_importance = {
-            "type": "bar_horizontal",
-            "labels": importance_df["feature"].tolist(),
-            "datasets": [{
-                "label": "Importancia",
-                "data": importance_df["importance"].tolist()
-            }],
-            "title": f"Impacto de Variables en {target_col}"
+            "chart_id": "feat_importance",
+            "metadata": {"title": f"Impacto de Variables en {target_col}", "insight_subtitle": "Importancia Gini (LGBM)", "source_metric": "importance"},
+            "layout_directives": {"chart_type": "HorizontalBar", "x_axis_type": "value", "y_axis_type": "category", "is_log_scale": False, "has_time_gaps": False, "high_cardinality": False, "show_confidence_bands": False},
+            "dataset": {"dimensions": ["importance", "feature"], "source": source_imp}
         }
 
         chart_shap = None
@@ -115,14 +113,12 @@ def run_feature_importance(
                     "abs_importance": mean_shap
                 }).sort_values("abs_importance", ascending=True).tail(15)
 
+                source_shap = shap_df[["feature", "shap_importance"]].copy().to_dict(orient="records")
                 chart_shap = {
-                    "type": "tornado",
-                    "labels": shap_df["feature"].tolist(),
-                    "datasets": [{
-                        "label": "Impacto Promedio (SHAP)",
-                        "data": shap_df["shap_importance"].tolist()
-                    }],
-                    "title": f"Factores de Atribución (SHAP) en {target_col}"
+                    "chart_id": "feat_shap",
+                    "metadata": {"title": f"Factores de Atribución (SHAP) en {target_col}", "insight_subtitle": "Direccionalidad del Impacto", "source_metric": "shap_importance"},
+                    "layout_directives": {"chart_type": "Tornado", "x_axis_type": "value", "y_axis_type": "category", "is_log_scale": False, "has_time_gaps": False, "high_cardinality": False, "show_confidence_bands": False},
+                    "dataset": {"dimensions": ["shap_importance", "feature"], "source": source_shap}
                 }
                 shap_summary = {feat: round(float(val), 4) for feat, val in zip(available, mean_shap)}
             except Exception:
