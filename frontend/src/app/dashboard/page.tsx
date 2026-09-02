@@ -516,8 +516,8 @@ function DashboardInner() {
                         <h4 className="text-lg font-black tracking-tight text-gray-900 leading-tight uppercase">{c.metadata?.title}</h4>
                       </div>
                       <p className="text-sm text-gray-500 mb-6 flex-1 font-medium">{c.metadata?.insightSubtitle}</p>
-                      <div className="mt-auto relative w-full flex-1 min-h-[300px]">
-                          <DynamicChartRenderer key={result.filename + i} payload={c} height="100%" />
+                      <div className="mt-auto relative w-full flex-1 h-[400px]">
+                          <DynamicChartRenderer key={result.filename + i} payload={c}  />
                       </div>
                     </div>
                   );
