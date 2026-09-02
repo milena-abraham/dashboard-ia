@@ -16,6 +16,22 @@ import math
 import pandas as pd
 
 def clean_json_nans(obj):
+    if hasattr(obj, "model_dump") and callable(getattr(obj, "model_dump")):
+        try:
+            obj = obj.model_dump()
+        except:
+            pass
+    elif hasattr(obj, "dict") and callable(getattr(obj, "dict")):
+        try:
+            obj = obj.dict()
+        except:
+            pass
+    elif hasattr(obj, "__dict__") and not isinstance(obj, type):
+        try:
+            obj = vars(obj)
+        except:
+            pass
+            
     if isinstance(obj, dict):
         return {k: clean_json_nans(v) for k, v in obj.items()}
     elif isinstance(obj, (list, tuple, set, np.ndarray, pd.Series, pd.Index)):
