@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Body
 from typing import Dict, Any
-from insights.narrator import generate_narrative
+from services.narrative_generator import generate_narrative
 
 router = APIRouter()
 
