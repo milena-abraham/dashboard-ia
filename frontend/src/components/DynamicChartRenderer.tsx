@@ -59,7 +59,7 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
     // Configuración Base
     const baseOptions: any = {
       dataset: dataset,
-      grid: { containLabel: true, left: '5%', right: '5%', top: '15%', bottom: '10%' },
+      grid: { containLabel: true, left: '5%', right: '5%', top: '15%', bottom: 70 },
       tooltip: { 
           trigger: 'axis', 
           axisPointer: { type: 'shadow' },
@@ -185,7 +185,7 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
           {
             name: 'Límite Superior',
             type: 'line',
-            encode: { x: 'date', y: 'upper' },
+            encode: { x: 'date', y: 'band_width' },
             lineStyle: { opacity: 0 },
             areaStyle: { color: '#815ae1', opacity: 0.15 },
             showSymbol: false,
@@ -285,7 +285,7 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
   const h = typeof height === 'number' ? `${height}px` : height;
 
   return (
-    <div style={{ width: '100%', height: h, minHeight: '300px' }} className="w-full flex-1">
+    <div style={{ width: '100%', height: h, minHeight: '400px' }} className="w-full flex-1">
       <ReactECharts
         option={options}
         theme="neo-brutalist"

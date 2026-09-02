@@ -93,13 +93,13 @@ def run_forecast(
             
             source = []
             for i in range(len(dates)):
-                source.append({"date": dates[i], "historical": reals[i], "forecast": fores[i], "upper": ups[i], "lower": downs[i]})
+                source.append({"date": dates[i], "historical": reals[i], "forecast": fores[i], "band_width": round(ups[i] - downs[i], 2), "lower": downs[i]})
                 
             chart_data = {
                 "chart_id": "forecast",
                 "metadata": {"title": f"Proyección a {periods} períodos", "insight_subtitle": f"Tendencia del {trend_pct}%", "source_metric": value_col},
                 "layout_directives": {"chart_type": "FanChart", "x_axis_type": "time", "y_axis_type": "value", "is_log_scale": False, "has_time_gaps": False, "high_cardinality": False, "show_confidence_bands": True},
-                "dataset": {"dimensions": ["date", "historical", "forecast", "upper", "lower"], "source": source}
+                "dataset": {"dimensions": ["date", "historical", "forecast", "band_width", "lower"], "source": source}
             }
             return None, chart_data, metrics
 
@@ -185,13 +185,13 @@ def run_forecast(
         
         source = []
         for i in range(len(dates)):
-            source.append({"date": dates[i], "historical": reals[i], "forecast": fores[i], "upper": ups[i], "lower": downs[i]})
+            source.append({"date": dates[i], "historical": reals[i], "forecast": fores[i], "band_width": round(ups[i] - downs[i], 2), "lower": downs[i]})
 
         chart_data = {
             "chart_id": "forecast",
             "metadata": {"title": f"Proyección a {periods} períodos", "insight_subtitle": f"Tendencia del {trend_pct}%", "source_metric": value_col},
             "layout_directives": {"chart_type": "FanChart", "x_axis_type": "time", "y_axis_type": "value", "is_log_scale": False, "has_time_gaps": False, "high_cardinality": False, "show_confidence_bands": True},
-            "dataset": {"dimensions": ["date", "historical", "forecast", "upper", "lower"], "source": source}
+            "dataset": {"dimensions": ["date", "historical", "forecast", "band_width", "lower"], "source": source}
         }
 
         return forecast, chart_data, metrics
