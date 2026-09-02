@@ -73,7 +73,7 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
       },
       xAxis: {
         type: layoutDirectives.xAxisType,
-        scale: true,
+        scale: layoutDirectives.xAxisType === 'value' || layoutDirectives.xAxisType === 'log',
         axisLabel: {
           hideOverlap: true,
           formatter: (value: any) => {
@@ -95,7 +95,7 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
       },
       yAxis: {
         type: layoutDirectives.isLogScale ? 'log' : layoutDirectives.yAxisType,
-        scale: true,
+        scale: layoutDirectives.yAxisType === 'value' || layoutDirectives.yAxisType === 'log',
         axisLabel: {
           hideOverlap: true,
           formatter: (value: any) => {
@@ -285,7 +285,7 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
   const h = typeof height === 'number' ? `${height}px` : height;
 
   return (
-    <div style={{ width: '100%', height: h, minHeight: '400px' }} className="w-full flex-1">
+    <div style={{ width: '100%', height: h || 400 }} className="w-full flex-1">
       <ReactECharts
         option={options}
         theme="neo-brutalist"
