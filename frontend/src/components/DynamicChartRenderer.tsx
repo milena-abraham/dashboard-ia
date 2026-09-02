@@ -26,9 +26,25 @@ interface DynamicChartRendererProps {
 }
 
 export default function DynamicChartRenderer({ payload, height = '100%' }: DynamicChartRendererProps) {
+    const safeDataset = useMemo(() => {
+        if (!payload || !payload.dataset) return null;
+        const ds = JSON.parse(JSON.stringify(payload.dataset));
+        if (ds.source && ds.dimensions) {
+            ds.source.forEach((row: any) => {
+                ds.dimensions.forEach((dim: string) => {
+                    if (typeof row[dim] === 'number' && (dim === ds.dimensions[0] || dim === 'feature' || dim === '_segment')) {
+                        row[dim] = String(row[dim]);
+                    }
+                });
+            });
+        }
+        return ds;
+    }, [payload]);
+
   const options = useMemo(() => {
-    if (!payload || !payload.dataset) return {};
-    const { layout_directives, dataset } = payload;
+    if (!payload || !safeDataset) return {};
+    const { layout_directives } = payload;
+    const dataset = safeDataset;
     
     // Configuración Base
     const baseOptions: any = {
@@ -46,7 +62,7 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
              if (layout_directives.x_axis_type === 'category' && layout_directives.high_cardinality) {
                  return String(value).length > 10 ? String(value).substring(0, 10) + '...' : value;
              }
-             return value;
+             return String(value);
           }
         }
       },
@@ -61,7 +77,7 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
              if (layout_directives.y_axis_type === 'category' && layout_directives.high_cardinality) {
                  return String(value).length > 15 ? String(value).substring(0, 15) + '...' : value;
              }
-             return value;
+             return String(value);
           }
         }
       },
@@ -141,7 +157,7 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
             baseOptions.dataset = undefined; // We construct series manually for multi-series scatter
             baseOptions.tooltip = { trigger: 'item' };
             baseOptions.series = segments.map(seg => ({
-                name: seg,
+                name: String(seg),
                 type: 'scatter',
                 data: dataset.source.filter(s => s._segment === seg).map(s => [s._pca1, s._pca2]),
                 itemStyle: { opacity: 0.8 }
@@ -180,9 +196,9 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
         baseOptions.tooltip = { trigger: 'item' };
         
         // ECharts Radar needs manual mapping
-        const indicators = dataset.dimensions.slice(1).map(dim => ({ name: dim }));
+        const indicators = dataset.dimensions.slice(1).map(dim => ({ name: String(dim) }));
         const radarData = dataset.source.map(row => ({
-            name: row._segment,
+            name: String(row._segment),
             value: dataset.dimensions.slice(1).map(dim => row[dim])
         }));
         

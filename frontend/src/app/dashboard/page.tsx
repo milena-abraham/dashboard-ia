@@ -7,7 +7,8 @@ import FileUploader from '@/components/FileUploader';
 import KPICards from '@/components/KPICards';
 
 import ChartErrorBoundary from '@/components/ChartErrorBoundary';
-import DynamicChartRenderer from '@/components/DynamicChartRenderer';
+import dynamic from 'next/dynamic';
+const DynamicChartRenderer = dynamic(() => import('@/components/DynamicChartRenderer'), { ssr: false });
 import InsightPanel from '@/components/InsightPanel';
 import DataChatbot, { Message as ChatMessage } from '@/components/DataChatbot';
 import LoadingAnalysis from '@/components/LoadingAnalysis';
@@ -18,11 +19,11 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import {
-  BarChart3,
+  
   Bot,
   TrendingUp,
   Users,
-  AlertTriangle,
+  TriangleAlert,
   Target,
   FileText,
   Download,
@@ -330,15 +331,6 @@ function DashboardInner() {
   const ADMIN_EMAILS = ['tadeomunozgarces@gmail.com', 'milenapabraham@gmail.com'];
   const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
 
-  const tabs = [
-    { label: 'Visualizaciones', icon: BarChart3 },
-    { label: 'Proyecciones', icon: TrendingUp },
-    { label: 'Segmentos', icon: Users },
-    { label: 'Anomalías', icon: AlertTriangle },
-    { label: 'Factores Clave', icon: Target },
-    { label: 'Informe IA', icon: FileText },
-    { id: 'chat', label: 'Asistente IA', icon: Bot, hidden: !isAdmin },
-  ];
 
   return (
     <div className="min-h-screen bg-[#fafafc] flex flex-col">
@@ -473,238 +465,144 @@ function DashboardInner() {
             {/* KPIs */}
             <KPICards kpis={result.kpis} />
 
-            {/* Navigation Tabs */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-[#111] border-2/80">
-              {tabs.map((tab, idx) => {
-                const Icon = tab.icon;
-                const active = activeTab === idx;
-                if (tab.hidden) return null;
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveTab(idx)}
-                    className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-none text-xs font-semibold whitespace-nowrap transition-all ${
-                      active
-                        ? 'bg-mio-violet text-white shadow-[4px_4px_0px_#111] shadow-mio-violet/30'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-white'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Tab Contents */}
-            <div className="pt-2">
-              {/* Tab 0: Visualizaciones (Bento Layout) */}
-              {activeTab === 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                  {result.charts && result.charts.length > 0 ? (
-                    result.charts.map((c, i) => {
-                      // Bento Grid logic: first chart is large, next are regular
-                      const spanClass = i === 0 ? "md:col-span-12 lg:col-span-8" : 
-                                      i === 1 ? "md:col-span-12 lg:col-span-4" : 
-                                      "md:col-span-6 lg:col-span-4";
-                      return (
-                        <div key={i} className={`bg-white p-6 flex flex-col rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_#111] ${spanClass}`}>
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-lg font-black tracking-tight text-gray-900 leading-tight uppercase">{c.metadata?.title}</h4>
-                          </div>
-                          <p className="text-sm text-gray-500 mb-6 flex-1 font-medium">{c.metadata?.insight_subtitle}</p>
-                          <div className="mt-auto relative w-full flex-1 min-h-[300px]">
-                              <DynamicChartRenderer key={result.filename + i} payload={c} height="100%" />
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="col-span-12 text-center py-16 border-2 border-dashed border-gray-300">
-                      <p className="text-gray-500 font-bold uppercase tracking-widest">No se encontraron gráficos automáticos</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Tab 1: Proyecciones */}
-              {activeTab === 1 && (
-                <div className="bg-white p-6 sm:p-8 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] space-y-6">
-                  {result.forecast?.metrics?.error ? (
-                    <div className="flex items-center justify-center h-48 bg-gray-50 border-2 border-dashed border-gray-300">
-                      <p className="text-gray-500 font-bold">{result.forecast.metrics.error}</p>
-                    </div>
-                  ) : !result.forecast?.chart_data ? (
-                    <div className="flex items-center justify-center h-48 bg-gray-50 border-2 border-dashed border-gray-300">
-                      <p className="text-gray-500 font-bold">No hay columnas de fecha en este dataset para proyectar.</p>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-lg font-bold text-gray-900">Proyección y Predicción Temporal</h3>
-                          <p className="text-xs text-gray-500">Estimación de tendencia futura basada en series de tiempo</p>
-                        </div>
-                        <div className="flex gap-2">
-                          {result.forecast?.metrics?.confianza && (
-                            <span className={`px-3 py-1 text-xs font-bold ${result.forecast.metrics.confianza === 'Alta' ? 'bg-emerald-50 text-emerald-700' : result.forecast.metrics.confianza === 'Media' ? 'bg-yellow-50 text-yellow-700' : 'bg-red-50 text-red-700'}`}>
-                              Confianza: {result.forecast.metrics.confianza}
-                            </span>
-                          )}
-                          {result.forecast?.metrics?.tendencia_pct !== undefined && (
-                            <span className={`px-3 py-1 rounded-none text-xs font-bold ${
-                              result.forecast.metrics.tendencia_pct >= 0
-                                ? 'bg-emerald-50 text-emerald-700'
-                                : 'bg-red-50 text-red-700'
-                            }`}>
-                              Tendencia: {result.forecast.metrics.tendencia_pct}%
-                            </span>
-                          )}
-                        </div>
+            {/* Unified Bento Layout */}
+            <div className="pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                
+                {/* Executive Summary at the top */}
+                {result.narrative && (
+                  <div className="md:col-span-12 bg-white p-6 md:p-8 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 bg-mio-violet rounded-none">
+                        <FileText className="w-5 h-5 text-white" />
                       </div>
+                      <h3 className="text-xl font-black uppercase tracking-tight">Resumen Ejecutivo</h3>
+                    </div>
+                    <div className="prose prose-sm md:prose-base max-w-none text-gray-700">
+                      <p className="whitespace-pre-line leading-relaxed">{result.narrative.text}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Exploratory Charts */}
+                {result.charts && result.charts.length > 0 && result.charts.map((c, i) => {
+                  const spanClass = i === 0 ? "md:col-span-12 lg:col-span-8" : 
+                                  i === 1 ? "md:col-span-12 lg:col-span-4" : 
+                                  "md:col-span-6 lg:col-span-4";
+                  return (
+                    <div key={i} className={`bg-white p-6 flex flex-col rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_#111] ${spanClass}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-lg font-black tracking-tight text-gray-900 leading-tight uppercase">{c.metadata?.title}</h4>
+                      </div>
+                      <p className="text-sm text-gray-500 mb-6 flex-1 font-medium">{c.metadata?.insight_subtitle}</p>
+                      <div className="mt-auto relative w-full flex-1 min-h-[300px]">
+                          <DynamicChartRenderer key={result.filename + i} payload={c} height="100%" />
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Forecast (if exists) */}
+                {result.forecast?.chart_data && (
+                  <div className="md:col-span-12 bg-white p-6 md:p-8 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-2 bg-mio-violet rounded-none">
+                        <TrendingUp className="w-5 h-5 text-white" />
+                      </div>
+                      <h3 className="text-xl font-black uppercase tracking-tight">Proyecciones Inteligentes</h3>
+                    </div>
+                    <div className="relative w-full min-h-[420px]">
                       <ChartErrorBoundary><DynamicChartRenderer key={`forecast-${result.filename}`} payload={result.forecast?.chart_data} height={420} /></ChartErrorBoundary>
-                      <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-500 text-xs text-blue-800">
-                        <strong>Aviso:</strong> Esta proyección se basa exclusivamente en el comportamiento histórico de tus datos usando el modelo {result.forecast?.metrics?.motor || 'Predictivo'} y no es una garantía del futuro. 
-                        {result.forecast?.metrics?.mae !== undefined && ` Margen de error histórico (MAE): ${result.forecast.metrics.mae}`}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-
-              {/* Tab 2: Segmentos */}
-              {activeTab === 2 && (
-                <div className="grid md:grid-cols-2 gap-6">
-                  {result.segmentation?.metrics?.error ? (
-                    <div className="col-span-2 flex items-center justify-center h-48 bg-gray-50 border-2 border-dashed border-gray-300">
-                      <p className="text-gray-500 font-bold">{result.segmentation.metrics.error}</p>
                     </div>
-                  ) : (
-                    <>
-                      <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
-                        <h4 className="text-base font-bold text-gray-900 mb-2">Mapa de Segmentación 2D (PCA)</h4>
+                  </div>
+                )}
+
+                {/* Segmentation (if exists) */}
+                {result.segmentation?.scatter_data && result.segmentation?.radar_data && (
+                  <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
+                      <div className="flex items-center gap-3 mb-6">
+                        <Users className="w-5 h-5 text-mio-violet" />
+                        <h3 className="text-xl font-black uppercase tracking-tight">Distribución</h3>
+                      </div>
+                      <div className="relative w-full min-h-[400px]">
                         <ChartErrorBoundary><DynamicChartRenderer key={`seg-scatter-${result.filename}`} payload={result.segmentation?.scatter_data} /></ChartErrorBoundary>
                       </div>
-                      <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
-                        <h4 className="text-base font-bold text-gray-900 mb-2">Perfil Promedio por Segmento</h4>
+                    </div>
+                    <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
+                      <div className="flex items-center gap-3 mb-6">
+                        <Target className="w-5 h-5 text-mio-violet" />
+                        <h3 className="text-xl font-black uppercase tracking-tight">Perfil (Radar)</h3>
+                      </div>
+                      <div className="relative w-full min-h-[400px]">
                         <ChartErrorBoundary><DynamicChartRenderer key={`seg-radar-${result.filename}`} payload={result.segmentation?.radar_data} /></ChartErrorBoundary>
                       </div>
-                    </>
-                  )}
-                </div>
-              )}
-
-              {/* Tab 3: Anomalías */}
-              {activeTab === 3 && (
-                <div className="bg-white p-6 sm:p-8 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] space-y-6">
-                  {result.anomalies?.metrics?.error ? (
-                    <div className="flex items-center justify-center h-48 bg-gray-50 border-2 border-dashed border-gray-300">
-                      <p className="text-gray-500 font-bold">{result.anomalies.metrics.error}</p>
                     </div>
-                  ) : (
-                    <>
-                      <div>
-                        <h3 className="text-lg font-bold text-gray-900">Detección de Anomalías (Isolation Forest)</h3>
-                        <p className="text-xs text-gray-500">Registros atípicos marcados para auditoría</p>
+                  </div>
+                )}
+
+                {/* Anomalies (if exists) */}
+                {result.anomalies?.chart_data && (
+                  <div className="md:col-span-12 bg-white p-6 md:p-8 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-2 bg-[#ff6b6b] rounded-none">
+                        <TriangleAlert className="w-5 h-5 text-white" />
                       </div>
+                      <h3 className="text-xl font-black uppercase tracking-tight">Valores Atípicos (Anomalías)</h3>
+                    </div>
+                    <div className="relative w-full min-h-[400px]">
                       <ChartErrorBoundary><DynamicChartRenderer key={`anom-${result.filename}`} payload={result.anomalies?.chart_data} height={400} /></ChartErrorBoundary>
-                      
-                      <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-500 text-xs text-blue-800">
-                        <strong>Aviso:</strong> El modelo Isolation Forest ha marcado <strong>{result.anomalies?.metrics?.n_anomalias || 0} registros atípicos</strong> ({result.anomalies?.metrics?.pct_anomalias || 0}% del total) que se desvían del patrón general. Revisa el listado inferior para auditar los casos más críticos.
-                      </div>
-
-                      {result.anomalies?.metrics?.anomalias_detalle && (
-                        <div className="pt-4 border-t border-[#111] border-2">
-                          <h5 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-3">
-                            Detalle de casos detectados:
-                          </h5>
-                          <div className="space-y-2">
-                            {result.anomalies.metrics.anomalias_detalle.map((d: string, idx: number) => (
-                              <div key={idx} className="p-3 bg-red-50/50 border border-red-100 rounded-none text-xs text-red-800">
-                                ⚠️ {d}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
-
-              {/* Tab 4: Factores Clave */}
-              {activeTab === 4 && (
-                <div className="bg-white p-0 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] overflow-hidden flex flex-col lg:flex-row min-h-[500px]">
-                  {result.feature_importance?.metrics?.error ? (
-                    <div className="flex-1 flex items-center justify-center p-12 bg-gray-50 border-2 border-dashed border-gray-300">
-                      <p className="text-gray-500 font-bold uppercase tracking-wide">Análisis No Aplicable: {result.feature_importance.metrics.error}</p>
                     </div>
-                  ) : (
-                    <>
-                      {/* Sidebar */}
-                      <div className="lg:w-1/3 bg-gray-50 border-b lg:border-b-0 lg:border-r border-[#111] p-6 sm:p-8 flex flex-col">
-                        <div>
-                            <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter leading-none mb-2">Atribución SHAP</h3>
-                            <p className="text-sm text-gray-600 font-medium mb-8">Factores clave extraídos vía Gradient Boosting</p>
-                            
-                            <div className="bg-white border border-[#111] p-4 shadow-[2px_2px_0px_#111] mb-6">
-                                <p className="text-xs text-gray-500 font-bold uppercase mb-4">Top Factores de Impacto Absoluto</p>
-                                <ul className="space-y-3">
-                                    {result.feature_importance?.metrics?.top_features?.slice(0,3)?.map((feat: any, idx: number) => (
-                                        <li key={idx} className="flex justify-between items-center text-sm">
-                                            <span className="font-bold text-gray-900 truncate pr-2 max-w-[150px]">{feat.feature}</span>
-                                            <span className="bg-gray-100 text-gray-600 px-2 py-0.5 text-xs font-mono border border-gray-200">
-                                                {(feat.importance).toFixed(3)}
-                                            </span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
+                  </div>
+                )}
+
+                {/* Feature Importance (if exists) */}
+                {result.feature_importance?.chart_importance && (
+                  <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
+                      <div className="flex items-center gap-3 mb-6">
+                        <Target className="w-5 h-5 text-mio-violet" />
+                        <h3 className="text-xl font-black uppercase tracking-tight">Impacto Base (Gini)</h3>
+                      </div>
+                      <div className="relative w-full min-h-[420px]">
+                        <ChartErrorBoundary><DynamicChartRenderer key={`feat-imp-${result.filename}`} payload={result.feature_importance?.chart_importance} height={420} /></ChartErrorBoundary>
+                      </div>
+                    </div>
+                    {result.feature_importance?.chart_shap && (
+                      <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
+                        <div className="flex items-center gap-3 mb-6">
+                          <Target className="w-5 h-5 text-[#bdf559]" />
+                          <h3 className="text-xl font-black uppercase tracking-tight">Atribución (SHAP)</h3>
                         </div>
-                        <div className="mt-auto p-4 bg-[#bdf559] text-gray-900 text-xs font-medium border border-[#111] shadow-[2px_2px_0px_#111]">
-                            <strong>Direccionalidad:</strong> Barras hacia la derecha (verdes) indican que al subir esta variable, sube tu objetivo. Hacia la izquierda (rojas), indica un impacto inversamente proporcional.
+                        <div className="relative w-full min-h-[420px]">
+                          <ChartErrorBoundary><DynamicChartRenderer key={`feat-shap-${result.filename}`} payload={result.feature_importance?.chart_shap} height={420} /></ChartErrorBoundary>
                         </div>
                       </div>
-                      
-                      {/* Canvas */}
-                      <div className="lg:w-2/3 p-6 sm:p-8">
-                          <ChartErrorBoundary><DynamicChartRenderer key={`feat-shap-${result.filename}`} payload={result.feature_importance?.chart_shap || result.feature_importance?.chart_importance} height={420} /></ChartErrorBoundary>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-
-              {/* Tab 5: Informe IA */}
-              {activeTab === 5 && (
-                <InsightPanel
-                  text={result.narrative?.text || 'Generando informe...'}
-                  source={result.narrative?.source}
-                />
-              )}
-
-              {/* Tab 6: Asistente IA — always rendered to persist chat state across tab changes */}
-              <div className={activeTab === 6 ? '' : 'hidden'}>
-                <DataChatbot
-                  context={result}
-                  charts={result.charts || []}
-                  messages={chatMessages}
-                  onMessagesChange={setChatMessages}
-                  onChartOverride={handleChartOverride}
-                />
+                    )}
+                  </div>
+                )}
+                
               </div>
             </div>
+
+            {/* AI Assistant Chatbot (Rendered unconditionally at the bottom) */}
+            {isAdmin && (
+              <div className="mt-8 mb-12">
+                 <div className="bg-white p-6 md:p-8 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="p-2 bg-mio-violet rounded-none">
+                        <Bot className="w-5 h-5 text-white" />
+                      </div>
+                      <h3 className="text-xl font-black uppercase tracking-tight">Asistente Interactivo IA</h3>
+                    </div>
+                    <DataChatbot context={result} charts={result.charts || []} messages={chatMessages} onMessagesChange={setChatMessages} onChartOverride={handleChartOverride} />
+                 </div>
+              </div>
+            )}
+}
           </div>
         )}
       </main>
     </div>
-  );
-}
-
-export default function DashboardPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-[#fafafc] flex items-center justify-center text-gray-400">Cargando...</div>}>
-      <DashboardInner />
-    </Suspense>
   );
 }
