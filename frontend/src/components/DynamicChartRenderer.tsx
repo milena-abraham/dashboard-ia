@@ -73,6 +73,7 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
       },
       xAxis: {
         type: layout_directives.x_axis_type,
+        scale: true,
         axisLabel: {
           hideOverlap: true,
           formatter: (value: any) => {
@@ -94,6 +95,7 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
       },
       yAxis: {
         type: layout_directives.is_log_scale ? 'log' : layout_directives.y_axis_type,
+        scale: true,
         axisLabel: {
           hideOverlap: true,
           formatter: (value: any) => {
@@ -112,17 +114,31 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
     };
 
     switch (layout_directives.chart_type) {
-      case 'HorizontalBar':
+      case 'HorizontalBar': {
+        const d0 = dataset.dimensions[0];
+        const d1 = dataset.dimensions[1];
+        const v0 = dataset.source[0] ? dataset.source[0][d0] : null;
+        const isD0Num = typeof v0 === 'number';
+        // If x is value and y is category, we map X -> Numeric, Y -> Category
+        const numD = isD0Num ? d0 : d1;
+        const catD = isD0Num ? d1 : d0;
         baseOptions.series = [{
           type: 'bar',
-          encode: { x: dataset.dimensions[1], y: dataset.dimensions[0] }
+          encode: { x: numD, y: catD }
         }];
         break;
+      }
         
-      case 'Tornado': // Divergent bar
+      case 'Tornado': { // Divergent bar
+        const td0 = dataset.dimensions[0];
+        const td1 = dataset.dimensions[1];
+        const tv0 = dataset.source[0] ? dataset.source[0][td0] : null;
+        const tisD0Num = typeof tv0 === 'number';
+        const tnumD = tisD0Num ? td0 : td1;
+        const tcatD = tisD0Num ? td1 : td0;
         baseOptions.series = [{
           type: 'bar',
-          encode: { x: dataset.dimensions[1], y: dataset.dimensions[0] },
+          encode: { x: tnumD, y: tcatD },
           itemStyle: {
               color: (params: any) => {
                   return params.value[dataset.dimensions[1]] >= 0 ? '#bdf559' : '#ff6b6b';
@@ -130,6 +146,7 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
           }
         }];
         break;
+      }
 
       case 'LineChart':
         baseOptions.series = [{
@@ -180,13 +197,13 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
       case 'Scatter':
         if (dataset.dimensions.includes('_segment')) {
             // Multi-series for clustering
-            const segments = Array.from(new Set(dataset.source.map(s => s._segment)));
+            const segments = Array.from(new Set(dataset.source.map((s: any) => s._segment)));
             baseOptions.dataset = undefined; // We construct series manually for multi-series scatter
             baseOptions.tooltip = { trigger: 'item' };
             baseOptions.series = segments.map(seg => ({
                 name: String(seg),
                 type: 'scatter',
-                data: dataset.source.filter(s => s._segment === seg).map(s => [s._pca1, s._pca2]),
+                data: dataset.source.filter((s: any) => s._segment === seg).map((s: any) => [s._pca1, s._pca2]),
                 itemStyle: { opacity: 0.8 }
             }));
             baseOptions.legend = { show: true, bottom: 0, padding: 0 };
@@ -195,13 +212,13 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
               {
                 name: 'Normal',
                 type: 'scatter',
-                data: dataset.source.filter(s => s._anomaly === 1).map(s => [s[dataset.dimensions[0]], s[dataset.dimensions[1]]]),
+                data: dataset.source.filter((s: any) => s._anomaly === 1).map((s: any) => [s[dataset.dimensions[0]], s[dataset.dimensions[1]]]),
                 itemStyle: { color: '#815ae1', opacity: 0.6 }
               },
               {
                 name: 'Anomalía',
                 type: 'scatter',
-                data: dataset.source.filter(s => s._anomaly === -1).map(s => [s[dataset.dimensions[0]], s[dataset.dimensions[1]]]),
+                data: dataset.source.filter((s: any) => s._anomaly === -1).map((s: any) => [s[dataset.dimensions[0]], s[dataset.dimensions[1]]]),
                 itemStyle: { color: '#ff6b6b', opacity: 1 },
                 symbolSize: 10
               }
