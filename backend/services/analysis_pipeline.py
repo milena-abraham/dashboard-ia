@@ -259,8 +259,9 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
             "narrative": narrative_res,
         }
         
+        # Use NumpyEncoder to sanitize all nested numpy types into native Python types
         json_str = json.dumps(final_response, cls=NumpyEncoder)
-        return Response(content=json_str, media_type="application/json")
+        return json.loads(json_str)
 
     except HTTPException:
         raise

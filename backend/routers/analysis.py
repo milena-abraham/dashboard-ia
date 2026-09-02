@@ -7,12 +7,13 @@ import time
 from core.logging import logger
 
 from services.analysis_pipeline import _analyze_sync
+from schemas.responses import AnalysisResponseSchema
 
 router = APIRouter()
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 
-@router.post("/analyze")
+@router.post("/analyze", response_model=AnalysisResponseSchema)
 async def analyze(
     file: Optional[UploadFile] = File(None), 
     file_url: Optional[str] = Form(None),
