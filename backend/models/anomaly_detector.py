@@ -79,7 +79,6 @@ def run_anomaly_detection(
             normal_df = normal_df.sort_values(by=date_col)
             anomaly_df = anomaly_df.sort_values(by=date_col)
 
-            import pandas as pd
             df_plot = pd.concat([normal_df, anomaly_df])
             df_plot["_anomaly"] = df_plot["_is_anomaly"].map({True: -1, False: 1})
             df_plot[date_col] = df_plot[date_col].dt.strftime('%Y-%m-%d %H:%M')
@@ -108,7 +107,6 @@ def run_anomaly_detection(
             def to_list_clean(series):
                 return [x if not pd.isna(x) else None for x in series]
 
-            import pandas as pd
             df_plot = pd.concat([df_normal, df_anomalies])
             df_plot["_anomaly"] = df_plot["_is_anomaly"].map({True: -1, False: 1})
             
