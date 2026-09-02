@@ -7,6 +7,7 @@ import FileUploader from '@/components/FileUploader';
 import KPICards from '@/components/KPICards';
 
 import ChartErrorBoundary from '@/components/ChartErrorBoundary';
+import DynamicChartRenderer from '@/components/DynamicChartRenderer';
 import InsightPanel from '@/components/InsightPanel';
 import DataChatbot, { Message as ChatMessage } from '@/components/DataChatbot';
 import LoadingAnalysis from '@/components/LoadingAnalysis';
