@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from typing import List, Dict, Any
-from backend.core.data_profiler import COLUMN_TYPE_NUMERIC, COLUMN_TYPE_CATEGORICAL, COLUMN_TYPE_DATE
+from core.data_profiler import COLUMN_TYPE_NUMERIC, COLUMN_TYPE_CATEGORICAL, COLUMN_TYPE_DATE
 
 def _detect_skewness(series: pd.Series) -> bool:
     try:
@@ -113,7 +113,7 @@ def auto_charts(df: pd.DataFrame, profile, target_col: str) -> List[Dict[str, An
         vc.columns = [target_col, "Cantidad"]
         ctype = "Donut" if len(vc) < 5 else "HorizontalBar"
         charts.append(build_autoviz_payload(
-            df=df, chart_id="cat_dist", title=f"Distribución de {target_col}",
+            df=vc, chart_id="cat_dist", title=f"Distribución de {target_col}",
             insight=f"El valor '{vc.iloc[0][target_col]}' domina con {vc.iloc[0]['Cantidad']} ocurrencias.",
             chart_type=ctype, dimensions=[target_col, "Cantidad"], source_df=vc.head(15)
         ))
@@ -170,7 +170,7 @@ def auto_charts(df: pd.DataFrame, profile, target_col: str) -> List[Dict[str, An
     while len(charts) < 4:
         dummy = df.head(5)[num_cols].reset_index() if num_cols else df.head(5)
         charts.append(build_autoviz_payload(
-            df=df, chart_id=f"filler_{len(charts)}", title="Muestra de Datos",
+            df=dummy, chart_id=f"filler_{len(charts)}", title="Muestra de Datos",
             insight="Generado automáticamente.", chart_type="HorizontalBar",
             dimensions=list(dummy.columns)[:2], source_df=dummy
         ))
