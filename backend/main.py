@@ -1,26 +1,25 @@
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from routers import analysis, export, chat, narrative
-import os
-from dotenv import load_dotenv
+from api.routes import analysis, export, chat, narrative
+from core.config import get_settings
+from core.exceptions import setup_exception_handlers
+from core.logging import logger
 
-load_dotenv()
+settings = get_settings()
 
-app = FastAPI(title="Dashboard IA API", version="1.0.0")
+app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION)
+
+# Set up global exception handlers
+setup_exception_handlers(app)
 
 @app.middleware("http")
 async def add_cors_headers_middleware(request: Request, call_next):
     if request.method == "OPTIONS":
         response = Response(status_code=200)
     else:
-        try:
-            response = await call_next(request)
-        except Exception as e:
-            response = JSONResponse(
-                status_code=500,
-                content={"detail": f"Error interno: {str(e)}"}
-            )
+        response = await call_next(request)
+        
     response.headers["Access-Control-Allow-Origin"] = "*"
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH"
     response.headers["Access-Control-Allow-Headers"] = "*"
@@ -28,18 +27,17 @@ async def add_cors_headers_middleware(request: Request, call_next):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.BACKEND_CORS_ORIGINS,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(analysis.router, prefix="/api")
-app.include_router(export.router, prefix="/api")
-app.include_router(chat.router, prefix="/api")
-app.include_router(narrative.router, prefix="/api")
-
+app.include_router(analysis.router, prefix=settings.API_V1_STR)
+app.include_router(export.router, prefix=settings.API_V1_STR)
+app.include_router(chat.router, prefix=settings.API_V1_STR)
+app.include_router(narrative.router, prefix=settings.API_V1_STR)
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "service": "Dashboard IA API"}
+    return {"status": "ok", "service": settings.PROJECT_NAME}
