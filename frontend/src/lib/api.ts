@@ -1,13 +1,12 @@
-import { AnalysisResult } from '@/types/analysis';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://dashboard-ia-1.onrender.com';
+import { AnalysisResponseSchema, NarrativeSchema } from '@/types/analysis';
+import { apiClient } from './apiClient';
 
 export async function analyzeFile(
   file: File | null,
   fileUrl?: string,
   filenameOverride?: string,
   targetCol?: string
-): Promise<AnalysisResult> {
+): Promise<AnalysisResponseSchema> {
   const formData = new FormData();
   if (file) {
     formData.append('file', file);
@@ -24,74 +23,21 @@ export async function analyzeFile(
     formData.append('target_col', targetCol);
   }
 
-  const response = await fetch(`${API_URL}/api/analyze`, {
-    method: 'POST',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: 'Error desconocido' }));
-    throw new Error(error.detail || `HTTP ${response.status}`);
-  }
-
-  return response.json() as Promise<AnalysisResult>;
+  return apiClient.post<AnalysisResponseSchema>('/analyze', formData);
 }
 
-export async function generateNarrative(data: any): Promise<{text: string, source: string}> {
-  const response = await fetch(`${API_URL}/api/narrative`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Error al generar narrativa: HTTP ${response.status}`);
-  }
-
-  return response.json();
-}
-
-export async function exportPDF(data: any): Promise<Blob> {
-  const response = await fetch(`${API_URL}/api/export/pdf`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Error al exportar PDF: HTTP ${response.status}`);
-  }
-
-  return response.blob();
+export async function generateNarrative(data: any): Promise<NarrativeSchema> {
+  return apiClient.post<NarrativeSchema>('/narrative', data);
 }
 
 export async function askGemini(message: string, context: any, charts?: any[]): Promise<{response: string, chart_override?: {index: number, chart_data: any} | null}> {
-  const response = await fetch(`${API_URL}/api/chat`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ message, context, charts: charts || [] }),
-  });
+  return apiClient.post('/chat', { message, context, charts: charts || [] });
+}
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.detail || 'Error al comunicarse con el asistente IA.');
-  }
-
-  return response.json();
+export async function exportPDF(data: any): Promise<Blob> {
+  return apiClient.postBlob('/export/pdf', data);
 }
 
 export async function exportPPTX(data: any): Promise<Blob> {
-  const response = await fetch(`${API_URL}/api/export/pptx`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Error al exportar PPTX: HTTP ${response.status}`);
-  }
-
-  return await response.blob();
+  return apiClient.postBlob('/export/pptx', data);
 }

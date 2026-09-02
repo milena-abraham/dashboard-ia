@@ -5,23 +5,23 @@ import { neoBrutalistTheme } from '../lib/echartsNeoBrutalistTheme';
 
 echarts.registerTheme('neo-brutalist', neoBrutalistTheme);
 
-export interface AutoVizPayload {
-  chart_id: string;
-  metadata: { title: string; insight_subtitle: string; source_metric: string; };
-  layout_directives: {
-    chart_type: 'LineChart' | 'HorizontalBar' | 'Scatter' | 'Donut' | 'Tornado' | 'FanChart' | 'Boxplot' | 'Radar';
-    x_axis_type: 'category' | 'value' | 'time' | 'log';
-    y_axis_type: 'category' | 'value' | 'time' | 'log';
-    is_log_scale: boolean;
-    has_time_gaps: boolean; 
-    high_cardinality: boolean; 
-    show_confidence_bands: boolean;
+export interface ChartSchema {
+  chartId: string;
+  metadata: { title: string; insightSubtitle: string; sourceMetric: string; };
+  layoutDirectives: {
+    chartType: 'LineChart' | 'HorizontalBar' | 'Scatter' | 'Donut' | 'Tornado' | 'FanChart' | 'Boxplot' | 'Radar';
+    xAxisType: 'category' | 'value' | 'time' | 'log';
+    yAxisType: 'category' | 'value' | 'time' | 'log';
+    isLogScale: boolean;
+    hasTimeGaps: boolean; 
+    highCardinality: boolean; 
+    showConfidenceBands: boolean;
   };
   dataset: { dimensions: string[]; source: Record<string, any>[]; };
 }
 
 interface DynamicChartRendererProps {
-  payload: AutoVizPayload;
+  payload: ChartSchema;
   height?: string | number;
 }
 
@@ -30,7 +30,7 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
         if (!payload || !payload.dataset) return null;
         const ds = JSON.parse(JSON.stringify(payload.dataset));
         if (ds.source && ds.dimensions) {
-            if (payload.layout_directives.chart_type === 'FanChart') {
+            if (payload.layoutDirectives.chartType === 'FanChart') {
                 ds.source.forEach((row: any) => {
                     if (row.upper != null && row.lower != null) {
                         row.band_width = row.upper - row.lower;
@@ -53,7 +53,7 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
 
   const options = useMemo(() => {
     if (!payload || !safeDataset) return {};
-    const { layout_directives } = payload;
+    const { layoutDirectives } = payload;
     const dataset = safeDataset;
     
     // Configuración Base
@@ -72,19 +72,19 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
           }
       },
       xAxis: {
-        type: layout_directives.x_axis_type,
+        type: layoutDirectives.xAxisType,
         scale: true,
         axisLabel: {
           hideOverlap: true,
           formatter: (value: any) => {
-             if (layout_directives.x_axis_type === 'value' || layout_directives.x_axis_type === 'log') {
+             if (layoutDirectives.xAxisType === 'value' || layoutDirectives.xAxisType === 'log') {
                 if (Math.abs(value) >= 1000000) return (value / 1000000).toFixed(1) + 'M';
                 if (Math.abs(value) >= 1000) return (value / 1000).toFixed(1) + 'K';
              }
-             if (layout_directives.x_axis_type === 'category' && layout_directives.high_cardinality) {
+             if (layoutDirectives.xAxisType === 'category' && layoutDirectives.highCardinality) {
                  return String(value).length > 10 ? String(value).substring(0, 10) + '...' : value;
              }
-             if (layout_directives.x_axis_type === 'time') {
+             if (layoutDirectives.xAxisType === 'time') {
                  // ECharts time axes pass timestamps (ms) to the formatter
                  const date = new Date(value);
                  return date.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
@@ -94,16 +94,16 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
         }
       },
       yAxis: {
-        type: layout_directives.is_log_scale ? 'log' : layout_directives.y_axis_type,
+        type: layoutDirectives.isLogScale ? 'log' : layoutDirectives.yAxisType,
         scale: true,
         axisLabel: {
           hideOverlap: true,
           formatter: (value: any) => {
-             if (layout_directives.y_axis_type === 'value' || layout_directives.y_axis_type === 'log') {
+             if (layoutDirectives.yAxisType === 'value' || layoutDirectives.yAxisType === 'log') {
                 if (Math.abs(value) >= 1000000) return (value / 1000000).toFixed(1) + 'M';
                 if (Math.abs(value) >= 1000) return (value / 1000).toFixed(1) + 'K';
              }
-             if (layout_directives.y_axis_type === 'category' && layout_directives.high_cardinality) {
+             if (layoutDirectives.yAxisType === 'category' && layoutDirectives.highCardinality) {
                  return String(value).length > 15 ? String(value).substring(0, 15) + '...' : value;
              }
              return String(value);
@@ -113,7 +113,7 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
       series: []
     };
 
-    switch (layout_directives.chart_type) {
+    switch (layoutDirectives.chartType) {
       case 'HorizontalBar': {
         const d0 = dataset.dimensions[0];
         const d1 = dataset.dimensions[1];
@@ -152,7 +152,7 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
         baseOptions.series = [{
           type: 'line',
           encode: { x: dataset.dimensions[0], y: dataset.dimensions[1] },
-          connectNulls: !layout_directives.has_time_gaps
+          connectNulls: !layoutDirectives.hasTimeGaps
         }];
         break;
         

@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import { KPIs } from '@/types/analysis';
+
 import { TrendingUp, Database, DollarSign, Layers, Hash } from 'lucide-react';
 
 interface KPICardsProps {
-  kpis: KPIs;
+  kpis: Record<string, any>;
 }
 
 export default function KPICards({ kpis }: KPICardsProps) {

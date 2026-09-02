@@ -1,3 +1,4 @@
+import { useDashboardState } from '@/features/dashboard/useDashboardState';
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -32,7 +33,7 @@ import {
   Sparkles,
   Save,
 } from 'lucide-react';
-import { AnalysisResult } from '@/types/analysis';
+import { AnalysisResponseSchema } from '@/types/analysis';
 
 import { logSystemEvent } from '@/lib/logger';
 
@@ -46,7 +47,7 @@ function DashboardInner() {
 
   const [targetCol, setTargetCol] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [result, setResult] = useState<AnalysisResponseSchema | null>(null);
   const [activeTab, setActiveTab] = useState<number>(0);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingPptx, setDownloadingPptx] = useState(false);
@@ -60,7 +61,7 @@ function DashboardInner() {
     content: '¡Hola! Soy **Asistente MIO**. He analizado tu archivo. ¿Qué te gustaría saber sobre los resultados? También podés pedirme que *modifique un gráfico*.'
   }]);
 
-  // Chart overrides: map of chart index -> overridden chart_data
+  // Chart overrides: map of chart index -> overridden chartData
   const [chartOverrides, setChartOverrides] = useState<Record<number, any>>({});
   const originalCharts = result?.charts || [];
 
@@ -147,7 +148,7 @@ function DashboardInner() {
         const metricsPayload = {
           forecast: data.forecast?.metrics || {},
           anomalies: data.anomalies?.metrics || {},
-          features: data.feature_importance?.metrics || {},
+          features: data.featureImportance?.metrics || {},
           segmentation: data.segmentation?.metrics || {}
         };
         logSystemEvent('analysis_success', { filename: file.name, uid: user?.uid, metrics: metricsPayload });
@@ -156,7 +157,7 @@ function DashboardInner() {
           try {
             const savePromise = addDoc(collection(db, 'users', user.uid, 'analyses'), {
               filename: data.filename || 'dataset',
-              target_col: data.target_col || data.target_column || '',
+              targetCol: data.target_col || data.target_column || '',
               created_at: serverTimestamp(),
               result_data: JSON.stringify(data)
             });
@@ -187,31 +188,6 @@ function DashboardInner() {
   const [isNarrativeExpanded, setIsNarrativeExpanded] = useState(true);
   const [generatingNarrative, setGeneratingNarrative] = useState(false);
 
-  useEffect(() => {
-    async function fetchNarrative() {
-      if (result && result.narrative?.source === 'pending' && !generatingNarrative) {
-        setGeneratingNarrative(true);
-        try {
-          const { generateNarrative } = await import('@/lib/api');
-          const narrative = await generateNarrative(result);
-          setResult((prev: any) => ({
-            ...prev,
-            narrative: narrative
-          }));
-        } catch (err) {
-          console.error("Error fetching narrative:", err);
-          setResult((prev: any) => ({
-            ...prev,
-            narrative: { text: "Error al generar informe IA.", source: "error" }
-          }));
-        } finally {
-          setGeneratingNarrative(false);
-        }
-      }
-    }
-    fetchNarrative();
-  }, [result]);
-
   const handleStartAnalysis = async () => {
     if (filesQueue.length === 0) {
       toast.error('Por favor seleccioná un archivo primero.');
@@ -229,7 +205,7 @@ function DashboardInner() {
     try {
       const blob = await exportPDF({
         filename: result.filename,
-        target_col: result.target_col,
+        targetCol: result.targetCol,
         kpis: result.kpis,
         narrative_text: result.narrative.text,
         profile: result.profile,
@@ -262,7 +238,7 @@ function DashboardInner() {
     try {
       const blob = await exportPPTX({
         filename: result.filename,
-        target_col: result.target_col,
+        targetCol: result.targetCol,
         kpis: result.kpis,
         narrative_text: result.narrative.text,
         profile: result.profile,
@@ -311,9 +287,9 @@ function DashboardInner() {
     try {
       const savePromise = addDoc(collection(db, 'users', user.uid, 'analyses'), {
         filename: result.filename || 'dataset',
-        target_col: result.target_col || (result as any).target_column || '',
+        targetCol: result.targetCol || (result as any).target_column || '',
         kpis: result.kpis || {},
-        quality_score: result.profile?.quality_score ?? 0,
+        qualityScore: result.profile?.qualityScore ?? 0,
         narrative_text: result.narrative?.text?.slice(0, 500) || '',
         created_at: serverTimestamp(),
       });
@@ -452,12 +428,12 @@ function DashboardInner() {
                 <div className="flex items-center gap-3 mb-1">
                   <h2 className="text-2xl font-bold text-gray-900">{result.filename}</h2>
                   <DataQualityBadge
-                    score={result.profile.quality_score}
-                    label={result.profile.quality_label}
+                    score={result.profile.qualityScore}
+                    label={result.profile.qualityLabel}
                   />
                 </div>
                 <p className="text-sm text-gray-500">
-                  Analizando foco en: <span className="font-semibold text-mio-violet">"{result.target_col}"</span> • {result.profile.n_rows} filas • {result.profile.n_cols} columnas
+                  Analizando foco en: <span className="font-semibold text-mio-violet">"{result.targetCol}"</span> • {result.profile.nRows} filas • {result.profile.nCols} columnas
                 </p>
               </div>
 
@@ -539,7 +515,7 @@ function DashboardInner() {
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="text-lg font-black tracking-tight text-gray-900 leading-tight uppercase">{c.metadata?.title}</h4>
                       </div>
-                      <p className="text-sm text-gray-500 mb-6 flex-1 font-medium">{c.metadata?.insight_subtitle}</p>
+                      <p className="text-sm text-gray-500 mb-6 flex-1 font-medium">{c.metadata?.insightSubtitle}</p>
                       <div className="mt-auto relative w-full flex-1 min-h-[300px]">
                           <DynamicChartRenderer key={result.filename + i} payload={c} height="100%" />
                       </div>
@@ -548,7 +524,7 @@ function DashboardInner() {
                 })}
 
                 {/* Forecast (if exists) */}
-                {result.forecast?.chart_data && (
+                {result.forecast?.chartData && (
                   <div className="md:col-span-12 bg-white p-6 md:p-8 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
                     <div className="flex items-center gap-3 mb-6">
                       <div className="p-2 bg-mio-violet rounded-none">
@@ -557,13 +533,13 @@ function DashboardInner() {
                       <h3 className="text-xl font-black uppercase tracking-tight">Proyecciones Inteligentes</h3>
                     </div>
                     <div className="relative w-full min-h-[420px]">
-                      <ChartErrorBoundary><DynamicChartRenderer key={`forecast-${result.filename}`} payload={result.forecast?.chart_data} height={420} /></ChartErrorBoundary>
+                      <ChartErrorBoundary><DynamicChartRenderer key={`forecast-${result.filename}`} payload={result.forecast?.chartData} height={420} /></ChartErrorBoundary>
                     </div>
                   </div>
                 )}
 
                 {/* Segmentation (if exists) */}
-                {result.segmentation?.scatter_data && result.segmentation?.radar_data && (
+                {result.segmentation?.scatterData && result.segmentation?.radarData && (
                   <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
                       <div className="flex items-center gap-3 mb-6">
@@ -571,7 +547,7 @@ function DashboardInner() {
                         <h3 className="text-xl font-black uppercase tracking-tight">Distribución</h3>
                       </div>
                       <div className="relative w-full min-h-[400px]">
-                        <ChartErrorBoundary><DynamicChartRenderer key={`seg-scatter-${result.filename}`} payload={result.segmentation?.scatter_data} /></ChartErrorBoundary>
+                        <ChartErrorBoundary><DynamicChartRenderer key={`seg-scatter-${result.filename}`} payload={result.segmentation?.scatterData} /></ChartErrorBoundary>
                       </div>
                     </div>
                     <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
@@ -580,14 +556,14 @@ function DashboardInner() {
                         <h3 className="text-xl font-black uppercase tracking-tight">Perfil (Radar)</h3>
                       </div>
                       <div className="relative w-full min-h-[400px]">
-                        <ChartErrorBoundary><DynamicChartRenderer key={`seg-radar-${result.filename}`} payload={result.segmentation?.radar_data} /></ChartErrorBoundary>
+                        <ChartErrorBoundary><DynamicChartRenderer key={`seg-radar-${result.filename}`} payload={result.segmentation?.radarData} /></ChartErrorBoundary>
                       </div>
                     </div>
                   </div>
                 )}
 
                 {/* Anomalies (if exists) */}
-                {result.anomalies?.chart_data && (
+                {result.anomalies?.chartData && (
                   <div className="md:col-span-12 bg-white p-6 md:p-8 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
                     <div className="flex items-center gap-3 mb-6">
                       <div className="p-2 bg-[#ff6b6b] rounded-none">
@@ -596,13 +572,13 @@ function DashboardInner() {
                       <h3 className="text-xl font-black uppercase tracking-tight">Valores Atípicos (Anomalías)</h3>
                     </div>
                     <div className="relative w-full min-h-[400px]">
-                      <ChartErrorBoundary><DynamicChartRenderer key={`anom-${result.filename}`} payload={result.anomalies?.chart_data} height={400} /></ChartErrorBoundary>
+                      <ChartErrorBoundary><DynamicChartRenderer key={`anom-${result.filename}`} payload={result.anomalies?.chartData} height={400} /></ChartErrorBoundary>
                     </div>
                   </div>
                 )}
 
                 {/* Feature Importance (if exists) */}
-                {result.feature_importance?.chart_importance && (
+                {result.featureImportance?.chartImportance && (
                   <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
                       <div className="flex items-center gap-3 mb-6">
@@ -610,17 +586,17 @@ function DashboardInner() {
                         <h3 className="text-xl font-black uppercase tracking-tight">Impacto Base (Gini)</h3>
                       </div>
                       <div className="relative w-full min-h-[420px]">
-                        <ChartErrorBoundary><DynamicChartRenderer key={`feat-imp-${result.filename}`} payload={result.feature_importance?.chart_importance} height={420} /></ChartErrorBoundary>
+                        <ChartErrorBoundary><DynamicChartRenderer key={`feat-imp-${result.filename}`} payload={result.featureImportance?.chartImportance} height={420} /></ChartErrorBoundary>
                       </div>
                     </div>
-                    {result.feature_importance?.chart_shap && (
+                    {result.featureImportance?.chartShap && (
                       <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
                         <div className="flex items-center gap-3 mb-6">
                           <Target className="w-5 h-5 text-[#bdf559]" />
                           <h3 className="text-xl font-black uppercase tracking-tight">Atribución (SHAP)</h3>
                         </div>
                         <div className="relative w-full min-h-[420px]">
-                          <ChartErrorBoundary><DynamicChartRenderer key={`feat-shap-${result.filename}`} payload={result.feature_importance?.chart_shap} height={420} /></ChartErrorBoundary>
+                          <ChartErrorBoundary><DynamicChartRenderer key={`feat-shap-${result.filename}`} payload={result.featureImportance?.chartShap} height={420} /></ChartErrorBoundary>
                         </div>
                       </div>
                     )}

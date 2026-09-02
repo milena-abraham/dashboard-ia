@@ -1,54 +1,121 @@
-export interface Profile {
-  n_rows: number;
-  n_cols: number;
-  quality_score: number;
-  quality_label: string;
-  numeric_columns: string[];
-  date_columns: string[];
-  categorical_columns: string[];
-  suggested_targets: string[];
+export interface ProfileSchema {
+  nRows: number;
+  nCols: number;
+  qualityScore: number;
+  qualityLabel: string;
+  numericColumns: string[];
+  dateColumns: string[];
+  categoricalColumns: string[];
+  suggestedTargets: string[];
 }
 
-export interface CleaningReport {
+export interface CleaningReportSchema {
   actions: string[];
-  duplicates_removed: number;
-  nulls_imputed: number;
+  duplicatesRemoved: number;
+  nullsImputed: Record<string, number>;
 }
 
-export interface KPIs {
-  [key: string]: number | string | undefined;
-}
-
-export interface Chart {
+export interface ChartMetadataSchema {
   title: string;
-  fig_json: string;
-  description?: string;
+  insightSubtitle: string;
+  sourceMetric: string;
 }
 
-export interface MLModelResult {
-  fig_json?: string | null;
-  scatter_json?: string | null;
-  profile_json?: string | null;
-  shap_json?: string | null;
-  metrics: Record<string, any>;
+export interface LayoutDirectivesSchema {
+  chartType: string;
+  xAxisType: string;
+  yAxisType: string;
+  isLogScale: boolean;
+  hasTimeGaps: boolean;
+  highCardinality: boolean;
+  showConfidenceBands: boolean;
 }
 
-export interface Narrative {
-  text: string;
-  source: string;
+export interface DatasetSchema {
+  dimensions: string[];
+  source: Record<string, any>[];
 }
 
-export interface AnalysisResult {
+export interface ChartSchema {
+  chartId: string;
+  metadata: ChartMetadataSchema;
+  layoutDirectives: LayoutDirectivesSchema;
+  dataset: DatasetSchema;
+}
+
+export interface ForecastMetricsSchema {
+  ultimoValorReal?: number;
+  valorFinalForecast?: number;
+  tendenciaPct?: number;
+  periodos?: number;
+  motor?: string;
+  mae?: number;
+  mape?: number;
+  confianza?: string;
+  validacion?: string;
+  error?: string;
+}
+
+export interface ForecastSchema {
+  chartData?: ChartSchema;
+  metrics: ForecastMetricsSchema;
+}
+
+export interface SegmentationMetricsSchema {
+  k?: number;
+  varianzaExplicadaPca?: number;
+  distribucion?: Record<string, number>;
+  perfil?: Record<string, any>[];
+  error?: string;
+}
+
+export interface SegmentationSchema {
+  scatterData?: ChartSchema;
+  radarData?: ChartSchema;
+  metrics: SegmentationMetricsSchema;
+}
+
+export interface AnomalyMetricsSchema {
+  nAnomalias?: number;
+  pctAnomalias?: number;
+  anomaliasDetalle?: Record<string, any>[];
+  error?: string;
+}
+
+export interface AnomaliesSchema {
+  chartData?: ChartSchema;
+  metrics: AnomalyMetricsSchema;
+}
+
+export interface FeatureImportanceMetricsSchema {
+  topFeatures?: Record<string, any>[];
+  shapSummary?: Record<string, number>;
+  nFeatures?: number;
+  shapDisponible?: boolean;
+  error?: string;
+}
+
+export interface FeatureImportanceSchema {
+  chartImportance?: ChartSchema;
+  chartShap?: ChartSchema;
+  metrics: FeatureImportanceMetricsSchema;
+}
+
+export interface NarrativeSchema {
+  text?: string;
+  source?: string;
+}
+
+export interface AnalysisResponseSchema {
   filename: string;
-  target_col: string;
-  target_column?: string;
-  profile: Profile;
-  cleaning_report: CleaningReport;
-  kpis: KPIs;
-  charts: Chart[];
-  forecast?: MLModelResult;
-  segmentation?: MLModelResult;
-  anomalies?: MLModelResult;
-  feature_importance?: MLModelResult;
-  narrative: Narrative;
+  targetCol?: string;
+  profile: ProfileSchema;
+  cleaningReport: CleaningReportSchema;
+  kpis: Record<string, any>;
+  charts: ChartSchema[];
+  forecast: ForecastSchema;
+  segmentation: SegmentationSchema;
+  anomalies: AnomaliesSchema;
+  featureImportance: FeatureImportanceSchema;
+  narrative: NarrativeSchema;
 }

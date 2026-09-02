@@ -11,7 +11,7 @@ interface ProjectCardProps {
     filename: string;
     target_col: string;
     created_at: any;
-    quality_score: number;
+    qualityScore: number;
     kpis: Record<string, any>;
     narrative_text?: string;
   };
@@ -49,7 +49,7 @@ export default function ProjectCard({ project, index, onDelete }: ProjectCardPro
           </div>
         </div>
         <span className="flex-shrink-0 px-2 py-1 bg-mio-violet/10 text-mio-violet text-[10px] font-bold border border-mio-violet/30">
-          Q: {Math.round(project.quality_score ?? 0)}%
+          Q: {Math.round(project.qualityScore ?? 0)}%
         </span>
       </div>
 
