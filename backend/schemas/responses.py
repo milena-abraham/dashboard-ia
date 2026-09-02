@@ -1,7 +1,15 @@
 from pydantic import BaseModel, ConfigDict
+from pydantic.alias_generators import to_camel
 from typing import List, Dict, Any, Optional
 
-class ProfileSchema(BaseModel):
+class BaseSchema(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+        arbitrary_types_allowed=True
+    )
+
+class ProfileSchema(BaseSchema):
     n_rows: int
     n_cols: int
     quality_score: int
@@ -11,17 +19,17 @@ class ProfileSchema(BaseModel):
     categorical_columns: List[str]
     suggested_targets: List[str]
 
-class CleaningReportSchema(BaseModel):
+class CleaningReportSchema(BaseSchema):
     actions: List[str]
     duplicates_removed: int
     nulls_imputed: Dict[str, int]
 
-class ChartMetadataSchema(BaseModel):
+class ChartMetadataSchema(BaseSchema):
     title: str
     insight_subtitle: str
     source_metric: str
 
-class LayoutDirectivesSchema(BaseModel):
+class LayoutDirectivesSchema(BaseSchema):
     chart_type: str
     x_axis_type: str
     y_axis_type: str
@@ -30,39 +38,71 @@ class LayoutDirectivesSchema(BaseModel):
     high_cardinality: bool
     show_confidence_bands: bool
 
-class DatasetSchema(BaseModel):
+class DatasetSchema(BaseSchema):
     dimensions: List[str]
     source: List[Dict[str, Any]]
 
-class ChartSchema(BaseModel):
+class ChartSchema(BaseSchema):
     chart_id: str
     metadata: ChartMetadataSchema
     layout_directives: LayoutDirectivesSchema
     dataset: DatasetSchema
 
-class ForecastSchema(BaseModel):
-    chart_data: Optional[ChartSchema] = None
-    metrics: Dict[str, Any]
+class ForecastMetricsSchema(BaseSchema):
+    ultimo_valor_real: Optional[float] = None
+    valor_final_forecast: Optional[float] = None
+    tendencia_pct: Optional[float] = None
+    periodos: Optional[int] = None
+    motor: Optional[str] = None
+    mae: Optional[float] = None
+    mape: Optional[float] = None
+    confianza: Optional[str] = None
+    validacion: Optional[str] = None
+    error: Optional[str] = None
 
-class SegmentationSchema(BaseModel):
+class ForecastSchema(BaseSchema):
+    chart_data: Optional[ChartSchema] = None
+    metrics: ForecastMetricsSchema
+
+class SegmentationMetricsSchema(BaseSchema):
+    k: Optional[int] = None
+    varianza_explicada_pca: Optional[float] = None
+    distribucion: Optional[Dict[str, int]] = None
+    perfil: Optional[List[Dict[str, Any]]] = None
+    error: Optional[str] = None
+
+class SegmentationSchema(BaseSchema):
     scatter_data: Optional[ChartSchema] = None
     radar_data: Optional[ChartSchema] = None
-    metrics: Dict[str, Any]
+    metrics: SegmentationMetricsSchema
 
-class AnomaliesSchema(BaseModel):
+class AnomalyMetricsSchema(BaseSchema):
+    n_anomalias: Optional[int] = None
+    pct_anomalias: Optional[float] = None
+    anomalias_detalle: Optional[List[Dict[str, Any]]] = None
+    error: Optional[str] = None
+
+class AnomaliesSchema(BaseSchema):
     chart_data: Optional[ChartSchema] = None
-    metrics: Dict[str, Any]
+    metrics: AnomalyMetricsSchema
 
-class FeatureImportanceSchema(BaseModel):
+class FeatureImportanceMetricsSchema(BaseSchema):
+    top_features: Optional[List[Dict[str, Any]]] = None
+    shap_summary: Optional[Dict[str, float]] = None
+    n_features: Optional[int] = None
+    shap_disponible: Optional[bool] = None
+    error: Optional[str] = None
+
+class FeatureImportanceSchema(BaseSchema):
     chart_importance: Optional[ChartSchema] = None
     chart_shap: Optional[ChartSchema] = None
-    metrics: Dict[str, Any]
+    metrics: FeatureImportanceMetricsSchema
 
-class NarrativeSchema(BaseModel):
+class NarrativeSchema(BaseSchema):
     text: Optional[str] = None
     source: Optional[str] = None
 
-class AnalysisResponseSchema(BaseModel):
+class AnalysisResponseSchema(BaseSchema):
     filename: str
     target_col: Optional[str] = None
     profile: ProfileSchema
@@ -74,5 +114,3 @@ class AnalysisResponseSchema(BaseModel):
     anomalies: AnomaliesSchema
     feature_importance: FeatureImportanceSchema
     narrative: NarrativeSchema
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
