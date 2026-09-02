@@ -8,6 +8,37 @@ from typing import Optional, Dict, Any
 import pandas as pd
 import io
 import json
+from fastapi.responses import JSONResponse, Response
+import math
+
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if hasattr(obj, 'model_dump') and callable(getattr(obj, 'model_dump')):
+            return obj.model_dump()
+        if hasattr(obj, 'dict') and callable(getattr(obj, 'dict')):
+            return obj.dict()
+        if hasattr(obj, '__dict__') and not isinstance(obj, type):
+            return vars(obj)
+        if isinstance(obj, (pd.Series, pd.Index, np.ndarray)):
+            return obj.tolist()
+        if isinstance(obj, (float, np.floating)):
+            if math.isnan(obj) or math.isinf(obj) or pd.isna(obj):
+                return None
+            return float(obj)
+        if isinstance(obj, (int, np.integer)):
+            return int(obj)
+        if type(obj).__name__ == 'bool' or isinstance(obj, bool) or isinstance(obj, np.bool_):
+            return bool(obj)
+        if pd.isna(obj):
+            return None
+        if hasattr(obj, 'item') and callable(getattr(obj, 'item')):
+            try:
+                return obj.item()
+            except:
+                pass
+        return super(NumpyEncoder, self).default(obj)
+
+import json
 import math
 import pandas as pd
 
@@ -33,7 +64,7 @@ def clean_json_nans(obj):
             pass
             
     if isinstance(obj, dict):
-        return {k: clean_json_nans(v) for k, v in obj.items()}
+        final_response = {k: clean_json_nans(v) for k, v in obj.items()}
     elif isinstance(obj, (list, tuple, set, np.ndarray, pd.Series, pd.Index)):
         return [clean_json_nans(v) for v in obj]
     elif isinstance(obj, (float, np.floating)):
@@ -358,7 +389,7 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
             "source": "pending"
         }
 
-        return {
+        final_response = {
             "filename": filename,
             "target_col": active_target,
             "profile": {
@@ -385,10 +416,8 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
             "narrative": narrative_res,
         }
         
-        # Filtro final anti-crashes (reemplaza NaN y Float infs por None para que fastapi jsonable_encoder no explote)
-        final_response = clean_json_nans(final_response)
-        
-        return final_response
+        json_str = json.dumps(final_response, cls=NumpyEncoder)
+        return Response(content=json_str, media_type="application/json")
 
     except HTTPException:
         raise
