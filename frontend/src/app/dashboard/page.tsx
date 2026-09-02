@@ -524,9 +524,16 @@ function DashboardInner() {
                 
                 {/* Exploratory Charts */}
                 {result.charts && result.charts.length > 0 && result.charts.map((c, i) => {
-                  const spanClass = i === 0 ? "md:col-span-12 lg:col-span-8" : 
-                                  i === 1 ? "md:col-span-12 lg:col-span-4" : 
-                                  "md:col-span-6 lg:col-span-4";
+                  let spanClass = "md:col-span-6 lg:col-span-4";
+                  if (result.charts!.length === 1) spanClass = "md:col-span-12 lg:col-span-12";
+                  else if (result.charts!.length === 2) spanClass = "md:col-span-12 lg:col-span-6";
+                  else if (result.charts!.length === 3) {
+                      spanClass = i === 0 ? "md:col-span-12 lg:col-span-12" : "md:col-span-6 lg:col-span-6";
+                  } else {
+                      if (i === 0) spanClass = "md:col-span-12 lg:col-span-8";
+                      else if (i === 1) spanClass = "md:col-span-12 lg:col-span-4";
+                      else spanClass = "md:col-span-6 lg:col-span-6";
+                  }
                   return (
                     <div key={i} className={`bg-white p-6 flex flex-col rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_#111] ${spanClass}`}>
                       <div className="flex items-center justify-between mb-2">
