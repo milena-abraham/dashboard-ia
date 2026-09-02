@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import FileUploader from '@/components/FileUploader';
 import KPICards from '@/components/KPICards';
-import ChartRenderer from '@/components/ChartRenderer';
+
 import ChartErrorBoundary from '@/components/ChartErrorBoundary';
 import InsightPanel from '@/components/InsightPanel';
 import DataChatbot, { Message as ChatMessage } from '@/components/DataChatbot';
@@ -502,8 +502,6 @@ function DashboardInner() {
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                   {result.charts && result.charts.length > 0 ? (
                     result.charts.map((c, i) => {
-                      const isOverridden = !!chartOverrides[i];
-                      const activeChartData = isOverridden ? chartOverrides[i] : c.chart_data;
                       // Bento Grid logic: first chart is large, next are regular
                       const spanClass = i === 0 ? "md:col-span-12 lg:col-span-8" : 
                                       i === 1 ? "md:col-span-12 lg:col-span-4" : 
@@ -511,20 +509,11 @@ function DashboardInner() {
                       return (
                         <div key={i} className={`bg-white p-6 flex flex-col rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_#111] ${spanClass}`}>
                           <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-lg font-black tracking-tight text-gray-900 leading-tight uppercase">{isOverridden ? (activeChartData.title || c.title) : c.title}</h4>
-                            {isOverridden && (
-                              <button
-                                onClick={() => setChartOverrides(prev => { const n = {...prev}; delete n[i]; return n; })}
-                                className="flex items-center gap-1 text-[11px] px-2 py-1 bg-gray-900 text-white hover:bg-mio-violet transition-colors"
-                                title="Restaurar gráfico original"
-                              >
-                                <RotateCcw className="w-3 h-3" /> Reset
-                              </button>
-                            )}
+                            <h4 className="text-lg font-black tracking-tight text-gray-900 leading-tight uppercase">{c.metadata?.title}</h4>
                           </div>
-                          <p className="text-sm text-gray-500 mb-6 flex-1 font-medium">{isOverridden ? '✏️ Modificado por Asistente IA' : c.description}</p>
+                          <p className="text-sm text-gray-500 mb-6 flex-1 font-medium">{c.metadata?.insight_subtitle}</p>
                           <div className="mt-auto relative w-full flex-1 min-h-[300px]">
-                              <ChartErrorBoundary><ChartRenderer key={result.filename + i} chartData={activeChartData} height="100%" /></ChartErrorBoundary>
+                              <DynamicChartRenderer key={result.filename + i} payload={c} height="100%" />
                           </div>
                         </div>
                       );
@@ -572,7 +561,7 @@ function DashboardInner() {
                           )}
                         </div>
                       </div>
-                      <ChartErrorBoundary><ChartRenderer key={`forecast-${result.filename}`} chartData={result.forecast?.chart_data} height={420} /></ChartErrorBoundary>
+                      <ChartErrorBoundary><DynamicChartRenderer key={`forecast-${result.filename}`} payload={result.forecast?.chart_data} height={420} /></ChartErrorBoundary>
                       <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-500 text-xs text-blue-800">
                         <strong>Aviso:</strong> Esta proyección se basa exclusivamente en el comportamiento histórico de tus datos usando el modelo {result.forecast?.metrics?.motor || 'Predictivo'} y no es una garantía del futuro. 
                         {result.forecast?.metrics?.mae !== undefined && ` Margen de error histórico (MAE): ${result.forecast.metrics.mae}`}
@@ -593,11 +582,11 @@ function DashboardInner() {
                     <>
                       <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
                         <h4 className="text-base font-bold text-gray-900 mb-2">Mapa de Segmentación 2D (PCA)</h4>
-                        <ChartErrorBoundary><ChartRenderer key={`seg-scatter-${result.filename}`} chartData={result.segmentation?.scatter_data} /></ChartErrorBoundary>
+                        <ChartErrorBoundary><DynamicChartRenderer key={`seg-scatter-${result.filename}`} payload={result.segmentation?.scatter_data} /></ChartErrorBoundary>
                       </div>
                       <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
                         <h4 className="text-base font-bold text-gray-900 mb-2">Perfil Promedio por Segmento</h4>
-                        <ChartErrorBoundary><ChartRenderer key={`seg-radar-${result.filename}`} chartData={result.segmentation?.radar_data} /></ChartErrorBoundary>
+                        <ChartErrorBoundary><DynamicChartRenderer key={`seg-radar-${result.filename}`} payload={result.segmentation?.radar_data} /></ChartErrorBoundary>
                       </div>
                     </>
                   )}
@@ -617,7 +606,7 @@ function DashboardInner() {
                         <h3 className="text-lg font-bold text-gray-900">Detección de Anomalías (Isolation Forest)</h3>
                         <p className="text-xs text-gray-500">Registros atípicos marcados para auditoría</p>
                       </div>
-                      <ChartErrorBoundary><ChartRenderer key={`anom-${result.filename}`} chartData={result.anomalies?.chart_data} height={400} /></ChartErrorBoundary>
+                      <ChartErrorBoundary><DynamicChartRenderer key={`anom-${result.filename}`} payload={result.anomalies?.chart_data} height={400} /></ChartErrorBoundary>
                       
                       <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-500 text-xs text-blue-800">
                         <strong>Aviso:</strong> El modelo Isolation Forest ha marcado <strong>{result.anomalies?.metrics?.n_anomalias || 0} registros atípicos</strong> ({result.anomalies?.metrics?.pct_anomalias || 0}% del total) que se desvían del patrón general. Revisa el listado inferior para auditar los casos más críticos.
@@ -678,7 +667,7 @@ function DashboardInner() {
                       
                       {/* Canvas */}
                       <div className="lg:w-2/3 p-6 sm:p-8">
-                          <ChartErrorBoundary><ChartRenderer key={`feat-shap-${result.filename}`} chartData={result.feature_importance?.chart_shap || result.feature_importance?.chart_importance} height={420} /></ChartErrorBoundary>
+                          <ChartErrorBoundary><DynamicChartRenderer key={`feat-shap-${result.filename}`} payload={result.feature_importance?.chart_shap || result.feature_importance?.chart_importance} height={420} /></ChartErrorBoundary>
                       </div>
                     </>
                   )}

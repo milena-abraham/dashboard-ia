@@ -6,20 +6,12 @@ import { collection, query, orderBy, limit, onSnapshot, where, getDocs, writeBat
 import { onAuthStateChanged } from 'firebase/auth';
 import { Activity, Users, AlertCircle, Trash2, ShieldAlert, Filter, Database, BarChart3, Bot, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Bar } from 'react-chartjs-2';
+import ReactECharts from 'echarts-for-react';
 import Navbar from '@/components/Navbar';
 import LogDetailsRenderer from '@/components/LogDetailsRenderer';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
-
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+import { neoBrutalistTheme } from '@/lib/echartsNeoBrutalistTheme';
+import * as echarts from 'echarts/core';
+echarts.registerTheme('neo-brutalist', neoBrutalistTheme);
 
 const ADMIN_EMAILS = ['tadeomunozgarces@gmail.com', 'milenapabraham@gmail.com'];
 

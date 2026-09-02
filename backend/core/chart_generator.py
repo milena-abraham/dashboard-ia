@@ -1,326 +1,179 @@
-"""
-core/chart_generator.py
-Motor de seleccion automatica y generacion de graficos para Web API (Chart.js raw data format).
-"""
-
-from __future__ import annotations
-from typing import Optional, List, Dict, Any
 import pandas as pd
+import numpy as np
+from typing import List, Dict, Any
+from backend.core.data_profiler import COLUMN_TYPE_NUMERIC, COLUMN_TYPE_CATEGORICAL, COLUMN_TYPE_DATE
 
+def _detect_skewness(series: pd.Series) -> bool:
+    try:
+        from scipy.stats import skew
+        s = skew(series.dropna())
+        return abs(s) > 1.5
+    except:
+        return False
 
-def chart_timeseries_monthly(df: pd.DataFrame, date_col: str, value_col: str, title: str = "") -> dict:
-    df_m = df.copy()
-    df_m[date_col] = pd.to_datetime(df_m[date_col])
-    df_m["_month"] = df_m[date_col].dt.to_period("M").astype(str)
-    df_agg = df_m.groupby("_month")[value_col].sum().reset_index()
-    df_agg.columns = ["Mes", value_col]
+def _detect_time_gaps(series: pd.Series) -> bool:
+    try:
+        deltas = series.sort_values().diff().dropna()
+        if deltas.empty: return False
+        mode_delta = deltas.mode()[0]
+        if pd.isna(mode_delta): return False
+        return (deltas > mode_delta * 1.5).any()
+    except:
+        return False
+
+def build_autoviz_payload(
+    df: pd.DataFrame, 
+    chart_id: str,
+    title: str,
+    insight: str,
+    chart_type: str,
+    dimensions: List[str],
+    source_df: pd.DataFrame,
+    is_time: bool = False
+) -> Dict[str, Any]:
+    
+    # 1. Cardinality
+    high_cardinality = False
+    if chart_type in ["Donut", "HorizontalBar"] and len(source_df) >= 5:
+        high_cardinality = True
+        if chart_type == "Donut":
+            chart_type = "HorizontalBar" # Force horizontal bar if cardinality >= 5
+
+    # 2. Skewness
+    is_log_scale = False
+    for dim in dimensions:
+        if pd.api.types.is_numeric_dtype(df[dim]) and dim != dimensions[0] if len(dimensions)>1 else True:
+            if _detect_skewness(df[dim]):
+                is_log_scale = True
+
+    # 3. Time gaps
+    has_time_gaps = False
+    if is_time:
+        has_time_gaps = _detect_time_gaps(df[dimensions[0]])
+
+    x_type = "category"
+    y_type = "value"
+    
+    if is_time:
+        x_type = "time"
+    
+    if chart_type == "HorizontalBar":
+        x_type, y_type = "value", "category"
+    
+    if chart_type == "Scatter":
+        x_type, y_type = "value", "value"
+
+    # Convert source
+    # ECharts needs simple string keys without NaNs
+    source_records = []
+    for record in source_df.to_dict(orient="records"):
+        clean_record = {}
+        for k, v in record.items():
+            if pd.isna(v):
+                clean_record[k] = None
+            elif isinstance(v, (pd.Timestamp, np.datetime64)):
+                clean_record[k] = str(v.date())
+            else:
+                clean_record[k] = v
+        source_records.append(clean_record)
 
     return {
-        "type": "line_area",
-        "labels": df_agg["Mes"].tolist(),
-        "datasets": [{
-            "label": value_col,
-            "data": df_agg[value_col].tolist(),
-        }],
-        "title": title
-    }
-
-def chart_bar_category(df: pd.DataFrame, cat_col: str, value_col: str, top_n: int = 15, title: str = "") -> dict:
-    df_agg = (
-        df.groupby(cat_col)[value_col]
-        .sum()
-        .reset_index()
-        .sort_values(value_col, ascending=True)
-        .tail(top_n)
-    )
-
-    return {
-        "type": "bar_horizontal",
-        "labels": df_agg[cat_col].tolist(),
-        "datasets": [{
-            "label": value_col,
-            "data": df_agg[value_col].tolist(),
-        }],
-        "title": title
-    }
-
-def chart_pie(df: pd.DataFrame, cat_col: str, value_col: str, title: str = "") -> dict:
-    df_agg = (
-        df.groupby(cat_col)[value_col]
-        .sum()
-        .reset_index()
-        .sort_values(value_col, ascending=False)
-        .head(8)
-    )
-    return {
-        "type": "doughnut",
-        "labels": df_agg[cat_col].tolist(),
-        "datasets": [{
-            "label": value_col,
-            "data": df_agg[value_col].tolist(),
-        }],
-        "title": title
-    }
-
-def chart_histogram(df: pd.DataFrame, value_col: str, title: str = "") -> dict:
-    # Dynamic bin calculation (sqrt rule bounded 5-40)
-    import math
-    n = len(df[value_col].dropna())
-    bins = max(5, min(40, int(math.ceil(math.sqrt(n)))))
-    
-    # Manual histogram binning for Chart.js
-    counts, bin_edges = pd.cut(df[value_col], bins=bins, retbins=True)
-    df_hist = counts.value_counts().sort_index()
-    
-    labels = [f"{round(b.left, 2)} - {round(b.right, 2)}" for b in df_hist.index]
-    
-    return {
-        "type": "bar",
-        "labels": labels,
-        "datasets": [{
-            "label": "Frecuencia",
-            "data": df_hist.values.tolist(),
-        }],
-        "title": title
-    }
-
-def chart_heatmap_corr(df: pd.DataFrame, title: str = "Mapa de Correlación") -> Optional[dict]:
-    numeric_df = df.select_dtypes(include=[float, int])
-    if numeric_df.shape[1] < 2:
-        return None
-    corr = numeric_df.corr().round(2)
-    
-    # We can represent correlation as a grouped bar chart or simple list for Chart.js since Chart.js doesn't have a native Heatmap
-    # However, to keep it simple, we will return a radar chart of correlations for the top 5 variables against each other
-    top_vars = corr.columns[:5].tolist()
-    datasets = []
-    for var in top_vars:
-        datasets.append({
-            "label": var,
-            "data": corr.loc[var, top_vars].tolist()
-        })
-        
-    return {
-        "type": "radar",
-        "metrics": top_vars,
-        "datasets": datasets,
-        "title": title
-    }
-
-
-def chart_boxplot(df: pd.DataFrame, cat_col: str, value_col: str, title: str = "") -> dict:
-    df_clean = df.dropna(subset=[cat_col, value_col])
-    
-    # Top 5 categorias
-    top_cats = df_clean[cat_col].value_counts().head(5).index
-    df_filt = df_clean[df_clean[cat_col].isin(top_cats)]
-    
-    # Calcular stats
-    labels = []
-    data_arrays = []
-    
-    for cat in top_cats:
-        series = df_filt[df_filt[cat_col] == cat][value_col]
-        if len(series) < 5:
-            continue
-        q1 = series.quantile(0.25)
-        med = series.median()
-        q3 = series.quantile(0.75)
-        iqr = q3 - q1
-        
-        # Whiskers with 1.5 IQR
-        min_val = max(series.min(), q1 - 1.5 * iqr)
-        max_val = min(series.max(), q3 + 1.5 * iqr)
-        
-        labels.append(str(cat))
-        # Format for @sgratzl/chartjs-chart-boxplot is {min, q1, median, q3, max}
-        data_arrays.append({
-            "min": float(min_val) if not pd.isna(min_val) else None,
-            "q1": float(q1) if not pd.isna(q1) else None,
-            "median": float(med) if not pd.isna(med) else None,
-            "q3": float(q3) if not pd.isna(q3) else None,
-            "max": float(max_val) if not pd.isna(max_val) else None
-        })
-        
-    if not labels:
-        raise ValueError("Sin datos para boxplot")
-
-    return {
-        "type": "boxplot",
-        "labels": labels,
-        "datasets": [{
-            "label": value_col,
-            "data": data_arrays,
-            "backgroundColor": "rgba(200, 255, 106, 0.6)",
-            "borderColor": "#111",
-            "borderWidth": 2,
-            "itemBackgroundColor": "#815ae1"
-        }],
-        "title": title
-    }
-
-def chart_scatter_trend(df: pd.DataFrame, x_col: str, y_col: str, title: str = "") -> dict:
-    df_clean = df.dropna(subset=[x_col, y_col])
-    if len(df_clean) > 1000:
-        df_clean = df_clean.sample(1000, random_state=42)
-        
-    return {
-        "type": "scatter",
-        "normal": {
-            "x": [float(v) if not pd.isna(v) else None for v in df_clean[x_col].tolist()],
-            "y": [float(v) if not pd.isna(v) else None for v in df_clean[y_col].tolist()],
+        "chart_id": chart_id,
+        "metadata": {
+            "title": title,
+            "insight_subtitle": insight,
+            "source_metric": dimensions[-1]
         },
-        "x_label": x_col,
-        "y_label": y_col,
-        "title": title
+        "layout_directives": {
+            "chart_type": chart_type,
+            "x_axis_type": x_type,
+            "y_axis_type": y_type,
+            "is_log_scale": is_log_scale,
+            "has_time_gaps": has_time_gaps,
+            "high_cardinality": high_cardinality,
+            "show_confidence_bands": False
+        },
+        "dataset": {
+            "dimensions": dimensions,
+            "source": source_records
+        }
     }
+
 
 def auto_charts(df: pd.DataFrame, profile, target_col: str) -> List[Dict[str, Any]]:
-    """Genera lista de graficos garantizando un mínimo de 4 visualizaciones ricas."""
     charts = []
+    
     date_cols = profile.date_columns
     cat_cols = profile.categorical_columns
     num_cols = profile.numeric_columns
 
     if target_col not in num_cols:
-        # 1. Bar horizontal (Distribución)
-        val_counts = df[target_col].value_counts().head(15)
-        charts.append({
-            "title": f"Distribución de {target_col}",
-            "chart_data": {
-                "type": "bar_horizontal",
-                "labels": val_counts.index.astype(str).tolist(),
-                "datasets": [{"label": "Cantidad", "data": val_counts.values.tolist()}],
-            },
-            "description": f"Ranking de los valores más comunes en la columna {target_col}."
-        })
+        # Categorical Target
+        vc = df[target_col].value_counts().reset_index()
+        vc.columns = [target_col, "Cantidad"]
+        ctype = "Donut" if len(vc) < 5 else "HorizontalBar"
+        charts.append(build_autoviz_payload(
+            df=df, chart_id="cat_dist", title=f"Distribución de {target_col}",
+            insight=f"El valor '{vc.iloc[0][target_col]}' domina con {vc.iloc[0]['Cantidad']} ocurrencias.",
+            chart_type=ctype, dimensions=[target_col, "Cantidad"], source_df=vc.head(15)
+        ))
         
-        # 2. Pie chart (Composición)
-        if len(val_counts) <= 8 and len(val_counts) > 1:
-            charts.append({
-                "title": f"Composición de {target_col}",
-                "chart_data": {
-                    "type": "doughnut",
-                    "labels": val_counts.index.astype(str).tolist(),
-                    "datasets": [{"label": "Cantidad", "data": val_counts.values.tolist()}],
-                },
-                "description": f"Proporción de los valores en la columna {target_col}."
-            })
+        for nc in num_cols:
+            if len(charts) >= 4: break
+            agg = df.groupby(target_col)[nc].mean().reset_index()
+            charts.append(build_autoviz_payload(
+                df=df, chart_id=f"cat_num_{nc}", title=f"Promedio de {nc} por {target_col}",
+                insight=f"Comparativa de métrica {nc}.",
+                chart_type="HorizontalBar", dimensions=[target_col, nc], source_df=agg.head(15)
+            ))
             
-        # 3. Boxplots con columnas numéricas
-        if num_cols:
-            for nc in num_cols:
-                if len(charts) >= 4: break
-                try:
-                    charts.append({
-                        "title": f"Dispersión de {nc} por {target_col}",
-                        "chart_data": chart_boxplot(df, target_col, nc),
-                        "description": f"Distribución de {nc} según cada categoría de {target_col}."
-                    })
-                except Exception: pass
+    else:
+        # Numeric Target
+        if date_cols:
+            dc = date_cols[0]
+            df_temp = df.copy()
+            df_temp[dc] = pd.to_datetime(df_temp[dc], errors='coerce')
+            agg = df_temp.groupby(dc)[target_col].mean().reset_index().dropna()
+            
+            # Subsample for timeseries to avoid huge payload
+            if len(agg) > 300:
+                agg = agg.set_index(dc).resample("W").mean().reset_index().dropna()
                 
-        # 4. Otras distribuciones categóricas si aún faltan
-        other_cats = [c for c in cat_cols if c != target_col]
-        for cc in other_cats:
-            if len(charts) >= 4: break
-            if df[cc].nunique() > 15: continue
-            try:
-                cc_counts = df[cc].value_counts().head(10)
-                charts.append({
-                    "title": f"Distribución de {cc}",
-                    "chart_data": {
-                        "type": "bar",
-                        "labels": cc_counts.index.astype(str).tolist(),
-                        "datasets": [{"label": "Frecuencia", "data": cc_counts.values.tolist()}],
-                    },
-                    "description": f"Frecuencia de las categorías en {cc}."
-                })
-            except Exception: pass
+            charts.append(build_autoviz_payload(
+                df=df_temp, chart_id="time_evo", title=f"Evolución Temporal de {target_col}",
+                insight="Análisis longitudinal histórico.",
+                chart_type="LineChart", dimensions=[dc, target_col], source_df=agg, is_time=True
+            ))
             
-        return charts
-
-    # 1. Timeseries (if dates exist)
-    if date_cols:
-        dc = date_cols[0]
-        try:
-            charts.append({
-                "title": f"Evolución mensual de {target_col}",
-                "chart_data": chart_timeseries_monthly(df, dc, target_col),
-                "description": f"Muestra cómo evolucionó {target_col} a lo largo del tiempo."
-            })
-        except Exception: pass
-
-    # 2. Boxplot (Data Science Dispersión)
-    if cat_cols:
-        cc = cat_cols[0]
-        try:
-            charts.append({
-                "title": f"Dispersión de {target_col} por {cc}",
-                "chart_data": chart_boxplot(df, cc, target_col),
-                "description": f"Diagrama de caja mostrando mínimos, máximos y promedios de {target_col}."
-            })
-        except Exception: pass
-
-    # 3. Scatter Trend (if another numeric exists)
-    other_nums = [c for c in num_cols if c != target_col]
-    if other_nums:
-        try:
-            corrs = df[[target_col] + other_nums].corr(method='spearman')[target_col].drop(target_col)
-            best_col = corrs.abs().idxmax()
-            best_corr = corrs[best_col]
-            if pd.notna(best_col):
-                charts.append({
-                    "title": f"Correlación: {target_col} vs {best_col}",
-                    "chart_data": chart_scatter_trend(df, best_col, target_col),
-                    "description": f"Análisis bivariado para detectar relación. Correlación de Spearman: {round(best_corr, 2)}."
-                })
-        except Exception: pass
-
-    # 4. Heatmap/Radar de correlación (if >= 3 numerics)
-    if len(num_cols) >= 3:
-        try:
-            cdata = chart_heatmap_corr(df)
-            if cdata:
-                charts.append({
-                    "title": "Red de Correlación",
-                    "chart_data": cdata,
-                    "description": "Fuerza estadística entre las variables numéricas."
-                })
-        except Exception: pass
-
-    # Fill up to 4 charts using alternative columns
-    if len(charts) < 4:
-        try:
-            charts.append({
-                "title": f"Distribución de {target_col}",
-                "chart_data": chart_histogram(df, target_col),
-                "description": f"Campana de distribución de frecuencias."
-            })
-        except Exception: pass
-        
-    if len(charts) < 4 and cat_cols:
-        for cc in cat_cols:
-            if len(charts) >= 4: break
-            if df[cc].nunique() > 25: continue
-            try:
-                charts.append({
-                    "title": f"{target_col} agrupado por {cc}",
-                    "chart_data": chart_bar_category(df, cc, target_col),
-                    "description": f"Ranking de categorías por sumatoria."
-                })
-            except Exception: pass
+        if cat_cols:
+            cc = cat_cols[0]
+            agg = df.groupby(cc)[target_col].mean().reset_index().sort_values(target_col, ascending=False)
+            ctype = "Donut" if len(agg) < 5 else "HorizontalBar"
+            charts.append(build_autoviz_payload(
+                df=df, chart_id="num_cat", title=f"{target_col} por {cc}",
+                insight=f"Segmentado por categorías.",
+                chart_type=ctype, dimensions=[cc, target_col], source_df=agg.head(15)
+            ))
             
-    # ABSOLUTE GUARANTEE: Si a pesar de todo faltan graficos (dataset pobre), metemos placeholders vacios de KPIs
+        other_nums = [c for c in num_cols if c != target_col]
+        if other_nums:
+            nc = other_nums[0]
+            scatter_df = df[[nc, target_col]].dropna()
+            if len(scatter_df) > 1000: scatter_df = scatter_df.sample(1000, random_state=42)
+            charts.append(build_autoviz_payload(
+                df=df, chart_id="scatter_corr", title=f"Correlación: {target_col} vs {nc}",
+                insight="Dispersión bivariada continua.",
+                chart_type="Scatter", dimensions=[nc, target_col], source_df=scatter_df
+            ))
+
+    # Guarantee 4 charts
     while len(charts) < 4:
-        dummy_num = num_cols[0] if num_cols else target_col
-        charts.append({
-            "title": f"Métrica Extra: {dummy_num}",
-            "chart_data": {
-                "type": "bar_horizontal",
-                "labels": ["General"],
-                "datasets": [{"label": dummy_num, "data": [df[dummy_num].mean() if pd.api.types.is_numeric_dtype(df[dummy_num]) else len(df)]}],
-            },
-            "description": f"Visualización de soporte extra generada por el motor para asegurar consistencia del layout."
-        })
-
+        dummy = df.head(5)[num_cols].reset_index() if num_cols else df.head(5)
+        charts.append(build_autoviz_payload(
+            df=df, chart_id=f"filler_{len(charts)}", title="Muestra de Datos",
+            insight="Generado automáticamente.", chart_type="HorizontalBar",
+            dimensions=list(dummy.columns)[:2], source_df=dummy
+        ))
+        
     return charts
+

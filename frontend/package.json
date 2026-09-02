@@ -8,13 +8,13 @@
     "start": "next start"
   },
   "dependencies": {
-    "@sgratzl/chartjs-chart-boxplot": "^4.4.5",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/react-plotly.js": "^2.6.3",
     "autoprefixer": "^10.0.0",
-    "chart.js": "^4.5.1",
+    "echarts": "^6.1.0",
+    "echarts-for-react": "^3.0.6",
     "firebase": "^10.12.0",
     "framer-motion": "^13.1.1",
     "html2canvas": "^1.4.1",
@@ -23,7 +23,6 @@
     "next": "14.2.3",
     "postcss": "^8",
     "react": "^18",
-    "react-chartjs-2": "^5.3.1",
     "react-dom": "^18",
     "react-dropzone": "^14.2.3",
     "react-hot-toast": "^2.4.1",
