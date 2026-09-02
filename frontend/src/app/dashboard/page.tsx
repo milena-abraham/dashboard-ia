@@ -184,6 +184,34 @@ function DashboardInner() {
       }
     }
   };
+  const [isNarrativeExpanded, setIsNarrativeExpanded] = useState(true);
+  const [generatingNarrative, setGeneratingNarrative] = useState(false);
+
+  useEffect(() => {
+    async function fetchNarrative() {
+      if (result && result.narrative?.source === 'pending' && !generatingNarrative) {
+        setGeneratingNarrative(true);
+        try {
+          const { generateNarrative } = await import('@/lib/api');
+          const narrative = await generateNarrative(result);
+          setResult((prev: any) => ({
+            ...prev,
+            narrative: narrative
+          }));
+        } catch (err) {
+          console.error("Error fetching narrative:", err);
+          setResult((prev: any) => ({
+            ...prev,
+            narrative: { text: "Error al generar informe IA.", source: "error" }
+          }));
+        } finally {
+          setGeneratingNarrative(false);
+        }
+      }
+    }
+    fetchNarrative();
+  }, [result]);
+
   const handleStartAnalysis = async () => {
     if (filesQueue.length === 0) {
       toast.error('Por favor seleccioná un archivo primero.');
@@ -471,16 +499,26 @@ function DashboardInner() {
                 
                 {/* Executive Summary at the top */}
                 {result.narrative && (
-                  <div className="md:col-span-12 bg-white p-6 md:p-8 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-2 bg-mio-violet rounded-none">
-                        <FileText className="w-5 h-5 text-white" />
+                  <div className="md:col-span-12 bg-white p-6 md:p-8 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] transition-all">
+                    <div className="flex items-center justify-between mb-4 cursor-pointer" onClick={() => setIsNarrativeExpanded(!isNarrativeExpanded)}>
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-mio-violet rounded-none">
+                          <FileText className="w-5 h-5 text-white" />
+                        </div>
+                        <h3 className="text-xl font-black uppercase tracking-tight">
+                          Resumen Ejecutivo {result.narrative.source === 'pending' && <span className="text-sm font-normal normal-case text-gray-500 ml-2 animate-pulse">(Generando...)</span>}
+                        </h3>
                       </div>
-                      <h3 className="text-xl font-black uppercase tracking-tight">Resumen Ejecutivo</h3>
+                      <button className="text-gray-400 hover:text-gray-800 transition-colors">
+                        {isNarrativeExpanded ? <span className="text-sm font-bold uppercase underline">Minimizar</span> : <span className="text-sm font-bold uppercase underline">Expandir</span>}
+                      </button>
                     </div>
-                    <div className="prose prose-sm md:prose-base max-w-none text-gray-700">
-                      <p className="whitespace-pre-line leading-relaxed">{result.narrative.text}</p>
-                    </div>
+                    
+                    {isNarrativeExpanded && (
+                      <div className="prose prose-sm md:prose-base max-w-none text-gray-700 mt-4 border-t border-gray-100 pt-4">
+                        <p className="whitespace-pre-line leading-relaxed">{result.narrative.text}</p>
+                      </div>
+                    )}
                   </div>
                 )}
                 

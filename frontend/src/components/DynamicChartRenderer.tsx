@@ -62,6 +62,11 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
              if (layout_directives.x_axis_type === 'category' && layout_directives.high_cardinality) {
                  return String(value).length > 10 ? String(value).substring(0, 10) + '...' : value;
              }
+             if (layout_directives.x_axis_type === 'time') {
+                 // ECharts time axes pass timestamps (ms) to the formatter
+                 const date = new Date(value);
+                 return date.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
+             }
              return String(value);
           }
         }

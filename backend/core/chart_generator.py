@@ -166,14 +166,7 @@ def auto_charts(df: pd.DataFrame, profile, target_col: str) -> List[Dict[str, An
                 chart_type="Scatter", dimensions=[nc, target_col], source_df=scatter_df
             ))
 
-    # Guarantee 4 charts
-    while len(charts) < 4:
-        dummy = df.head(5)[num_cols].reset_index() if num_cols else df.head(5)
-        charts.append(build_autoviz_payload(
-            df=dummy, chart_id=f"filler_{len(charts)}", title="Muestra de Datos",
-            insight="Generado automáticamente.", chart_type="HorizontalBar",
-            dimensions=list(dummy.columns)[:2], source_df=dummy
-        ))
+
         
     return charts
 
