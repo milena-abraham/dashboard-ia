@@ -30,6 +30,16 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
         if (!payload || !payload.dataset) return null;
         const ds = JSON.parse(JSON.stringify(payload.dataset));
         if (ds.source && ds.dimensions) {
+            if (payload.layout_directives.chart_type === 'FanChart') {
+                ds.source.forEach((row: any) => {
+                    if (row.upper != null && row.lower != null) {
+                        row.band_width = row.upper - row.lower;
+                    } else {
+                        row.band_width = null;
+                    }
+                });
+                if (!ds.dimensions.includes('band_width')) ds.dimensions.push('band_width');
+            }
             ds.source.forEach((row: any) => {
                 ds.dimensions.forEach((dim: string) => {
                     if (typeof row[dim] === 'number' && (dim === ds.dimensions[0] || dim === 'feature' || dim === '_segment')) {
@@ -50,10 +60,21 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
     const baseOptions: any = {
       dataset: dataset,
       grid: { containLabel: true, left: '5%', right: '5%', top: '15%', bottom: '10%' },
-      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      tooltip: { 
+          trigger: 'axis', 
+          axisPointer: { type: 'shadow' },
+          valueFormatter: (value: any) => {
+              if (value == null) return '-';
+              if (typeof value === 'number') {
+                  return Number.isInteger(value) ? value.toString() : value.toFixed(2);
+              }
+              return String(value);
+          }
+      },
       xAxis: {
         type: layout_directives.x_axis_type,
         axisLabel: {
+          hideOverlap: true,
           formatter: (value: any) => {
              if (layout_directives.x_axis_type === 'value' || layout_directives.x_axis_type === 'log') {
                 if (Math.abs(value) >= 1000000) return (value / 1000000).toFixed(1) + 'M';
@@ -74,6 +95,7 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
       yAxis: {
         type: layout_directives.is_log_scale ? 'log' : layout_directives.y_axis_type,
         axisLabel: {
+          hideOverlap: true,
           formatter: (value: any) => {
              if (layout_directives.y_axis_type === 'value' || layout_directives.y_axis_type === 'log') {
                 if (Math.abs(value) >= 1000000) return (value / 1000000).toFixed(1) + 'M';
