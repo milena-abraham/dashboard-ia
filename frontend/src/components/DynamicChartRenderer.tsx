@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
-import * as echarts from 'echarts/core';
+import * as echarts from 'echarts';
 import { neoBrutalistTheme } from '../lib/echartsNeoBrutalistTheme';
 
 echarts.registerTheme('neo-brutalist', neoBrutalistTheme);

@@ -11,15 +11,22 @@ import json
 import math
 import pandas as pd
 
+import numpy as np
 def clean_json_nans(obj):
     if isinstance(obj, dict):
         return {k: clean_json_nans(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
+    elif isinstance(obj, list) or isinstance(obj, tuple) or isinstance(obj, set) or isinstance(obj, np.ndarray):
         return [clean_json_nans(v) for v in obj]
-    elif isinstance(obj, float):
+    elif isinstance(obj, float) or isinstance(obj, np.floating):
         if pd.isna(obj) or math.isnan(obj) or math.isinf(obj):
             return None
-        return obj
+        return float(obj)
+    elif isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.bool_):
+        return bool(obj)
+    elif pd.isna(obj):
+        return None
     return obj
 
 import asyncio

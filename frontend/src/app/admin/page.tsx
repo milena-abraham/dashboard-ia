@@ -10,7 +10,7 @@ import ReactECharts from 'echarts-for-react';
 import Navbar from '@/components/Navbar';
 import LogDetailsRenderer from '@/components/LogDetailsRenderer';
 import { neoBrutalistTheme } from '@/lib/echartsNeoBrutalistTheme';
-import * as echarts from 'echarts/core';
+import * as echarts from 'echarts';
 echarts.registerTheme('neo-brutalist', neoBrutalistTheme);
 
 const ADMIN_EMAILS = ['tadeomunozgarces@gmail.com', 'milenapabraham@gmail.com'];
@@ -189,12 +189,21 @@ export default function AdminDashboard() {
             
             <div className="bg-white p-6 border-2 border-[#111] shadow-[4px_4px_0px_#111]">
               <h3 className="font-bold text-gray-900 mb-4">Distribución de Eventos</h3>
-              <Bar 
-                data={chartData} 
-                options={{
-                  plugins: { legend: { display: false } },
-                  scales: { y: { beginAtZero: true, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } }
-                }} 
+              <ReactECharts 
+                theme="neo-brutalist"
+                option={{
+                    grid: { containLabel: true, top: 10, bottom: 20, left: 10, right: 10 },
+                    tooltip: { trigger: 'axis' },
+                    xAxis: { type: 'category', data: chartData.labels },
+                    yAxis: { type: 'value' },
+                    series: chartData.datasets.map((d: any) => ({
+                        name: d.label,
+                        type: 'bar',
+                        data: d.data,
+                        itemStyle: { color: d.backgroundColor }
+                    }))
+                }}
+                style={{ height: '300px', width: '100%' }}
               />
             </div>
           </div>
