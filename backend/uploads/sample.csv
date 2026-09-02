@@ -1,0 +1,11 @@
+id,nombre,precio,fecha,categoria,cantidad
+1,Producto A,10.5,2025-01-01,Cat1,100
+2,Producto B,20.0,2025-01-02,Cat1,50
+3,Producto C,15.2,2025-01-03,Cat2,200
+4,Producto D,30.0,2025-01-04,Cat2,10
+5,Producto E,10.0,2025-01-05,Cat1,100
+6,Producto F,25.0,2025-01-06,Cat3,50
+7,Producto G,18.0,2025-01-07,Cat2,300
+8,Producto H,40.0,2025-01-08,Cat3,5
+9,Producto I,12.0,2025-01-09,Cat1,120
+10,Producto J,22.0,2025-01-10,Cat1,60
