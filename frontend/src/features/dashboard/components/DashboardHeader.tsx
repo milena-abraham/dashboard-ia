@@ -1,7 +1,7 @@
 import React from 'react';
 import DataQualityBadge from '@/components/DataQualityBadge';
 import { AnalysisResponseSchema } from '@/types/analysis';
-import { Download, Presentation, RotateCcw } from 'lucide-react';
+import { Download, Presentation, RotateCcw, RefreshCw } from 'lucide-react';
 
 interface DashboardHeaderProps {
   result: AnalysisResponseSchema;
@@ -10,6 +10,7 @@ interface DashboardHeaderProps {
   onDownloadPdf: () => void;
   onDownloadPptx: () => void;
   onReset: () => void;
+  onRefresh?: () => void;
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -19,6 +20,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onDownloadPdf,
   onDownloadPptx,
   onReset,
+  onRefresh,
 }) => {
   return (
     <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
@@ -38,6 +40,17 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-2.5 w-full md:w-auto">
+        {onRefresh && (
+          <button
+            onClick={onRefresh}
+            title="Recalcular análisis con el backend sin volver a subir el archivo"
+            className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-none bg-mio-violet/10 hover:bg-mio-violet/20 text-mio-violet text-xs font-bold border border-[#111] transition-colors"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Recalcular</span>
+          </button>
+        )}
+
         <button
           onClick={onDownloadPptx}
           disabled={downloadingPptx}

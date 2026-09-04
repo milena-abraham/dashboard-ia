@@ -48,3 +48,12 @@ def test_narrative_endpoint():
     # Ensure no emojis in the generated narrative
     for emoji in ["📈", "🎯", "⚠️", "🚀", "⭐"]:
         assert emoji not in data["text"]
+
+def test_analyze_existing_filename():
+    data = {"existing_filename": "test_sales.csv", "target_col": "ventas"}
+    response = client.post("/api/v1/analyze", data=data)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["filename"] == "test_sales.csv"
+    assert "profile" in body
+    assert "kpis" in body

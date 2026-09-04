@@ -18,13 +18,11 @@ async def analyze(
     file: Optional[UploadFile] = File(None), 
     file_url: Optional[str] = Form(None),
     filename_override: Optional[str] = Form(None),
+    existing_filename: Optional[str] = Form(None),
     target_col: Optional[str] = Form(None)
 ):
     t_start = time.time()
     
-    if not file and not file_url:
-        raise HTTPException(status_code=400, detail="Debe enviar 'file' o 'file_url'.")
-
     file_path = ""
     filename = ""
     if file:
@@ -32,8 +30,25 @@ async def analyze(
         file_path = str(UPLOAD_DIR / filename)
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
+    elif existing_filename:
+        # Check standard upload directory first
+        target_path = UPLOAD_DIR / existing_filename
+        if not target_path.exists():
+            # Check parent directory uploads or root (convenience for development)
+            parent_uploads = Path("..") / "uploads" / existing_filename
+            root_file = Path("..") / existing_filename
+            if parent_uploads.exists():
+                target_path = parent_uploads
+            elif root_file.exists():
+                target_path = root_file
+            else:
+                raise HTTPException(status_code=404, detail=f"Archivo '{existing_filename}' no encontrado en el servidor.")
+        filename = existing_filename
+        file_path = str(target_path)
     elif file_url:
         raise HTTPException(status_code=400, detail="file_url method not fully implemented in local stub")
+    else:
+        raise HTTPException(status_code=400, detail="Debe enviar 'file', 'existing_filename' o 'file_url'.")
         
     if filename_override:
         filename = filename_override

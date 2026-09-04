@@ -103,6 +103,38 @@ export function useDashboardState() {
     loadProjectData();
   }, [searchParams, user, authLoading, result]);
 
+  // 2b. Restore active analysis on page reload without re-uploading file
+  useEffect(() => {
+    const projectId = searchParams.get('project');
+    if (projectId || result || loading) return;
+
+    if (typeof window === 'undefined') return;
+    const saved = localStorage.getItem('mio_active_analysis');
+    if (saved) {
+      try {
+        const { filename, targetCol: savedTarget } = JSON.parse(saved);
+        if (filename) {
+          setLoading(true);
+          if (savedTarget) setTargetCol(savedTarget);
+          analyzeFile(null, undefined, undefined, savedTarget || undefined, filename)
+            .then((freshData) => {
+              setResult(freshData);
+              toast.success(`Datos actualizados desde el backend (${filename})`, { id: 'restore-analysis' });
+            })
+            .catch((err) => {
+              console.warn('No se pudo recargar el archivo activo:', err);
+              localStorage.removeItem('mio_active_analysis');
+            })
+            .finally(() => {
+              setLoading(false);
+            });
+        }
+      } catch (err) {
+        console.error('Error reading mio_active_analysis:', err);
+      }
+    }
+  }, [searchParams, result, loading]);
+
   // 3. Narrative generation effect
   useEffect(() => {
     async function fetchNarrative() {
@@ -160,6 +192,14 @@ export function useDashboardState() {
       try {
         const data = await analyzeFile(file, undefined, undefined, targetCol || undefined);
         setResult(data);
+        try {
+          localStorage.setItem('mio_active_analysis', JSON.stringify({
+            filename: data.filename,
+            targetCol: data.targetCol || targetCol || ''
+          }));
+        } catch (storageErr) {
+          console.warn('LocalStorage error:', storageErr);
+        }
         toast.success(`¡Análisis de ${file.name} completado con éxito!`);
 
         const metricsPayload = {
@@ -287,6 +327,9 @@ export function useDashboardState() {
   };
 
   const handleReset = () => {
+    try {
+      localStorage.removeItem('mio_active_analysis');
+    } catch (e) {}
     setFilesQueue([]);
     setResult(null);
     setTargetCol('');
@@ -300,6 +343,26 @@ export function useDashboardState() {
           '¡Hola! Soy **Asistente MIO**. He analizado tu archivo. ¿Qué te gustaría saber sobre los resultados? También podés pedirme que *modifique un gráfico*.',
       },
     ]);
+  };
+
+  const handleRefresh = async () => {
+    if (!result?.filename) return;
+    setLoading(true);
+    try {
+      const freshData = await analyzeFile(
+        null,
+        undefined,
+        undefined,
+        targetCol || result.targetCol || undefined,
+        result.filename
+      );
+      setResult(freshData);
+      toast.success('Gráficos y análisis recalculados con el backend');
+    } catch (err: any) {
+      toast.error('Error al refrescar análisis: ' + (err.message || 'Desconocido'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSaveProject = async () => {
@@ -397,6 +460,7 @@ export function useDashboardState() {
     handleDownloadPdf,
     handleDownloadPptx,
     handleReset,
+    handleRefresh,
     handleSaveProject,
     handleChartOverride,
     handleLoadSample,

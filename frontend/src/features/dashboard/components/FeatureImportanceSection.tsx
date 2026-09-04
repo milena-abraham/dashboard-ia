@@ -28,7 +28,7 @@ export const FeatureImportanceSection: React.FC<FeatureImportanceSectionProps> =
             Impacto Base (Gini)
           </h3>
         </div>
-        <div className="relative w-full min-h-[420px]">
+        <div className="relative w-full h-[420px]">
           <ChartErrorBoundary>
             <DynamicChartRenderer
               key={`feat-imp-${filename}`}
@@ -47,7 +47,7 @@ export const FeatureImportanceSection: React.FC<FeatureImportanceSectionProps> =
               Atribución (SHAP)
             </h3>
           </div>
-          <div className="relative w-full min-h-[420px]">
+          <div className="relative w-full h-[420px]">
             <ChartErrorBoundary>
               <DynamicChartRenderer
                 key={`feat-shap-${filename}`}

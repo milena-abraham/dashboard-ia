@@ -28,11 +28,12 @@ export const SegmentationSection: React.FC<SegmentationSectionProps> = ({
             {scatterData.metadata?.title || 'Distribución de Segmentos'}
           </h3>
         </div>
-        <div className="relative w-full min-h-[400px]">
+        <div className="relative w-full h-[460px]">
           <ChartErrorBoundary>
             <DynamicChartRenderer
               key={`seg-dist-${filename}`}
               payload={scatterData}
+              height={460}
             />
           </ChartErrorBoundary>
         </div>
@@ -45,11 +46,12 @@ export const SegmentationSection: React.FC<SegmentationSectionProps> = ({
             {radarData.metadata?.title || 'Perfil de Segmentos'}
           </h3>
         </div>
-        <div className="relative w-full min-h-[400px]">
+        <div className="relative w-full h-[460px]">
           <ChartErrorBoundary>
             <DynamicChartRenderer
               key={`seg-prof-${filename}`}
               payload={radarData}
+              height={460}
             />
           </ChartErrorBoundary>
         </div>

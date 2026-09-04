@@ -35,6 +35,7 @@ function DashboardInner() {
     handleDownloadPdf,
     handleDownloadPptx,
     handleReset,
+    handleRefresh,
     isNarrativeExpanded,
     setIsNarrativeExpanded,
     effectiveCharts,
@@ -75,6 +76,7 @@ function DashboardInner() {
               onDownloadPdf={handleDownloadPdf}
               onDownloadPptx={handleDownloadPptx}
               onReset={handleReset}
+              onRefresh={handleRefresh}
             />
 
             <KPICards kpis={result.kpis} />

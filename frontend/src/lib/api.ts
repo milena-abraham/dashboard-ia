@@ -5,18 +5,21 @@ export async function analyzeFile(
   file: File | null,
   fileUrl?: string,
   filenameOverride?: string,
-  targetCol?: string
+  targetCol?: string,
+  existingFilename?: string
 ): Promise<AnalysisResponseSchema> {
   const formData = new FormData();
   if (file) {
     formData.append('file', file);
+  } else if (existingFilename) {
+    formData.append('existing_filename', existingFilename);
   } else if (fileUrl) {
     formData.append('file_url', fileUrl);
     if (filenameOverride) {
       formData.append('filename_override', filenameOverride);
     }
   } else {
-    throw new Error('Debe proveer un archivo o una URL');
+    throw new Error('Debe proveer un archivo o el nombre de un archivo existente.');
   }
 
   if (targetCol) {

@@ -27,12 +27,12 @@ export const AnomaliesSection: React.FC<AnomaliesSectionProps> = ({
           Valores Atípicos (Anomalías)
         </h3>
       </div>
-      <div className="relative w-full min-h-[400px]">
+      <div className="relative w-full h-[420px]">
         <ChartErrorBoundary>
           <DynamicChartRenderer
             key={`anom-${filename}`}
             payload={chartData}
-            height={400}
+            height={420}
           />
         </ChartErrorBoundary>
       </div>

@@ -27,12 +27,12 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
           Proyecciones Inteligentes
         </h3>
       </div>
-      <div className="relative w-full min-h-[420px]">
+      <div className="relative w-full h-[450px]">
         <ChartErrorBoundary>
           <DynamicChartRenderer
             key={`forecast-${filename}`}
             payload={chartData}
-            height={420}
+            height={450}
           />
         </ChartErrorBoundary>
       </div>

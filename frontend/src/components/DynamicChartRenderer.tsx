@@ -44,9 +44,16 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
     const dataset = safeDataset;
     
     // Configuración Base
+    const isLegendChart = ['FanChart', 'Scatter'].includes(layoutDirectives.chartType);
     const baseOptions: any = {
       dataset: dataset,
-      grid: { containLabel: true, left: '5%', right: '5%', top: '15%', bottom: 70 },
+      grid: { 
+        containLabel: true, 
+        left: 12, 
+        right: 25, 
+        top: 20, 
+        bottom: isLegendChart ? 45 : 25 
+      },
       tooltip: { 
           trigger: 'axis', 
           axisPointer: { type: 'shadow' },
@@ -109,8 +116,31 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
         // If x is value and y is category, we map X -> Numeric, Y -> Category
         const numD = isD0Num ? d0 : d1;
         const catD = isD0Num ? d1 : d0;
+        baseOptions.grid = { containLabel: true, left: 12, right: 40, top: 20, bottom: 25 };
         baseOptions.series = [{
           type: 'bar',
+          barMaxWidth: 38,
+          barCategoryGap: '25%',
+          itemStyle: {
+            color: '#815ae1',
+            borderColor: '#111',
+            borderWidth: 2
+          },
+          label: {
+            show: true,
+            position: 'right',
+            fontWeight: 'bold',
+            fontSize: 12,
+            formatter: (p: any) => {
+              const val = p.value ? p.value[numD] : p.value;
+              if (typeof val === 'number') {
+                if (Math.abs(val) >= 1000000) return (val / 1000000).toFixed(1) + 'M';
+                if (Math.abs(val) >= 1000) return (val / 1000).toFixed(1) + 'K';
+                return Number.isInteger(val) ? val.toString() : val.toFixed(1);
+              }
+              return String(val ?? '');
+            }
+          },
           encode: { x: numD, y: catD }
         }];
         break;
@@ -256,15 +286,15 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
         };
         baseOptions.legend = {
           show: dataset.source.length <= 10,
-          bottom: 10,
+          bottom: 8,
           left: 'center',
           itemGap: 14,
-          textStyle: { fontWeight: 'bold' }
+          textStyle: { fontWeight: 'bold', fontSize: 12 }
         };
         baseOptions.series = [{
           type: 'pie',
-          radius: ['45%', '72%'],
-          center: ['50%', '46%'],
+          radius: ['40%', '75%'],
+          center: ['50%', '44%'],
           avoidLabelOverlap: true,
           itemStyle: {
             borderColor: '#111',
@@ -274,12 +304,18 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
             show: true,
             formatter: '{b}\n{d}%',
             fontWeight: 'bold',
-            fontSize: 12
+            fontSize: 13,
+            color: '#111'
+          },
+          labelLine: {
+            show: true,
+            length: 12,
+            length2: 10
           },
           emphasis: {
             label: {
               show: true,
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: 'bold'
             }
           },
@@ -301,14 +337,14 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
     return <div className="text-gray-400">Datos no disponibles</div>;
   }
 
-  const h = typeof height === 'number' ? `${height}px` : height;
+  const h = typeof height === 'number' ? `${height}px` : (height === '100%' ? '420px' : (height || '420px'));
 
   return (
-    <div style={{ width: '100%', height: h || 400 }} className="w-full flex-1">
+    <div style={{ width: '100%', height: h, minHeight: 400 }} className="w-full h-full flex-1">
       <ReactECharts
         option={options}
         theme="neo-brutalist"
-        style={{ height: '100%', width: '100%' }}
+        style={{ height: '100%', minHeight: 400, width: '100%' }}
         opts={{ renderer: 'canvas' }}
       />
     </div>

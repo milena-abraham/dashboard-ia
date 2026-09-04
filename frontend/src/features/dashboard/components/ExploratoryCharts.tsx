@@ -44,8 +44,8 @@ export const ExploratoryCharts: React.FC<ExploratoryChartsProps> = ({
             <p className="text-sm text-gray-500 mb-6 flex-1 font-medium">
               {c.metadata?.insightSubtitle}
             </p>
-            <div className="mt-auto relative w-full flex-1 h-[400px]">
-              <DynamicChartRenderer key={`${filename}-${i}`} payload={c} />
+            <div className="mt-auto relative w-full flex-1 h-[420px]">
+              <DynamicChartRenderer key={`${filename}-${i}`} payload={c} height={420} />
             </div>
           </div>
         );
