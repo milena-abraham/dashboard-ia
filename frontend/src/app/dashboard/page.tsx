@@ -25,6 +25,7 @@ function DashboardInner() {
     currentFileIndex,
     isUploading,
     uploadProgress,
+    activeFileSize,
     targetCol,
     setTargetCol,
     setFilesQueue,
@@ -45,6 +46,11 @@ function DashboardInner() {
     handleChartOverride,
   } = useDashboardState();
 
+  const effectiveFileSize =
+    filesQueue[currentFileIndex]?.size ||
+    activeFileSize ||
+    (result?.profile?.nRows ? result.profile.nRows * 95 : undefined);
+
   return (
     <div className="min-h-screen bg-[#fafafc] flex flex-col">
       <Navbar />
@@ -52,7 +58,7 @@ function DashboardInner() {
       <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
         {loading ? (
           <LoadingAnalysis
-            fileSize={filesQueue[currentFileIndex]?.size}
+            fileSize={effectiveFileSize}
             isUploading={isUploading}
             uploadProgress={uploadProgress}
             currentFile={currentFileIndex + 1}

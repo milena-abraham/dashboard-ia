@@ -52,23 +52,33 @@ class DataProfile:
 # Detección de tipo
 # ─────────────────────────────────────────────────────────────
 
-def _infer_column_type(series: pd.Series) -> str:
-    """Infiere el tipo semántico de una columna."""
-    name_lower = series.name.lower()
+def _infer_column_type(series: pd.Series, n_unique: Optional[int] = None) -> str:
+    """Infiere el tipo semántico de una columna de forma rápida y determinística."""
+    name_lower = str(series.name).lower()
 
-    # Identificadores: columnas con nombres típicos de ID o cardinalidad alta entera
-    n_unique = series.nunique()
+    # Identificadores: columnas con tokens típicos de ID (palabras separadas por _ o espacios)
+    import re
+    tokens = set(re.split(r"[\s_]+", name_lower))
+    id_keywords = {"id", "cod", "codigo", "código", "code", "key", "uuid", "numero", "número"}
+    has_id_keyword = bool(tokens & id_keywords)
+
     n_rows = len(series)
-    id_keywords = ["id", "cod", "código", "code", "key", "uuid", "numero", "número"]
-    has_id_keyword = any(kw in name_lower for kw in id_keywords)
-    
-    is_high_cardinality = n_unique / max(n_rows, 1) > 0.95
+    if n_unique is None:
+        if n_rows > 50000:
+            sample = series.dropna().head(5000)
+            is_high_cardinality = sample.nunique() / max(len(sample), 1) > 0.95
+        else:
+            n_unique = int(series.nunique())
+            is_high_cardinality = n_unique / max(n_rows, 1) > 0.95
+    else:
+        is_high_cardinality = n_unique / max(n_rows, 1) > 0.95
+
     is_integer = pd.api.types.is_integer_dtype(series)
     if not is_integer and pd.api.types.is_numeric_dtype(series):
-        # Check if float values are actually integers
-        is_integer = (series.dropna() % 1 == 0).all()
+        sample_vals = series.dropna().head(500)
+        is_integer = len(sample_vals) > 0 and (sample_vals % 1 == 0).all()
 
-    if (has_id_keyword and n_unique == n_rows) or (is_high_cardinality and is_integer):
+    if (has_id_keyword and is_high_cardinality) or (is_high_cardinality and is_integer and has_id_keyword):
         return COLUMN_TYPE_ID
 
     # Fechas
@@ -90,20 +100,33 @@ def _infer_column_type(series: pd.Series) -> str:
 
     # Numéricas
     if pd.api.types.is_numeric_dtype(series):
-        # Si tiene muy pocos únicos puede ser categórica numérica
-        if series.nunique() <= 10 and series.nunique() < len(series) * 0.05:
-            return COLUMN_TYPE_CATEGORICAL
-        return COLUMN_TYPE_NUMERIC
+        if n_unique is None:
+            sample_u = series.dropna().head(1000).nunique()
+            if sample_u <= 5:
+                n_unique = int(series.nunique())
+                if n_unique <= 10 and n_unique < n_rows * 0.05:
+                    return COLUMN_TYPE_CATEGORICAL
+            return COLUMN_TYPE_NUMERIC
+        else:
+            if n_unique <= 10 and n_unique < n_rows * 0.05:
+                return COLUMN_TYPE_CATEGORICAL
+            return COLUMN_TYPE_NUMERIC
 
     # Categóricas vs Texto libre
-    n_unique = series.nunique()
-    n_rows   = len(series.dropna())
-    if n_unique == 0:
+    if n_unique is None:
+        sample_u = series.dropna().head(1000).nunique()
+        ratio = sample_u / max(1, min(1000, n_rows))
+        if ratio < 0.4 or sample_u <= 30:
+            return COLUMN_TYPE_CATEGORICAL
         return COLUMN_TYPE_TEXT
-    ratio = n_unique / n_rows
-    if ratio < 0.4 or n_unique <= 30:
-        return COLUMN_TYPE_CATEGORICAL
-    return COLUMN_TYPE_TEXT
+    else:
+        n_non_null = n_rows - int(series.isna().sum())
+        if n_unique == 0 or n_non_null == 0:
+            return COLUMN_TYPE_TEXT
+        ratio = n_unique / n_non_null
+        if ratio < 0.4 or n_unique <= 30:
+            return COLUMN_TYPE_CATEGORICAL
+        return COLUMN_TYPE_TEXT
 
 
 # ─────────────────────────────────────────────────────────────
@@ -111,10 +134,11 @@ def _infer_column_type(series: pd.Series) -> str:
 # ─────────────────────────────────────────────────────────────
 
 def _profile_column(series: pd.Series) -> ColumnProfile:
-    inferred = _infer_column_type(series)
+    n_unique = int(series.nunique())
+    inferred = _infer_column_type(series, n_unique=n_unique)
     null_count = int(series.isna().sum())
     null_pct   = round(null_count / max(len(series), 1) * 100, 1)
-    sample_vals = series.dropna().unique()[:5].tolist()
+    sample_vals = series.dropna().head(50).drop_duplicates().head(5).tolist()
 
     stats: Dict = {}
     if inferred == COLUMN_TYPE_NUMERIC:
@@ -130,7 +154,7 @@ def _profile_column(series: pd.Series) -> ColumnProfile:
             "min":    _safe_float(desc.get("min")),
             "max":    _safe_float(desc.get("max")),
             "mean":   _safe_float(desc.get("mean")),
-            "median": _safe_float(series.median()),
+            "median": _safe_float(desc.get("50%")),
             "std":    _safe_float(desc.get("std")),
         }
 
@@ -138,7 +162,7 @@ def _profile_column(series: pd.Series) -> ColumnProfile:
         name=series.name,
         dtype=str(series.dtype),
         inferred_type=inferred,
-        n_unique=int(series.nunique()),
+        n_unique=n_unique,
         null_count=null_count,
         null_pct=null_pct,
         sample_values=sample_vals,
@@ -231,12 +255,13 @@ def _suggest_targets(cols: List[ColumnProfile]) -> List[str]:
 # API pública
 # ─────────────────────────────────────────────────────────────
 
-def profile_dataframe(df: pd.DataFrame) -> DataProfile:
+def profile_dataframe(df: pd.DataFrame, duplicate_rows: Optional[int] = None) -> DataProfile:
     """
     Genera un perfil completo del DataFrame.
 
     Args:
         df: DataFrame a analizar.
+        duplicate_rows: Cantidad de duplicados si ya fue calculada previamente.
 
     Returns:
         DataProfile con toda la información del dataset.
@@ -246,7 +271,11 @@ def profile_dataframe(df: pd.DataFrame) -> DataProfile:
     date_cols        = [c.name for c in cols if c.inferred_type == COLUMN_TYPE_DATE]
     numeric_cols     = [c.name for c in cols if c.inferred_type == COLUMN_TYPE_NUMERIC]
     categorical_cols = [c.name for c in cols if c.inferred_type == COLUMN_TYPE_CATEGORICAL]
-    dup_rows         = int(df.duplicated().sum())
+    
+    if duplicate_rows is not None:
+        dup_rows = duplicate_rows
+    else:
+        dup_rows = int(df.duplicated().sum())
 
     quality_score, quality_label = _compute_quality_score(df, cols)
     suggested_targets = _suggest_targets(cols)

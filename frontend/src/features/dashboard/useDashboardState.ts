@@ -22,6 +22,7 @@ export function useDashboardState() {
   const [currentFileIndex, setCurrentFileIndex] = useState(0);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [activeFileSize, setActiveFileSize] = useState<number | undefined>(undefined);
 
   const [targetCol, setTargetCol] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -112,7 +113,8 @@ export function useDashboardState() {
     const saved = localStorage.getItem('mio_active_analysis');
     if (saved) {
       try {
-        const { filename, targetCol: savedTarget } = JSON.parse(saved);
+        const { filename, targetCol: savedTarget, fileSize: savedSize } = JSON.parse(saved);
+        if (savedSize) setActiveFileSize(savedSize);
         if (filename) {
           setLoading(true);
           if (savedTarget) setTargetCol(savedTarget);
@@ -192,10 +194,12 @@ export function useDashboardState() {
       try {
         const data = await analyzeFile(file, undefined, undefined, targetCol || undefined);
         setResult(data);
+        setActiveFileSize(file.size);
         try {
           localStorage.setItem('mio_active_analysis', JSON.stringify({
             filename: data.filename,
-            targetCol: data.targetCol || targetCol || ''
+            targetCol: data.targetCol || targetCol || '',
+            fileSize: file.size,
           }));
         } catch (storageErr) {
           console.warn('LocalStorage error:', storageErr);
@@ -332,6 +336,7 @@ export function useDashboardState() {
     } catch (e) {}
     setFilesQueue([]);
     setResult(null);
+    setActiveFileSize(undefined);
     setTargetCol('');
     setChatLogged(false);
     setChartOverrides({});
@@ -347,6 +352,9 @@ export function useDashboardState() {
 
   const handleRefresh = async () => {
     if (!result?.filename) return;
+    if (!activeFileSize && result?.profile?.nRows) {
+      setActiveFileSize(result.profile.nRows * 95);
+    }
     setLoading(true);
     try {
       const freshData = await analyzeFile(
@@ -443,6 +451,7 @@ export function useDashboardState() {
     currentFileIndex,
     uploadProgress,
     isUploading,
+    activeFileSize,
     targetCol,
     setTargetCol,
     loading,

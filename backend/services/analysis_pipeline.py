@@ -159,9 +159,16 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
         df_clean, cleaning_report = clean_dataframe(df_raw)
         
         t_prof = time.time()
-        profile = profile_dataframe(df_clean)
+        # Pasamos duplicate_rows=0 porque clean_dataframe ya eliminó duplicados
+        profile = profile_dataframe(df_clean, duplicate_rows=0)
 
-        df_ml = df_clean
+        # Para modelos de ML intensivos (Clustering, Anomalías, LightGBM), si el dataset supera 50,000 filas,
+        # usamos una muestra representativa estratificada/aleatoria de 50k filas para responder en ~2-4 segundos.
+        # df_clean se preserva 100% íntegro para KPIs, conteos, profiling, gráficos y series temporales completas.
+        if len(df_clean) > 50000:
+            df_ml = df_clean.sample(50000, random_state=42)
+        else:
+            df_ml = df_clean
 
         active_target = None
         if target_col:
@@ -206,7 +213,7 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
             fut_forecast, fut_feature, fut_anomaly, fut_segmentation = None, None, None, None
             
             if profile.date_columns and active_target in profile.numeric_columns:
-                fut_forecast = executor.submit(run_forecast, df_ml, date_col=profile.date_columns[0], value_col=active_target, periods=60)
+                fut_forecast = executor.submit(run_forecast, df_clean, date_col=profile.date_columns[0], value_col=active_target, periods=60)
             
             if active_target in profile.numeric_columns:
                 feats = [c for c in profile.numeric_columns if c != active_target]

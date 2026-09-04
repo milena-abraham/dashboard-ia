@@ -14,6 +14,7 @@ from typing import List, Tuple
 
 from core.data_profiler import (
     profile_dataframe,
+    _infer_column_type,
     COLUMN_TYPE_NUMERIC,
     COLUMN_TYPE_DATE,
     COLUMN_TYPE_CATEGORICAL,
@@ -149,9 +150,8 @@ def clean_dataframe(df: pd.DataFrame) -> Tuple[pd.DataFrame, CleaningReport]:
         report.duplicates_removed = dup_count
         report.actions.append(f"Se eliminaron {dup_count} filas duplicadas.")
 
-    # 5. Perfilar el dataset limpio parcialmente para saber tipos
-    profile = profile_dataframe(df)
-    type_map = {col.name: col.inferred_type for col in profile.columns}
+    # 5. Inferencia rápida de tipos de columna para limpieza (evita doble profiling completo)
+    type_map = {col: _infer_column_type(df[col]) for col in df.columns}
 
     # 6. Limpiar columnas de moneda / porcentaje
     for col in df.columns:
