@@ -40,9 +40,12 @@ def run_anomaly_detection(
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)
 
-        # Dynamic contamination: cap at ~150 anomalies to prevent chart smearing and noise, 
-        # but keep it between 0.1% and 5%
-        dynamic_contamination = min(0.05, max(0.001, 150 / len(X_scaled)))
+        # Calibración conservadora de anomalías:
+        # Las anomalías de negocio deben ser valores verdaderamente atípicos (~0.5% - 1.0%),
+        # nunca una cuarta parte del dataset. Cappeamos entre 8 y 40 anomalías genuinas.
+        n_samples = len(X_scaled)
+        target_anomalies = min(40, max(8, int(n_samples * 0.005)))
+        dynamic_contamination = max(0.001, min(0.015, target_anomalies / n_samples))
         
         iso = IsolationForest(
             n_estimators=100,
@@ -67,28 +70,37 @@ def run_anomaly_detection(
             normal_df = df_plot[~df_plot["_is_anomaly"]]
             anomaly_df = df_plot[df_plot["_is_anomaly"]]
 
-            # Downsample normal points for frontend performance
-            if len(normal_df) > 1500:
-                normal_df = normal_df.sample(1500, random_state=42)
+            # Downsample normal points for frontend performance & visual clarity
+            if len(normal_df) > 800:
+                normal_df = normal_df.sample(800, random_state=42)
                 
-            # Limit anomalies to prevent massive payload if contamination is high
-            if len(anomaly_df) > 500:
-                anomaly_df = anomaly_df.sample(500, random_state=42)
-                
-            # Sort by date
-            normal_df = normal_df.sort_values(by=date_col)
-            anomaly_df = anomaly_df.sort_values(by=date_col)
+            # Limit anomalies to prevent noise
+            if len(anomaly_df) > 50:
+                anomaly_df = anomaly_df.sample(50, random_state=42)
 
-            df_plot = pd.concat([normal_df, anomaly_df])
+            # CRÍTICO: Concatenar y ordenar cronológicamente de forma estricta por fecha
+            df_plot = pd.concat([normal_df, anomaly_df]).sort_values(by=date_col)
             df_plot["_anomaly"] = df_plot["_is_anomaly"].map({True: -1, False: 1})
-            df_plot[date_col] = df_plot[date_col].dt.strftime('%Y-%m-%d %H:%M')
+            df_plot[date_col] = df_plot[date_col].dt.strftime('%Y-%m-%d %H:%M:%S')
             
             source = df_plot[[date_col, target_col, "_anomaly"]].copy().to_dict(orient="records")
             
             chart_data = {
                 "chart_id": "anom_time",
-                "metadata": {"title": "Detección de Anomalías", "insight_subtitle": f"Sobre la serie temporal de {target_col}", "source_metric": target_col},
-                "layout_directives": {"chart_type": "Scatter", "x_axis_type": "category", "y_axis_type": "value", "is_log_scale": False, "has_time_gaps": False, "high_cardinality": False, "show_confidence_bands": False},
+                "metadata": {
+                    "title": "Detección de Anomalías", 
+                    "insight_subtitle": f"Valores atípicos detectados sobre la serie temporal de {target_col}", 
+                    "source_metric": target_col
+                },
+                "layout_directives": {
+                    "chart_type": "Scatter", 
+                    "x_axis_type": "time", 
+                    "y_axis_type": "value", 
+                    "is_log_scale": False, 
+                    "has_time_gaps": False, 
+                    "high_cardinality": False, 
+                    "show_confidence_bands": False
+                },
                 "dataset": {"dimensions": [date_col, target_col, "_anomaly"], "source": source}
             }
 
@@ -100,9 +112,10 @@ def run_anomaly_detection(
             df_anomalies = df_out[df_out["_is_anomaly"]]
             df_normal = df_out[~df_out["_is_anomaly"]]
             
-            # Downsample only normal points if needed
-            if len(df_normal) > 3000:
-                df_normal = df_normal.sample(3000, random_state=42)
+            if len(df_normal) > 1000:
+                df_normal = df_normal.sample(1000, random_state=42)
+            if len(df_anomalies) > 50:
+                df_anomalies = df_anomalies.sample(50, random_state=42)
 
             def to_list_clean(series):
                 return [x if not pd.isna(x) else None for x in series]
@@ -132,7 +145,7 @@ def run_anomaly_detection(
 
         metrics = {
             "n_anomalias": n_anomalies,
-            "pct_anomalias": round(n_anomalies / max(len(df), 1) * 100, 1),
+            "pct_anomalias": round(n_anomalies / max(len(df), 1) * 100, 2),
             "anomalias_detalle": anomaly_descriptions,
         }
 

@@ -432,22 +432,91 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
             }));
             baseOptions.legend = { show: true, bottom: 0, padding: 0 };
         } else if (dataset.dimensions.includes('_anomaly')) {
+            const xDim = dataset.dimensions[0];
+            const yDim = dataset.dimensions[1];
+            const isTimeAxis = layoutDirectives.xAxisType === 'time';
+
+            baseOptions.dataset = undefined;
+            baseOptions.dataZoom = [
+              {
+                type: 'inside',
+                filterMode: 'none',
+              }
+            ];
+
+            baseOptions.tooltip = {
+              trigger: 'item',
+              formatter: (params: any) => {
+                const pt = params.data || [];
+                const xVal = pt[0];
+                const yVal = pt[1];
+                const isAnom = params.seriesName === 'Anomalía';
+                const dotColor = isAnom ? '#ff6b6b' : '#815ae1';
+                const statusLabel = isAnom ? 'ANOMALÍA DETECTADA' : 'REGISTRO NORMAL';
+                
+                let dateDisplay = String(xVal ?? '');
+                if (isTimeAxis && xVal) {
+                  const d = new Date(xVal);
+                  if (!isNaN(d.getTime())) {
+                    dateDisplay = d.toLocaleString('es-ES', { 
+                      year: 'numeric', month: 'short', day: '2-digit', 
+                      hour: '2-digit', minute: '2-digit' 
+                    });
+                  }
+                }
+
+                return `
+                  <div style="font-weight:900;text-transform:uppercase;margin-bottom:6px;border-bottom:1px solid #ddd;padding-bottom:2px;">${dateDisplay}</div>
+                  <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+                    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${dotColor};"></span>
+                    <span style="font-weight:bold;color:${dotColor};font-size:11px;">${statusLabel}</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;gap:14px;">
+                    <span>${yDim}:</span>
+                    <b>${typeof yVal === 'number' ? yVal.toFixed(2) : yVal}</b>
+                  </div>
+                `;
+              }
+            };
+
+            baseOptions.legend = {
+              show: true,
+              bottom: 8,
+              left: 'center',
+              itemGap: 20,
+              data: ['Normal', 'Anomalía'],
+              textStyle: { fontWeight: 'bold', fontSize: 12 }
+            };
+
             baseOptions.series = [
               {
                 name: 'Normal',
                 type: 'scatter',
-                data: dataset.source.filter((s: any) => s._anomaly === 1).map((s: any) => [s[dataset.dimensions[0]], s[dataset.dimensions[1]]]),
-                itemStyle: { color: '#815ae1', opacity: 0.6 }
+                data: dataset.source
+                  .filter((s: any) => s._anomaly === 1)
+                  .map((s: any) => [s[xDim], s[yDim]]),
+                symbolSize: 6,
+                itemStyle: { 
+                  color: 'rgba(129, 90, 225, 0.45)',
+                  borderColor: '#815ae1',
+                  borderWidth: 1
+                }
               },
               {
                 name: 'Anomalía',
                 type: 'scatter',
-                data: dataset.source.filter((s: any) => s._anomaly === -1).map((s: any) => [s[dataset.dimensions[0]], s[dataset.dimensions[1]]]),
-                itemStyle: { color: '#ff6b6b', opacity: 1 },
-                symbolSize: 10
+                data: dataset.source
+                  .filter((s: any) => s._anomaly === -1)
+                  .map((s: any) => [s[xDim], s[yDim]]),
+                symbolSize: 11,
+                itemStyle: { 
+                  color: '#ff6b6b',
+                  borderColor: '#111111',
+                  borderWidth: 2
+                },
+                z: 10
               }
             ];
-            baseOptions.legend = { show: true, bottom: 0 };
         } else {
             baseOptions.series = [{
               type: 'scatter',

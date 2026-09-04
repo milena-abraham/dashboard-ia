@@ -114,6 +114,7 @@ function DashboardInner() {
 
                 <AnomaliesSection
                   chartData={result.anomalies?.chartData}
+                  metrics={result.anomalies?.metrics}
                   filename={result.filename}
                 />
 
