@@ -5,20 +5,7 @@ import { neoBrutalistTheme } from '../lib/echartsNeoBrutalistTheme';
 
 echarts.registerTheme('neo-brutalist', neoBrutalistTheme);
 
-export interface ChartSchema {
-  chartId: string;
-  metadata: { title: string; insightSubtitle: string; sourceMetric: string; };
-  layoutDirectives: {
-    chartType: 'LineChart' | 'HorizontalBar' | 'Scatter' | 'Donut' | 'Tornado' | 'FanChart' | 'Boxplot' | 'Radar';
-    xAxisType: 'category' | 'value' | 'time' | 'log';
-    yAxisType: 'category' | 'value' | 'time' | 'log';
-    isLogScale: boolean;
-    hasTimeGaps: boolean; 
-    highCardinality: boolean; 
-    showConfidenceBands: boolean;
-  };
-  dataset: { dimensions: string[]; source: Record<string, any>[]; };
-}
+import { ChartSchema } from '@/types/analysis';
 
 interface DynamicChartRendererProps {
   payload: ChartSchema;
@@ -240,10 +227,10 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
         baseOptions.tooltip = { trigger: 'item' };
         
         // ECharts Radar needs manual mapping
-        const indicators = dataset.dimensions.slice(1).map(dim => ({ name: String(dim) }));
-        const radarData = dataset.source.map(row => ({
+        const indicators = dataset.dimensions.slice(1).map((dim: string) => ({ name: String(dim) }));
+        const radarData = dataset.source.map((row: any) => ({
             name: String(row._segment),
-            value: dataset.dimensions.slice(1).map(dim => row[dim])
+            value: dataset.dimensions.slice(1).map((dim: string) => row[dim])
         }));
         
         baseOptions.radar = { indicator: indicators, shape: 'circle' };
