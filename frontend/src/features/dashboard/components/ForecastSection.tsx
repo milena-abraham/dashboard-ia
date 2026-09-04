@@ -1,8 +1,12 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import { TrendingUp, TrendingDown, Minus, ShieldCheck, Activity } from 'lucide-react';
+import { TrendingUp, ShieldCheck } from 'lucide-react';
 import { ChartSchema, ForecastMetricsSchema } from '@/types/analysis';
 import ChartErrorBoundary from '@/components/ChartErrorBoundary';
+import { ForecastTimeRangeFilter, ForecastTimeRange } from './ForecastTimeRangeFilter';
+import { ForecastMetricsBar } from './ForecastMetricsBar';
 
 const DynamicChartRenderer = dynamic(() => import('@/components/DynamicChartRenderer'), { ssr: false });
 
@@ -17,35 +21,28 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
   metrics,
   filename,
 }) => {
-  if (!chartData) return null;
+  const [timeRange, setTimeRange] = useState<ForecastTimeRange>('ALL');
 
-  const [timeRange, setTimeRange] = React.useState<'3M' | '6M' | '1Y' | 'ALL'>('ALL');
-
-  const precision = metrics?.precisionPct ?? (metrics?.mape != null ? Math.max(0, 100 - metrics.mape) : 95.0);
-  const trend = metrics?.tendenciaPct ?? 0;
-  const isPositiveTrend = trend > 0.5;
-  const isNegativeTrend = trend < -0.5;
-  const confidence = metrics?.confianza ?? (precision >= 85 ? 'Alta' : precision >= 70 ? 'Media' : 'Precaución');
-
-  const sourceRows = chartData.dataset?.source || [];
+  const sourceRows = chartData?.dataset?.source || [];
   const hasMultipleRanges = sourceRows.length > 25;
 
-  const filteredPayload = React.useMemo(() => {
+  const precision = metrics?.precisionPct ?? (metrics?.mape != null ? Math.max(0, 100 - metrics.mape) : 95.0);
+  const confidence = metrics?.confianza ?? (precision >= 85 ? 'Alta' : precision >= 70 ? 'Media' : 'Precaución');
+
+  const filteredPayload = useMemo(() => {
     if (!chartData || timeRange === 'ALL' || !hasMultipleRanges) return chartData;
     const source = chartData.dataset?.source || [];
 
-    // Encontrar el último punto histórico (primer índice donde empieza el forecast)
     const firstForecastIdx = source.findIndex((r: any) => r.forecast != null);
     const splitIdx = firstForecastIdx >= 0 ? firstForecastIdx : source.length;
     const splitDateStr = source[Math.max(0, splitIdx - 1)]?.date;
     if (!splitDateStr) return chartData;
 
     const endDate = new Date(splitDateStr).getTime();
-    const daysMap = { '3M': 92, '6M': 183, '1Y': 365 };
-    const cutoffMs = endDate - daysMap[timeRange] * 24 * 60 * 60 * 1000;
+    const daysMap: Record<string, number> = { '3M': 92, '6M': 183, '1Y': 365 };
+    const cutoffMs = endDate - (daysMap[timeRange] || 365) * 24 * 60 * 60 * 1000;
 
     const filtered = source.filter((r: any, idx: number) => {
-      // Siempre mantener todos los puntos de la proyección futura
       if (idx >= splitIdx) return true;
       const t = new Date(r.date).getTime();
       return t >= cutoffMs;
@@ -59,6 +56,8 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
       },
     };
   }, [chartData, timeRange, hasMultipleRanges]);
+
+  if (!chartData) return null;
 
   return (
     <div className="md:col-span-12 bg-white p-6 md:p-8 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
@@ -86,24 +85,8 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-3 self-start lg:self-auto">
-          {/* Quick Time Range Selector */}
           {hasMultipleRanges && (
-            <div className="flex items-center border border-[#111] bg-[#f4f4f5] p-0.5 shadow-[2px_2px_0px_#111]">
-              {(['3M', '6M', '1Y', 'ALL'] as const).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setTimeRange(r)}
-                  className={`px-2.5 py-1 text-[11px] font-black uppercase transition-all ${
-                    timeRange === r
-                      ? 'bg-[#111] text-white shadow-[1px_1px_0px_#815ae1]'
-                      : 'bg-transparent text-gray-600 hover:text-black hover:bg-gray-200'
-                  }`}
-                >
-                  {r === 'ALL' ? 'Todo' : r === '1Y' ? '1 Año' : r === '6M' ? '6 Meses' : '3 Meses'}
-                </button>
-              ))}
-            </div>
+            <ForecastTimeRangeFilter value={timeRange} onChange={setTimeRange} />
           )}
 
           {metrics?.confianza && (
@@ -126,96 +109,8 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
         </ChartErrorBoundary>
       </div>
 
-      {/* Prediction Metrics Bar */}
-      {metrics && !metrics.error && (
-        <div className="mt-8 pt-6 border-t-2 border-[#111]">
-          <div className="flex items-center gap-2 mb-4">
-            <Activity className="w-4 h-4 text-mio-violet" />
-            <h4 className="text-xs font-black uppercase tracking-wider text-gray-800">
-              Métricas de Rendimiento & Precisión del Modelo
-            </h4>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Metric 1: Precisión */}
-            <div className="p-4 bg-[#fafafc] border border-[#111] border-2 shadow-[3px_3px_0px_#111] flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-black uppercase text-gray-600">Precisión Estimada</span>
-                <span
-                  className={`text-[10px] font-black uppercase px-2 py-0.5 border border-[#111] ${
-                    precision >= 85
-                      ? 'bg-[#bdf559] text-gray-900'
-                      : precision >= 70
-                      ? 'bg-[#ffe066] text-gray-900'
-                      : 'bg-[#ff6b6b] text-white'
-                  }`}
-                >
-                  {precision >= 85 ? 'Excelente' : precision >= 70 ? 'Aceptable' : 'Dispersa'}
-                </span>
-              </div>
-              <div className="text-2xl font-black text-gray-900">
-                {precision.toFixed(1)}%
-              </div>
-              <p className="text-[11px] text-gray-500 mt-1 font-medium">
-                MAPE: {metrics.mape != null ? `${metrics.mape.toFixed(2)}%` : 'Bajo control'}
-              </p>
-            </div>
-
-            {/* Metric 2: Error Medio Absoluto (MAE) */}
-            <div className="p-4 bg-[#fafafc] border border-[#111] border-2 shadow-[3px_3px_0px_#111] flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-black uppercase text-gray-600">Error Medio (MAE)</span>
-                <span className="text-[10px] font-bold text-gray-500 uppercase">Desvío Promedio</span>
-              </div>
-              <div className="text-2xl font-black text-gray-900">
-                ± {metrics.mae != null ? metrics.mae : '-'}
-              </div>
-              <p className="text-[11px] text-gray-500 mt-1 font-medium">
-                {metrics.rmse != null ? `RMSE: ± ${metrics.rmse}` : 'Dispersión estable'}
-                {metrics.r2 != null && ` • R²: ${metrics.r2}`}
-              </p>
-            </div>
-
-            {/* Metric 3: Tendencia */}
-            <div className="p-4 bg-[#fafafc] border border-[#111] border-2 shadow-[3px_3px_0px_#111] flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-black uppercase text-gray-600">Tendencia Futura</span>
-                {isPositiveTrend ? (
-                  <TrendingUp className="w-4 h-4 text-green-600" />
-                ) : isNegativeTrend ? (
-                  <TrendingDown className="w-4 h-4 text-red-600" />
-                ) : (
-                  <Minus className="w-4 h-4 text-gray-500" />
-                )}
-              </div>
-              <div className="text-2xl font-black text-gray-900">
-                {trend > 0 ? `+${trend}%` : `${trend}%`}
-              </div>
-              <p className="text-[11px] text-gray-500 mt-1 font-medium truncate">
-                {metrics.ultimoValorReal != null && metrics.valorFinalForecast != null
-                  ? `${metrics.ultimoValorReal} → ${metrics.valorFinalForecast}`
-                  : 'Estabilidad proyectada'}
-              </p>
-            </div>
-
-            {/* Metric 4: Horizonte & Motor */}
-            <div className="p-4 bg-[#fafafc] border border-[#111] border-2 shadow-[3px_3px_0px_#111] flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-black uppercase text-gray-600">Horizonte Temporal</span>
-                <span className="text-[10px] font-black bg-mio-violet/10 text-mio-violet px-2 py-0.5 border border-mio-violet/30">
-                  {metrics.frecuencia || 'Adaptativa'}
-                </span>
-              </div>
-              <div className="text-2xl font-black text-gray-900">
-                {metrics.periodos ?? 30} {metrics.frecuencia === 'Semanal' ? 'Semanas' : 'Días'}
-              </div>
-              <p className="text-[11px] text-gray-500 mt-1 font-medium truncate">
-                {metrics.motor || 'Prophet'} • {metrics.validacion || 'OOS'}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modular Prediction Metrics Bar */}
+      {metrics && <ForecastMetricsBar metrics={metrics} />}
     </div>
   );
 };

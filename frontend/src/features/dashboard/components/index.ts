@@ -3,6 +3,8 @@ export * from './DashboardUploader';
 export * from './ExecutiveSummary';
 export * from './ExploratoryCharts';
 export * from './ForecastSection';
+export * from './ForecastMetricsBar';
+export * from './ForecastTimeRangeFilter';
 export * from './SegmentationSection';
 export * from './AnomaliesSection';
 export * from './FeatureImportanceSection';
