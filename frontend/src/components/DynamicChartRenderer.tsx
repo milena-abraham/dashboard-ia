@@ -165,13 +165,107 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
         break;
       }
 
-      case 'LineChart':
-        baseOptions.series = [{
+      case 'LineChart': {
+        const xDim = dataset.dimensions[0];
+        const yDims = dataset.dimensions.slice(1);
+        const sourceRows = dataset?.source || [];
+
+        const validValues = sourceRows.flatMap((row: any) =>
+          yDims.map((dim: string) => {
+            const val = row[dim];
+            return typeof val === 'number' && !isNaN(val) ? val : null;
+          }).filter((v: any): v is number => v !== null)
+        );
+
+        // Smart Y-axis framing: evita efecto electrocardiograma si la variación es pequeña
+        if (validValues.length > 0) {
+          const minVal = Math.min(...validValues);
+          const maxVal = Math.max(...validValues);
+          const range = maxVal - minVal;
+          const meanVal = validValues.reduce((a: number, b: number) => a + b, 0) / validValues.length;
+          const isTightRange = meanVal > 0 && (range / meanVal) < 0.25;
+
+          if (isTightRange) {
+            const pad = Math.max(range * 2.5, meanVal * 0.18);
+            baseOptions.yAxis = {
+              ...baseOptions.yAxis,
+              min: (val: any) => Math.max(0, Math.floor((val.min - pad) * 10) / 10),
+              max: (val: any) => Math.ceil((val.max + pad) * 10) / 10,
+              scale: true,
+            };
+          } else {
+            const pad = Math.max(range * 0.12, 1);
+            baseOptions.yAxis = {
+              ...baseOptions.yAxis,
+              min: (val: any) => Math.max(minVal >= 0 ? 0 : -Infinity, Math.floor((val.min - pad) * 10) / 10),
+              max: (val: any) => Math.ceil((val.max + pad) * 10) / 10,
+              scale: true,
+            };
+          }
+        }
+
+        baseOptions.dataZoom = [
+          {
+            type: 'inside',
+            filterMode: 'none',
+          }
+        ];
+
+        baseOptions.tooltip = {
+          trigger: 'axis',
+          axisPointer: { type: 'line', lineStyle: { color: '#815ae1', width: 1.5, type: 'dashed' } },
+          formatter: (params: any[]) => {
+            if (!params || !params.length) return '';
+            const p = params[0];
+            const row = p.data;
+            const dateStr = (row && row[xDim]) || p.axisValueLabel || p.name || '';
+            let html = `<div style="font-weight:900;text-transform:uppercase;margin-bottom:6px;border-bottom:1px solid #ddd;padding-bottom:2px;">${dateStr}</div>`;
+            params.forEach((param: any) => {
+              const r = param.data;
+              const yCol = param.seriesName || yDims[0];
+              const val = r ? (r[yCol] ?? param.value) : param.value;
+              if (val != null) {
+                const color = param.color || '#18181b';
+                html += `<div style="display:flex;justify-content:space-between;gap:14px;margin-bottom:2px;"><span><span style="display:inline-block;width:8px;height:8px;background:${color};margin-right:6px;"></span>${yCol}:</span><b>${typeof val === 'number' ? Number(val).toFixed(2) : val}</b></div>`;
+              }
+            });
+            return html;
+          }
+        };
+
+        const colors = ['#18181b', '#815ae1', '#06b6d4', '#10b981'];
+        baseOptions.series = (yDims.length > 0 ? yDims : [dataset.dimensions[1]]).map((yCol: string, idx: number) => ({
+          name: yCol,
           type: 'line',
-          encode: { x: dataset.dimensions[0], y: dataset.dimensions[1] },
+          encode: { x: xDim, y: yCol },
+          itemStyle: { color: colors[idx % colors.length] },
+          lineStyle: { width: 2.5, color: colors[idx % colors.length] },
+          areaStyle: {
+            color: {
+              type: 'linear',
+              x: 0, y: 0, x2: 0, y2: 1,
+              colorStops: [
+                { offset: 0, color: idx === 0 ? 'rgba(24, 24, 27, 0.08)' : 'rgba(129, 90, 225, 0.08)' },
+                { offset: 1, color: 'rgba(24, 24, 27, 0.00)' }
+              ]
+            }
+          },
+          showSymbol: false,
+          smooth: 0.28,
           connectNulls: !layoutDirectives.hasTimeGaps
-        }];
+        }));
+
+        if (yDims.length > 1) {
+          baseOptions.legend = {
+            show: true,
+            bottom: 8,
+            left: 'center',
+            itemGap: 14,
+            textStyle: { fontWeight: 'bold', fontSize: 12 }
+          };
+        }
         break;
+      }
         
       case 'FanChart': { // Prophet Forecast
         const sourceRows = dataset?.source || [];

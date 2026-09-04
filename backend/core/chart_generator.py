@@ -132,16 +132,31 @@ def auto_charts(df: pd.DataFrame, profile, target_col: str) -> List[Dict[str, An
         if date_cols:
             dc = date_cols[0]
             df_temp = df.copy()
-            df_temp[dc] = pd.to_datetime(df_temp[dc], errors='coerce')
-            agg = df_temp.groupby(dc)[target_col].mean().reset_index().dropna()
+            df_temp[dc] = pd.to_datetime(df_temp[dc], errors='coerce').dt.normalize()
+            df_temp = df_temp.dropna(subset=[dc, target_col])
             
-            # Subsample for timeseries to avoid huge payload
-            if len(agg) > 300:
-                agg = agg.set_index(dc).resample("W").mean().reset_index().dropna()
+            min_date = df_temp[dc].min()
+            max_date = df_temp[dc].max()
+            span_days = int((max_date - min_date).days) if pd.notna(min_date) and pd.notna(max_date) else 0
+            n_dates = df_temp[dc].nunique()
+            
+            if span_days > 1095:
+                freq = "MS"
+                insight_desc = "Consolidado mensual histórico."
+            elif span_days > 90 or n_dates > 90:
+                freq = "W"
+                insight_desc = "Consolidado semanal (suavizado macro)."
+            else:
+                freq = "D"
+                insight_desc = "Seguimiento diario continuo."
+                
+            agg = df_temp.groupby(pd.Grouper(key=dc, freq=freq))[target_col].mean().reset_index().dropna()
+            agg[dc] = agg[dc].dt.strftime("%Y-%m-%d")
+            agg[target_col] = agg[target_col].round(2)
                 
             charts.append(build_autoviz_payload(
                 df=df_temp, chart_id="time_evo", title=f"Evolución Temporal de {target_col}",
-                insight="Análisis longitudinal histórico.",
+                insight=insight_desc,
                 chart_type="LineChart", dimensions=[dc, target_col], source_df=agg, is_time=True
             ))
             
