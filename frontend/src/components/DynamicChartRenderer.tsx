@@ -19,10 +19,8 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
         if (ds.source && ds.dimensions) {
             if (payload.layoutDirectives.chartType === 'FanChart') {
                 ds.source.forEach((row: any) => {
-                    if (row.upper != null && row.lower != null) {
-                        row.band_width = row.upper - row.lower;
-                    } else {
-                        row.band_width = null;
+                    if (row.upper != null && row.lower != null && row.band_width == null) {
+                        row.band_width = Math.max(0, row.upper - row.lower);
                     }
                 });
                 if (!ds.dimensions.includes('band_width')) ds.dimensions.push('band_width');
@@ -174,20 +172,54 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
         break;
         
       case 'FanChart': // Prophet Forecast
-        // dimensions: ["date", "historical", "forecast", "upper", "lower"]
+        baseOptions.tooltip = {
+          trigger: 'axis',
+          axisPointer: { type: 'line', lineStyle: { color: '#111', width: 1, type: 'dashed' } },
+          formatter: (params: any[]) => {
+            if (!params || !params.length) return '';
+            const dateStr = params[0].axisValueLabel || params[0].name;
+            let html = `<div style="font-weight:900;text-transform:uppercase;margin-bottom:6px;border-bottom:1px solid #ddd;padding-bottom:2px;">${dateStr}</div>`;
+            const row = params[0].data;
+            if (row) {
+              if (row.historical != null) {
+                html += `<div style="display:flex;justify-content:space-between;gap:14px;margin-bottom:2px;"><span><span style="display:inline-block;width:8px;height:8px;background:#111;margin-right:6px;"></span>Histórico:</span><b>${Number(row.historical).toFixed(2)}</b></div>`;
+              }
+              if (row.forecast != null) {
+                html += `<div style="display:flex;justify-content:space-between;gap:14px;color:#815ae1;margin-bottom:2px;"><span><span style="display:inline-block;width:8px;height:8px;background:#815ae1;margin-right:6px;"></span>Proyección:</span><b>${Number(row.forecast).toFixed(2)}</b></div>`;
+              }
+              if (row.lower != null) {
+                html += `<div style="display:flex;justify-content:space-between;gap:14px;font-size:11px;color:#555;"><span>Límite Inferior:</span><b>${Number(row.lower).toFixed(2)}</b></div>`;
+              }
+              const upVal = row.upper != null ? row.upper : (row.lower != null && row.band_width != null ? row.lower + row.band_width : null);
+              if (upVal != null) {
+                html += `<div style="display:flex;justify-content:space-between;gap:14px;font-size:11px;color:#555;"><span>Límite Superior:</span><b>${Number(upVal).toFixed(2)}</b></div>`;
+              }
+            }
+            return html;
+          }
+        };
+        baseOptions.legend = {
+          show: true,
+          bottom: 8,
+          left: 'center',
+          itemGap: 16,
+          data: ['Histórico', 'Proyección', 'Banda de Confianza'],
+          textStyle: { fontWeight: 'bold', fontSize: 12 }
+        };
         baseOptions.series = [
           {
             name: 'Histórico',
             type: 'line',
             encode: { x: 'date', y: 'historical' },
             itemStyle: { color: '#111111' },
+            lineStyle: { width: 2 },
             showSymbol: false
           },
           {
             name: 'Proyección',
             type: 'line',
             encode: { x: 'date', y: 'forecast' },
-            lineStyle: { type: 'dashed' },
+            lineStyle: { type: 'dashed', width: 2.5 },
             itemStyle: { color: '#815ae1' },
             showSymbol: false
           },
@@ -200,11 +232,11 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
             stack: 'confidence-band'
           },
           {
-            name: 'Límite Superior',
+            name: 'Banda de Confianza',
             type: 'line',
             encode: { x: 'date', y: 'band_width' },
             lineStyle: { opacity: 0 },
-            areaStyle: { color: '#815ae1', opacity: 0.15 },
+            areaStyle: { color: '#815ae1', opacity: 0.18 },
             showSymbol: false,
             stack: 'confidence-band'
           }

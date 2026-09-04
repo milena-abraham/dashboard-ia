@@ -96,6 +96,7 @@ function DashboardInner() {
 
                 <ForecastSection
                   chartData={result.forecast?.chartData}
+                  metrics={result.forecast?.metrics}
                   filename={result.filename}
                 />
 

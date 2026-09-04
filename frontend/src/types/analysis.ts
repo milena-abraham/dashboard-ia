@@ -50,9 +50,13 @@ export interface ForecastMetricsSchema {
   periodos?: number;
   motor?: string;
   mae?: number;
+  rmse?: number;
   mape?: number;
+  precisionPct?: number;
+  r2?: number;
   confianza?: string;
   validacion?: string;
+  frecuencia?: string;
   error?: string;
 }
 

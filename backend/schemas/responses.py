@@ -55,9 +55,13 @@ class ForecastMetricsSchema(BaseSchema):
     periodos: Optional[int] = None
     motor: Optional[str] = None
     mae: Optional[float] = None
+    rmse: Optional[float] = None
     mape: Optional[float] = None
+    precision_pct: Optional[float] = None
+    r2: Optional[float] = None
     confianza: Optional[str] = None
     validacion: Optional[str] = None
+    frecuencia: Optional[str] = None
     error: Optional[str] = None
 
 class ForecastSchema(BaseSchema):

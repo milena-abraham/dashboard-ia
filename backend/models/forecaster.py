@@ -25,182 +25,305 @@ def run_forecast(
     freq: str = "D",
 ) -> Tuple[Optional[pd.DataFrame], Optional[dict], dict]:
     """
-    Ejecuta forecast de serie temporal.
-    Retorna (df_forecast, data_dict, metrics)
+    Ejecuta forecast de serie temporal optimizado con Prophet o fallback analítico.
+    Detecta automáticamente estacionalidad, estacionariedad y horizon óptimo.
+    Retorna (df_forecast, chart_data, metrics)
     """
     try:
         df_prep = df[[date_col, value_col]].copy()
-        df_prep[date_col] = pd.to_datetime(df_prep[date_col], errors="coerce")
-        df_prep = df_prep.dropna()
+        df_prep["ds"] = pd.to_datetime(df_prep[date_col], errors="coerce").dt.normalize()
+        df_prep[value_col] = pd.to_numeric(df_prep[value_col], errors="coerce")
+        df_prep = df_prep.dropna(subset=["ds", value_col])
 
-        if len(df_prep) < 2:
-            return None, None, {"error": "Se requieren al menos 2 fechas válidas con datos numéricos."}
+        if len(df_prep) < 5:
+            return None, None, {"error": "Se requieren al menos 5 registros válidos con fecha y valor numérico."}
 
-        df_agg = df_prep.groupby(date_col)[value_col].mean().reset_index()
+        min_d = df_prep["ds"].min()
+        max_d = df_prep["ds"].max()
+        span_days = int((max_d - min_d).days)
+        n_distinct_dates = df_prep["ds"].nunique()
+
+        # Selección adaptativa de frecuencia y horizonte de proyección
+        if span_days > 730 or n_distinct_dates > 1000:
+            chosen_freq = "W"
+            default_horizon = 12  # 12 semanas (~3 meses)
+        elif span_days > 45:
+            chosen_freq = "D"
+            default_horizon = 30  # 30 días (~1 mes)
+        else:
+            chosen_freq = "D"
+            default_horizon = max(5, min(14, int(max(span_days, 10) * 0.3)))
+
+        # Respetar periods si el usuario lo especificó diferente a 60 por defecto
+        actual_periods = default_horizon if periods == 60 else min(periods, max(6, int(max(span_days, 10) * 0.35)))
+
+        # Agregación regular
+        df_agg = df_prep.groupby(pd.Grouper(key="ds", freq=chosen_freq))[value_col].mean().dropna().reset_index()
         df_agg.columns = ["ds", "y"]
-        df_agg = df_agg.sort_values("ds")
-        # Only downsample if extremely dense (e.g. hourly data)
-        if len(df_agg) > 3000:
-            df_agg = df_agg.set_index("ds").resample("W").mean().reset_index()
-            freq = "W" 
+        df_agg = df_agg.sort_values("ds").reset_index(drop=True)
+
+        if len(df_agg) < 5 and chosen_freq == "W":
+            # Fallback a diario si el semanal dejó muy pocos puntos
+            chosen_freq = "D"
+            actual_periods = min(30, max(7, span_days // 4))
+            df_agg = df_prep.groupby(pd.Grouper(key="ds", freq="D"))[value_col].mean().dropna().reset_index()
+            df_agg.columns = ["ds", "y"]
+            df_agg = df_agg.sort_values("ds").reset_index(drop=True)
 
         if len(df_agg) < 5:
-            return None, None, {"error": "Insuficientes datos agregados por fecha para proyecciones (min: 5)."}
-            
-        # Check variance (flat series)
-        if df_agg["y"].nunique() <= 1:
-            return None, None, {"error": "La serie de tiempo es constante (varianza 0). No se puede proyectar."}
-            
+            return None, None, {"error": "Insuficientes observaciones agregadas por fecha (mínimo 5)."}
+
+        y_vals = df_agg["y"].values
+        n_pts = len(y_vals)
+
+        # Análisis estadístico de tendencia y variabilidad
+        x_idx = np.arange(n_pts)
+        slope, intercept = np.polyfit(x_idx, y_vals, 1)
+        y_fit = intercept + slope * x_idx
+        ss_tot = float(np.sum((y_vals - np.mean(y_vals)) ** 2))
+        ss_res = float(np.sum((y_vals - y_fit) ** 2))
+        r2 = float(1.0 - (ss_res / (ss_tot + 1e-8)))
+        mean_y = float(np.mean(y_vals))
+        total_pct_change = float(((slope * n_pts) / (abs(mean_y) + 1e-5)) * 100.0)
+
+        # Criterio riguroso de estacionariedad:
+        # Si la variación total sobre todo el histórico es < 3.5% o R² < 0.04,
+        # la serie oscila alrededor de una media constante.
+        is_stationary = bool(r2 < 0.04 or abs(total_pct_change) < 3.5)
+        growth_mode = "flat" if is_stationary else "linear"
+        is_positive = bool(y_vals.min() >= 0)
+
         if not PROPHET_AVAILABLE:
-            # Fallback simple con extrapolación de tendencia lineal
-            x = np.arange(len(df_agg))
-            y = df_agg["y"].values
-            z = np.polyfit(x, y, 1)
-            p = np.poly1d(z)
+            # Fallback analítico con regularización
+            future_dates = pd.date_range(start=df_agg["ds"].iloc[-1], periods=actual_periods + 1, freq=chosen_freq)[1:]
+            last_val = float(y_vals[-1])
+            
+            if is_stationary:
+                y_future = np.full(actual_periods, mean_y)
+            else:
+                x_future = np.arange(n_pts, n_pts + actual_periods)
+                # Aplicar amortiguamiento de tendencia
+                damped_slope = slope * (0.92 ** np.arange(1, actual_periods + 1))
+                y_future = last_val + np.cumsum(damped_slope)
 
-            future_dates = pd.date_range(start=df_agg["ds"].iloc[-1], periods=periods + 1, freq=freq)[1:]
-            x_future = np.arange(len(df_agg), len(df_agg) + periods)
-            y_future = p(x_future)
-
-            last_val = float(y[-1])
-            proj_val = float(y_future[-1])
-            trend_pct = round(((proj_val - last_val) / max(abs(last_val), 1)) * 100, 1)
-
-            # Pseudo-MAE (In-sample)
-            y_pred_in_sample = p(x)
-            mae = np.mean(np.abs(y - y_pred_in_sample))
-            mse = np.mean((y - y_pred_in_sample)**2)
-            std_err = np.sqrt(mse) if len(y) > 2 else 0
+            std_err = float(np.std(y_vals - y_fit))
             margin = 1.96 * std_err
+
+            dates = df_agg["ds"].dt.strftime('%Y-%m-%d').tolist() + future_dates.strftime('%Y-%m-%d').tolist()
+            reals = [float(round(v, 2)) for v in y_vals] + [None] * actual_periods
+            fores = [None] * (n_pts - 1) + [round(last_val, 2)] + [float(round(v, 2)) for v in y_future]
+            ups = [None] * (n_pts - 1) + [round(last_val, 2)] + [float(round(v + margin, 2)) for v in y_future]
+            downs = [None] * (n_pts - 1) + [round(last_val, 2)] + [float(round(max(0, v - margin) if is_positive else v - margin, 2)) for v in y_future]
+
+            source = []
+            for i in range(len(dates)):
+                b_w = round(max(0.0, ups[i] - downs[i]), 2) if (ups[i] is not None and downs[i] is not None) else None
+                source.append({
+                    "date": dates[i],
+                    "historical": reals[i],
+                    "forecast": fores[i],
+                    "lower": downs[i],
+                    "upper": ups[i],
+                    "band_width": b_w
+                })
+
+            mae = float(round(float(np.mean(np.abs(y_vals - y_fit))), 2))
+            rmse = float(round(std_err, 2))
+            mape = float(round(float(np.mean(np.abs((y_vals - y_fit) / (np.abs(y_vals) + 1e-4)))) * 100, 2))
+            precision_pct = float(max(0.0, min(100.0, round(100.0 - mape, 1))))
 
             metrics = {
                 "ultimo_valor_real": round(last_val, 2),
-                "valor_final_forecast": round(proj_val, 2),
-                "tendencia_pct": trend_pct,
-                "periodos": periods,
-                "motor": "Regresión Lineal",
-                "mae": round(mae, 2),
-                "confianza": "Baja (pocos datos o modelo base)"
+                "valor_final_forecast": round(float(y_future[-1]), 2),
+                "tendencia_pct": round(float(((y_future[-1] - last_val) / max(abs(last_val), 1)) * 100), 1),
+                "periodos": actual_periods,
+                "motor": "Modelo Analítico",
+                "mae": mae,
+                "rmse": rmse,
+                "mape": mape,
+                "precision_pct": precision_pct,
+                "r2": round(max(-1.0, min(1.0, r2)), 2),
+                "confianza": "Media",
+                "validacion": "In-Sample",
+                "frecuencia": "Semanal" if chosen_freq == "W" else "Diaria"
             }
-            
-            upper_future = y_future + margin
-            lower_future = y_future - margin
-            
-            dates = df_agg["ds"].dt.strftime('%Y-%m-%d').tolist() + future_dates.strftime('%Y-%m-%d').tolist()
-            reals = [x if not pd.isna(x) else None for x in y] + [None] * len(future_dates)
-            fores = [None] * (len(df_agg) - 1) + [y[-1]] + y_future.tolist()
-            ups = [None] * (len(df_agg) - 1) + [y[-1]] + upper_future.tolist()
-            downs = [None] * (len(df_agg) - 1) + [y[-1]] + lower_future.tolist()
-            
-            source = []
-            for i in range(len(dates)):
-                source.append({"date": dates[i], "historical": reals[i], "forecast": fores[i], "band_width": round(ups[i] - downs[i], 2), "lower": downs[i]})
-                
+
             chart_data = {
                 "chart_id": "forecast",
-                "metadata": {"title": f"Proyección a {periods} períodos", "insight_subtitle": f"Tendencia del {trend_pct}%", "source_metric": value_col},
-                "layout_directives": {"chart_type": "FanChart", "x_axis_type": "time", "y_axis_type": "value", "is_log_scale": False, "has_time_gaps": False, "high_cardinality": False, "show_confidence_bands": True},
-                "dataset": {"dimensions": ["date", "historical", "forecast", "band_width", "lower"], "source": source}
+                "metadata": {
+                    "title": f"Proyección a {actual_periods} {'semanas' if chosen_freq == 'W' else 'días'}",
+                    "insight_subtitle": f"Tendencia estimada del {metrics['tendencia_pct']}%",
+                    "source_metric": value_col
+                },
+                "layout_directives": {
+                    "chart_type": "FanChart",
+                    "x_axis_type": "time",
+                    "y_axis_type": "value",
+                    "is_log_scale": False,
+                    "has_time_gaps": False,
+                    "high_cardinality": False,
+                    "show_confidence_bands": True
+                },
+                "dataset": {
+                    "dimensions": ["date", "historical", "forecast", "lower", "upper", "band_width"],
+                    "source": source
+                }
             }
             return None, chart_data, metrics
 
-        # Model Prophet with robust trend regularization to avoid overfitting recent noise
-        is_positive = bool(df_agg["y"].min() >= 0)
+        # Modelo Prophet con regularización avanzada
         model = Prophet(
-            yearly_seasonality=True if len(df_agg) > 180 else False,
-            weekly_seasonality=True if len(df_agg) > 14 and freq != "W" else False,
+            growth=growth_mode,
+            yearly_seasonality=bool(span_days >= 365),
+            weekly_seasonality=bool(chosen_freq != "W" and n_pts >= 14),
             daily_seasonality=False,
             seasonality_mode="additive",
-            changepoint_prior_scale=0.02,
-            interval_width=0.8,
+            changepoint_prior_scale=0.03 if not is_stationary else 0.01,
+            interval_width=0.80,
         )
         model.fit(df_agg)
 
-        # Predict future
-        future = model.make_future_dataframe(periods=periods, freq=freq)
+        # Validación Out-Of-Sample (OOS)
+        test_size = max(2, min(int(n_pts * 0.15), 20))
+        if n_pts >= 12:
+            df_train = df_agg.iloc[:-test_size].copy()
+            df_test = df_agg.iloc[-test_size:].copy()
+            try:
+                m_eval = Prophet(
+                    growth=growth_mode,
+                    yearly_seasonality=bool(span_days >= 365),
+                    weekly_seasonality=bool(chosen_freq != "W" and len(df_train) >= 14),
+                    daily_seasonality=False,
+                    seasonality_mode="additive",
+                    changepoint_prior_scale=0.03 if not is_stationary else 0.01,
+                    interval_width=0.80,
+                )
+                m_eval.fit(df_train)
+                fut_eval = m_eval.make_future_dataframe(periods=test_size, freq=chosen_freq)
+                fc_eval = m_eval.predict(fut_eval)
+                oos_preds = fc_eval["yhat"].iloc[-test_size:].values
+                oos_reals = df_test["y"].values
+                mae = float(np.mean(np.abs(oos_reals - oos_preds)))
+                rmse = float(np.sqrt(np.mean((oos_reals - oos_preds) ** 2)))
+                mape = float(np.mean(np.abs((oos_reals - oos_preds) / (np.abs(oos_reals) + 1e-4))) * 100)
+                eval_type = "Out-of-Sample (OOS)"
+            except Exception:
+                in_sample = model.predict(df_agg)["yhat"].values
+                mae = float(np.mean(np.abs(y_vals - in_sample)))
+                rmse = float(np.sqrt(np.mean((y_vals - in_sample) ** 2)))
+                mape = float(np.mean(np.abs((y_vals - in_sample) / (np.abs(y_vals) + 1e-4))) * 100)
+                eval_type = "In-Sample"
+        else:
+            in_sample = model.predict(df_agg)["yhat"].values
+            mae = float(np.mean(np.abs(y_vals - in_sample)))
+            rmse = float(np.sqrt(np.mean((y_vals - in_sample) ** 2)))
+            mape = float(np.mean(np.abs((y_vals - in_sample) / (np.abs(y_vals) + 1e-4))) * 100)
+            eval_type = "In-Sample"
+
+        precision_pct = float(max(0.0, min(100.0, round(100.0 - mape, 1))))
+
+        # Generar proyección futura
+        future = model.make_future_dataframe(periods=actual_periods, freq=chosen_freq)
         forecast = model.predict(future)
 
-        last_actual = float(df_agg["y"].iloc[-1])
+        # Si el modelo tiene tendencia lineal, amortiguar la pendiente futura para evitar caídas irreales
+        if growth_mode == "linear":
+            hist_len = len(df_agg)
+            last_trend = float(forecast["trend"].iloc[hist_len - 1])
+            final_raw_trend = float(forecast["trend"].iloc[-1])
+            delta_per_step = (final_raw_trend - last_trend) / max(actual_periods, 1)
+            
+            accum = last_trend
+            for i in range(actual_periods):
+                idx = hist_len + i
+                damped_delta = delta_per_step * (0.92 ** (i + 1))
+                accum += damped_delta
+                diff_seasonal = forecast.loc[idx, "yhat"] - forecast.loc[idx, "trend"]
+                forecast.loc[idx, "trend"] = accum
+                forecast.loc[idx, "yhat"] = accum + diff_seasonal
+
+        # Acotar piso no negativo
+        if is_positive:
+            forecast["yhat"] = forecast["yhat"].clip(lower=0)
+            forecast["yhat_lower"] = forecast["yhat_lower"].clip(lower=0)
+            forecast["yhat_upper"] = forecast["yhat_upper"].clip(lower=0)
+
+        last_actual = float(y_vals[-1])
         end_forecast = float(forecast["yhat"].iloc[-1])
         trend_pct = round(((end_forecast - last_actual) / max(abs(last_actual), 1)) * 100, 1)
 
-        # Out-Of-Sample (OOS) Validation para evitar over-fitting y dar una precisión real
-        n_points = len(df_agg)
-        test_size = max(2, int(n_points * 0.15))
-        
-        if n_points > 15:
-            df_train = df_agg.iloc[:-test_size].copy()
-            df_test = df_agg.iloc[-test_size:].copy()
-            
-            # Eval Model
-            model_eval = Prophet(
-                yearly_seasonality=True if len(df_train) > 180 else False,
-                weekly_seasonality=True if len(df_train) > 14 and freq != "W" else False,
-                daily_seasonality=False,
-                seasonality_mode="additive",
-                changepoint_prior_scale=0.02,
-                interval_width=0.8,
-            )
-            model_eval.fit(df_train)
-            
-            # Predict only test periods
-            future_eval = model_eval.make_future_dataframe(periods=test_size, freq=freq)
-            forecast_eval = model_eval.predict(future_eval)
-            oos_pred = forecast_eval["yhat"].iloc[-test_size:].values
-            oos_real = df_test["y"].values
-            
-            mae = np.mean(np.abs(oos_real - oos_pred))
-            mape = np.mean(np.abs((oos_real - oos_pred) / (np.abs(oos_real) + 0.001))) * 100
-        else:
-            # Fallback a In-Sample si hay muy pocos datos
-            in_sample = forecast.set_index("ds")["yhat"].loc[df_agg["ds"]].values
-            mae = np.mean(np.abs(df_agg["y"].values - in_sample))
-            mape = np.mean(np.abs((df_agg["y"].values - in_sample) / (np.abs(df_agg["y"].values) + 0.001))) * 100
-        
-        # Confidence logic based on OOS MAPE
         confianza = "Alta"
-        if len(df_agg) < 30 or mape > 25:
-            confianza = "Baja"
-        elif len(df_agg) < 90 or mape > 10:
+        if precision_pct < 70 or n_pts < 15:
+            confianza = "Precaución"
+        elif precision_pct < 85 or n_pts < 30:
             confianza = "Media"
 
         metrics = {
             "ultimo_valor_real": round(last_actual, 2),
             "valor_final_forecast": round(end_forecast, 2),
             "tendencia_pct": trend_pct,
-            "periodos": periods,
-            "motor": "Prophet (Meta AI)",
+            "periodos": actual_periods,
+            "motor": f"Prophet ({'Estacionario' if is_stationary else 'Tendencia'})",
             "mae": float(round(mae, 2)),
+            "rmse": float(round(rmse, 2)),
             "mape": float(round(mape, 2)),
+            "precision_pct": precision_pct,
+            "r2": float(round(max(-1.0, min(1.0, r2)), 2)),
             "confianza": confianza,
-            "validacion": "Out-of-Sample (OOS)" if n_points > 15 else "In-Sample"
+            "validacion": eval_type,
+            "frecuencia": "Semanal" if chosen_freq == "W" else "Diaria"
         }
 
-        merged = pd.merge(forecast, df_agg, on='ds', how='left')
+        merged = pd.merge(forecast, df_agg, on="ds", how="left")
         
-        def to_list_clean(series):
-            return [x if not pd.isna(x) else None for x in series]
+        # Vincular punto de empalme histórico con la proyección para una transición suave
+        hist_end_idx = len(df_agg) - 1
+        if hist_end_idx < len(merged):
+            merged.loc[hist_end_idx, "yhat"] = merged.loc[hist_end_idx, "y"]
+            merged.loc[hist_end_idx, "yhat_lower"] = merged.loc[hist_end_idx, "y"]
+            merged.loc[hist_end_idx, "yhat_upper"] = merged.loc[hist_end_idx, "y"]
 
-        dates = merged['ds'].dt.strftime('%Y-%m-%d').tolist()
-        reals = to_list_clean(merged['y'])
-        if is_positive:
-            merged['yhat'] = merged['yhat'].clip(lower=0)
-            merged['yhat_lower'] = merged['yhat_lower'].clip(lower=0)
-            merged['yhat_upper'] = merged['yhat_upper'].clip(lower=0)
-
-        fores = to_list_clean(merged['yhat'])
-        ups = to_list_clean(merged['yhat_upper'])
-        downs = to_list_clean(merged['yhat_lower'])
-        
         source = []
-        for i in range(len(dates)):
-            source.append({"date": dates[i], "historical": reals[i], "forecast": fores[i], "band_width": round(ups[i] - downs[i], 2), "lower": downs[i]})
+        for i in range(len(merged)):
+            row_d = merged.iloc[i]
+            d_str = row_d["ds"].strftime("%Y-%m-%d")
+            real_v = float(round(row_d["y"], 2)) if not pd.isna(row_d["y"]) else None
+            # Solo mostrar forecast a partir del último punto real
+            is_forecast_point = i >= hist_end_idx
+            pred_v = float(round(row_d["yhat"], 2)) if is_forecast_point and not pd.isna(row_d["yhat"]) else None
+            low_v = float(round(row_d["yhat_lower"], 2)) if is_forecast_point and not pd.isna(row_d["yhat_lower"]) else None
+            up_v = float(round(row_d["yhat_upper"], 2)) if is_forecast_point and not pd.isna(row_d["yhat_upper"]) else None
+            b_w = round(max(0.0, up_v - low_v), 2) if (up_v is not None and low_v is not None) else None
+
+            source.append({
+                "date": d_str,
+                "historical": real_v,
+                "forecast": pred_v,
+                "lower": low_v,
+                "upper": up_v,
+                "band_width": b_w
+            })
 
         chart_data = {
             "chart_id": "forecast",
-            "metadata": {"title": f"Proyección a {periods} períodos", "insight_subtitle": f"Tendencia del {trend_pct}%", "source_metric": value_col},
-            "layout_directives": {"chart_type": "FanChart", "x_axis_type": "time", "y_axis_type": "value", "is_log_scale": False, "has_time_gaps": False, "high_cardinality": False, "show_confidence_bands": True},
-            "dataset": {"dimensions": ["date", "historical", "forecast", "band_width", "lower"], "source": source}
+            "metadata": {
+                "title": f"Proyección a {actual_periods} {'semanas' if chosen_freq == 'W' else 'días'}",
+                "insight_subtitle": f"Tendencia estimada del {trend_pct}% ({'estable/estacionaria' if is_stationary else 'crecimiento/contracción'})",
+                "source_metric": value_col
+            },
+            "layout_directives": {
+                "chart_type": "FanChart",
+                "x_axis_type": "time",
+                "y_axis_type": "value",
+                "is_log_scale": False,
+                "has_time_gaps": False,
+                "high_cardinality": False,
+                "show_confidence_bands": True
+            },
+            "dataset": {
+                "dimensions": ["date", "historical", "forecast", "lower", "upper", "band_width"],
+                "source": source
+            }
         }
 
         return forecast, chart_data, metrics
