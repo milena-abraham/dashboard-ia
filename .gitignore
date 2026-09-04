@@ -25,3 +25,13 @@ out/
 # OS
 .DS_Store
 Thumbs.db
+
+# Data & Uploads
+*.csv
+*.pdf
+*.json.out
+debug_out.json
+backend/debug_out.json
+uploads/
+backend/uploads/
+backend/sample.csv

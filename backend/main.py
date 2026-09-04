@@ -39,5 +39,7 @@ app.include_router(chat.router, prefix=settings.API_V1_STR)
 app.include_router(narrative.router, prefix=settings.API_V1_STR)
 
 @app.get("/api/health")
+@app.get(f"{settings.API_V1_STR}/health")
+@app.get("/health")
 def health():
     return {"status": "ok", "service": settings.PROJECT_NAME}

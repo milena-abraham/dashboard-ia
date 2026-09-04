@@ -5,8 +5,8 @@ Endpoint para exportación de reportes PDF ejecutivos.
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
-from pydantic import BaseModel
 from typing import Any, Dict, Optional
+from schemas.responses import BaseSchema
 
 from reports.pdf_generator import generate_pdf_report
 from reports.pptx_generator import generate_pptx_report
@@ -14,7 +14,7 @@ from reports.pptx_generator import generate_pptx_report
 router = APIRouter()
 
 
-class ExportPDFRequest(BaseModel):
+class ExportPDFRequest(BaseSchema):
     filename: str
     target_col: str
     kpis: Dict[str, Any]
