@@ -1,55 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React from 'react';
 import Navbar from '@/components/Navbar';
 import ProjectCard from '@/components/ProjectCard';
-import { auth, db } from '@/lib/firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { collection, getDocs, deleteDoc, doc, orderBy, query } from 'firebase/firestore';
 import { Layers, Plus, Loader2 } from 'lucide-react';
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/ScrollReveal';
-import toast from 'react-hot-toast';
+import { useProjectsState } from '@/features/projects/useProjectsState';
 
 export default function ProjectsPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [projects, setProjects] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      if (!u) { router.push('/login'); return; }
-      setUser(u);
-      loadProjects(u.uid);
-    });
-    return () => unsub();
-  }, []);
-
-  const loadProjects = async (uid: string) => {
-    try {
-      const q = query(collection(db, 'users', uid, 'analyses'), orderBy('created_at', 'desc'));
-      const snap = await getDocs(q);
-      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setProjects(docs);
-    } catch (e) {
-      console.warn('Error cargando proyectos:', e);
-      toast.error('No se pudieron cargar los proyectos.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!user) return;
-    try {
-      await deleteDoc(doc(db, 'users', user.uid, 'analyses', id));
-      setProjects(prev => prev.filter(p => p.id !== id));
-      toast.success('Proyecto eliminado.');
-    } catch (e) {
-      toast.error('No se pudo eliminar el proyecto.');
-    }
-  };
+  const { projects, loading, handleDelete, router } = useProjectsState();
 
   return (
     <div className="min-h-screen bg-[#fafafc] flex flex-col">
@@ -104,7 +63,9 @@ export default function ProjectsPage() {
         ) : (
           <>
             <div className="mb-4 flex items-center gap-2">
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{projects.length} análisis guardados</span>
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                {projects.length} análisis guardados
+              </span>
             </div>
             <StaggerContainer staggerDelay={0.08}>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
