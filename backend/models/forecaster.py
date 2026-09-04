@@ -42,6 +42,7 @@ def run_forecast(
         # Only downsample if extremely dense (e.g. hourly data)
         if len(df_agg) > 3000:
             df_agg = df_agg.set_index("ds").resample("W").mean().reset_index()
+            freq = "W" 
 
         if len(df_agg) < 5:
             return None, None, {"error": "Insuficientes datos agregados por fecha para proyecciones (min: 5)."}
@@ -103,12 +104,14 @@ def run_forecast(
             }
             return None, chart_data, metrics
 
-        # Model Prophet
+        # Model Prophet with robust trend regularization to avoid overfitting recent noise
+        is_positive = bool(df_agg["y"].min() >= 0)
         model = Prophet(
             yearly_seasonality=True if len(df_agg) > 180 else False,
-            weekly_seasonality=True if len(df_agg) > 14 else False,
+            weekly_seasonality=True if len(df_agg) > 14 and freq != "W" else False,
             daily_seasonality=False,
-            seasonality_mode="additive" if df_agg["y"].min() <= 0 else "multiplicative",
+            seasonality_mode="additive",
+            changepoint_prior_scale=0.02,
             interval_width=0.8,
         )
         model.fit(df_agg)
@@ -132,9 +135,10 @@ def run_forecast(
             # Eval Model
             model_eval = Prophet(
                 yearly_seasonality=True if len(df_train) > 180 else False,
-                weekly_seasonality=True if len(df_train) > 14 else False,
+                weekly_seasonality=True if len(df_train) > 14 and freq != "W" else False,
                 daily_seasonality=False,
-                seasonality_mode="additive" if df_train["y"].min() <= 0 else "multiplicative",
+                seasonality_mode="additive",
+                changepoint_prior_scale=0.02,
                 interval_width=0.8,
             )
             model_eval.fit(df_train)
@@ -166,8 +170,8 @@ def run_forecast(
             "tendencia_pct": trend_pct,
             "periodos": periods,
             "motor": "Prophet (Meta AI)",
-            "mae": round(mae, 2),
-            "mape": round(mape, 2),
+            "mae": float(round(mae, 2)),
+            "mape": float(round(mape, 2)),
             "confianza": confianza,
             "validacion": "Out-of-Sample (OOS)" if n_points > 15 else "In-Sample"
         }
@@ -179,6 +183,11 @@ def run_forecast(
 
         dates = merged['ds'].dt.strftime('%Y-%m-%d').tolist()
         reals = to_list_clean(merged['y'])
+        if is_positive:
+            merged['yhat'] = merged['yhat'].clip(lower=0)
+            merged['yhat_lower'] = merged['yhat_lower'].clip(lower=0)
+            merged['yhat_upper'] = merged['yhat_upper'].clip(lower=0)
+
         fores = to_list_clean(merged['yhat'])
         ups = to_list_clean(merged['yhat_upper'])
         downs = to_list_clean(merged['yhat_lower'])
