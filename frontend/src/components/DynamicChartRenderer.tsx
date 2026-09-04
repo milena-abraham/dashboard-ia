@@ -171,10 +171,53 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
         }];
         break;
         
-      case 'FanChart': // Prophet Forecast
+      case 'FanChart': { // Prophet Forecast
+        const sourceRows = dataset?.source || [];
+        const validValues = sourceRows.flatMap((d: any) => 
+          [d.historical, d.forecast, d.lower, d.upper].filter((v: any) => typeof v === 'number' && !isNaN(v))
+        );
+        
+        // Smart Y-axis framing: evita efecto electrocardiograma si la variación es pequeña
+        if (validValues.length > 0) {
+          const minVal = Math.min(...validValues);
+          const maxVal = Math.max(...validValues);
+          const range = maxVal - minVal;
+          const meanVal = validValues.reduce((a: number, b: number) => a + b, 0) / validValues.length;
+          const isTightRange = meanVal > 0 && (range / meanVal) < 0.25;
+          
+          if (isTightRange) {
+            const pad = Math.max(range * 2.5, meanVal * 0.18);
+            baseOptions.yAxis = {
+              ...baseOptions.yAxis,
+              min: (val: any) => Math.max(0, Math.floor((val.min - pad) * 10) / 10),
+              max: (val: any) => Math.ceil((val.max + pad) * 10) / 10,
+              scale: true,
+            };
+          } else {
+            const pad = Math.max(range * 0.12, 1);
+            baseOptions.yAxis = {
+              ...baseOptions.yAxis,
+              min: (val: any) => Math.max(minVal >= 0 ? 0 : -Infinity, Math.floor((val.min - pad) * 10) / 10),
+              max: (val: any) => Math.ceil((val.max + pad) * 10) / 10,
+              scale: true,
+            };
+          }
+        }
+
+        // Encontrar punto de transición para la línea divisoria
+        const firstForecastIdx = sourceRows.findIndex((r: any) => r.forecast != null);
+        const transitionDate = firstForecastIdx >= 0 ? sourceRows[firstForecastIdx]?.date : undefined;
+
+        baseOptions.dataZoom = [
+          {
+            type: 'inside',
+            filterMode: 'none',
+          }
+        ];
+
         baseOptions.tooltip = {
           trigger: 'axis',
-          axisPointer: { type: 'line', lineStyle: { color: '#111', width: 1, type: 'dashed' } },
+          axisPointer: { type: 'line', lineStyle: { color: '#815ae1', width: 1.5, type: 'dashed' } },
           formatter: (params: any[]) => {
             if (!params || !params.length) return '';
             const dateStr = params[0].axisValueLabel || params[0].name;
@@ -182,46 +225,78 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
             const row = params[0].data;
             if (row) {
               if (row.historical != null) {
-                html += `<div style="display:flex;justify-content:space-between;gap:14px;margin-bottom:2px;"><span><span style="display:inline-block;width:8px;height:8px;background:#111;margin-right:6px;"></span>Histórico:</span><b>${Number(row.historical).toFixed(2)}</b></div>`;
+                html += `<div style="display:flex;justify-content:space-between;gap:14px;margin-bottom:2px;"><span><span style="display:inline-block;width:8px;height:8px;background:#18181b;margin-right:6px;"></span>Histórico:</span><b>${Number(row.historical).toFixed(2)}</b></div>`;
               }
               if (row.forecast != null) {
                 html += `<div style="display:flex;justify-content:space-between;gap:14px;color:#815ae1;margin-bottom:2px;"><span><span style="display:inline-block;width:8px;height:8px;background:#815ae1;margin-right:6px;"></span>Proyección:</span><b>${Number(row.forecast).toFixed(2)}</b></div>`;
               }
               if (row.lower != null) {
-                html += `<div style="display:flex;justify-content:space-between;gap:14px;font-size:11px;color:#555;"><span>Límite Inferior:</span><b>${Number(row.lower).toFixed(2)}</b></div>`;
+                html += `<div style="display:flex;justify-content:space-between;gap:14px;font-size:11px;color:#666;"><span>Límite Inferior:</span><b>${Number(row.lower).toFixed(2)}</b></div>`;
               }
               const upVal = row.upper != null ? row.upper : (row.lower != null && row.band_width != null ? row.lower + row.band_width : null);
               if (upVal != null) {
-                html += `<div style="display:flex;justify-content:space-between;gap:14px;font-size:11px;color:#555;"><span>Límite Superior:</span><b>${Number(upVal).toFixed(2)}</b></div>`;
+                html += `<div style="display:flex;justify-content:space-between;gap:14px;font-size:11px;color:#666;"><span>Límite Superior:</span><b>${Number(upVal).toFixed(2)}</b></div>`;
               }
             }
             return html;
           }
         };
+
         baseOptions.legend = {
           show: true,
           bottom: 8,
           left: 'center',
-          itemGap: 16,
+          itemGap: 20,
           data: ['Histórico', 'Proyección', 'Banda de Confianza'],
           textStyle: { fontWeight: 'bold', fontSize: 12 }
         };
+
         baseOptions.series = [
           {
             name: 'Histórico',
             type: 'line',
             encode: { x: 'date', y: 'historical' },
-            itemStyle: { color: '#111111' },
-            lineStyle: { width: 2 },
-            showSymbol: false
+            itemStyle: { color: '#18181b' },
+            lineStyle: { width: 2.5, color: '#18181b' },
+            areaStyle: {
+              color: {
+                type: 'linear',
+                x: 0, y: 0, x2: 0, y2: 1,
+                colorStops: [
+                  { offset: 0, color: 'rgba(24, 24, 27, 0.08)' },
+                  { offset: 1, color: 'rgba(24, 24, 27, 0.00)' }
+                ]
+              }
+            },
+            showSymbol: false,
+            smooth: 0.28,
           },
           {
             name: 'Proyección',
             type: 'line',
             encode: { x: 'date', y: 'forecast' },
-            lineStyle: { type: 'dashed', width: 2.5 },
+            lineStyle: { type: 'dashed', width: 2.5, color: '#815ae1' },
             itemStyle: { color: '#815ae1' },
-            showSymbol: false
+            showSymbol: false,
+            smooth: 0.28,
+            markLine: transitionDate ? {
+              symbol: ['none', 'none'],
+              silent: true,
+              lineStyle: { color: '#815ae1', type: 'dashed', width: 1.5 },
+              label: {
+                show: true,
+                position: 'insideEndTop',
+                formatter: 'Proyección IA',
+                color: '#815ae1',
+                fontWeight: 'bold',
+                fontSize: 10,
+                backgroundColor: '#ffffff',
+                borderColor: '#815ae1',
+                borderWidth: 1.5,
+                padding: [3, 6],
+              },
+              data: [{ xAxis: transitionDate }]
+            } : undefined
           },
           {
             name: 'Límite Inferior',
@@ -229,19 +304,23 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
             encode: { x: 'date', y: 'lower' },
             lineStyle: { opacity: 0 },
             showSymbol: false,
-            stack: 'confidence-band'
+            stack: 'confidence-band',
+            smooth: 0.28,
           },
           {
             name: 'Banda de Confianza',
             type: 'line',
             encode: { x: 'date', y: 'band_width' },
             lineStyle: { opacity: 0 },
+            itemStyle: { color: '#815ae1' },
             areaStyle: { color: '#815ae1', opacity: 0.18 },
             showSymbol: false,
-            stack: 'confidence-band'
+            stack: 'confidence-band',
+            smooth: 0.28,
           }
         ];
         break;
+      }
 
       case 'Scatter':
         if (dataset.dimensions.includes('_segment')) {

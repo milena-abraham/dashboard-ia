@@ -19,44 +19,108 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
 }) => {
   if (!chartData) return null;
 
+  const [timeRange, setTimeRange] = React.useState<'3M' | '6M' | '1Y' | 'ALL'>('ALL');
+
   const precision = metrics?.precisionPct ?? (metrics?.mape != null ? Math.max(0, 100 - metrics.mape) : 95.0);
   const trend = metrics?.tendenciaPct ?? 0;
   const isPositiveTrend = trend > 0.5;
   const isNegativeTrend = trend < -0.5;
   const confidence = metrics?.confianza ?? (precision >= 85 ? 'Alta' : precision >= 70 ? 'Media' : 'Precaución');
 
+  const sourceRows = chartData.dataset?.source || [];
+  const hasMultipleRanges = sourceRows.length > 25;
+
+  const filteredPayload = React.useMemo(() => {
+    if (!chartData || timeRange === 'ALL' || !hasMultipleRanges) return chartData;
+    const source = chartData.dataset?.source || [];
+
+    // Encontrar el último punto histórico (primer índice donde empieza el forecast)
+    const firstForecastIdx = source.findIndex((r: any) => r.forecast != null);
+    const splitIdx = firstForecastIdx >= 0 ? firstForecastIdx : source.length;
+    const splitDateStr = source[Math.max(0, splitIdx - 1)]?.date;
+    if (!splitDateStr) return chartData;
+
+    const endDate = new Date(splitDateStr).getTime();
+    const daysMap = { '3M': 92, '6M': 183, '1Y': 365 };
+    const cutoffMs = endDate - daysMap[timeRange] * 24 * 60 * 60 * 1000;
+
+    const filtered = source.filter((r: any, idx: number) => {
+      // Siempre mantener todos los puntos de la proyección futura
+      if (idx >= splitIdx) return true;
+      const t = new Date(r.date).getTime();
+      return t >= cutoffMs;
+    });
+
+    return {
+      ...chartData,
+      dataset: {
+        ...chartData.dataset,
+        source: filtered,
+      },
+    };
+  }, [chartData, timeRange, hasMultipleRanges]);
+
   return (
     <div className="md:col-span-12 bg-white p-6 md:p-8 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-mio-violet rounded-none border border-[#111]">
             <TrendingUp className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="text-xl font-black uppercase tracking-tight text-gray-900">
-              Proyecciones Inteligentes
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-xl font-black uppercase tracking-tight text-gray-900">
+                Proyecciones Inteligentes
+              </h3>
+              {metrics?.frecuencia && (
+                <span className="px-2 py-0.5 bg-[#fafafc] border border-[#111] text-[10px] font-black uppercase tracking-wider text-gray-700">
+                  {metrics.frecuencia}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-gray-500 font-medium">
               {chartData.metadata?.insightSubtitle || 'Modelo predictivo regularizado con bandas de confianza'}
             </p>
           </div>
         </div>
 
-        {metrics?.confianza && (
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 border border-[#111] bg-white shadow-[2px_2px_0px_#111] text-xs font-bold self-start sm:self-auto">
-            <ShieldCheck className="w-4 h-4 text-mio-violet" />
-            <span>Confianza del Modelo: <strong className="uppercase">{confidence}</strong></span>
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-3 self-start lg:self-auto">
+          {/* Quick Time Range Selector */}
+          {hasMultipleRanges && (
+            <div className="flex items-center border border-[#111] bg-[#f4f4f5] p-0.5 shadow-[2px_2px_0px_#111]">
+              {(['3M', '6M', '1Y', 'ALL'] as const).map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setTimeRange(r)}
+                  className={`px-2.5 py-1 text-[11px] font-black uppercase transition-all ${
+                    timeRange === r
+                      ? 'bg-[#111] text-white shadow-[1px_1px_0px_#815ae1]'
+                      : 'bg-transparent text-gray-600 hover:text-black hover:bg-gray-200'
+                  }`}
+                >
+                  {r === 'ALL' ? 'Todo' : r === '1Y' ? '1 Año' : r === '6M' ? '6 Meses' : '3 Meses'}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {metrics?.confianza && (
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 border border-[#111] bg-white shadow-[2px_2px_0px_#111] text-xs font-bold">
+              <ShieldCheck className="w-4 h-4 text-mio-violet" />
+              <span>Confianza: <strong className="uppercase">{confidence}</strong></span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Chart Canvas */}
       <div className="relative w-full h-[450px]">
         <ChartErrorBoundary>
           <DynamicChartRenderer
-            key={`forecast-${filename}`}
-            payload={chartData}
+            key={`forecast-${filename}-${timeRange}`}
+            payload={filteredPayload}
             height={450}
           />
         </ChartErrorBoundary>

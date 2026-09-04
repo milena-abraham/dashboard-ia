@@ -44,15 +44,20 @@ def run_forecast(
         n_distinct_dates = df_prep["ds"].nunique()
 
         # Selección adaptativa de frecuencia y horizonte de proyección
-        if span_days > 730 or n_distinct_dates > 1000:
+        # Para series temporales de más de 90 días, la agregación semanal elimina el ruido diario
+        # ("código de barras / electrocardiograma ilegible") y produce una curva limpia y ejecutiva.
+        if span_days > 1095:
+            chosen_freq = "MS"
+            default_horizon = 12  # 12 meses
+        elif span_days > 90 or n_distinct_dates > 90:
             chosen_freq = "W"
             default_horizon = 12  # 12 semanas (~3 meses)
-        elif span_days > 45:
+        elif span_days > 30:
             chosen_freq = "D"
-            default_horizon = 30  # 30 días (~1 mes)
+            default_horizon = 14  # 14 días
         else:
             chosen_freq = "D"
-            default_horizon = max(5, min(14, int(max(span_days, 10) * 0.3)))
+            default_horizon = max(5, min(10, int(max(span_days, 7) * 0.35)))
 
         # Respetar periods si el usuario lo especificó diferente a 60 por defecto
         actual_periods = default_horizon if periods == 60 else min(periods, max(6, int(max(span_days, 10) * 0.35)))
@@ -62,8 +67,8 @@ def run_forecast(
         df_agg.columns = ["ds", "y"]
         df_agg = df_agg.sort_values("ds").reset_index(drop=True)
 
-        if len(df_agg) < 5 and chosen_freq == "W":
-            # Fallback a diario si el semanal dejó muy pocos puntos
+        if len(df_agg) < 5 and chosen_freq in ("W", "MS"):
+            # Fallback a diario si el agrupamiento dejó muy pocos puntos
             chosen_freq = "D"
             actual_periods = min(30, max(7, span_days // 4))
             df_agg = df_prep.groupby(pd.Grouper(key="ds", freq="D"))[value_col].mean().dropna().reset_index()
@@ -271,7 +276,7 @@ def run_forecast(
             "r2": float(round(max(-1.0, min(1.0, r2)), 2)),
             "confianza": confianza,
             "validacion": eval_type,
-            "frecuencia": "Semanal" if chosen_freq == "W" else "Diaria"
+            "frecuencia": "Mensual" if chosen_freq in ("MS", "M") else ("Semanal" if chosen_freq == "W" else "Diaria")
         }
 
         merged = pd.merge(forecast, df_agg, on="ds", how="left")
@@ -307,7 +312,7 @@ def run_forecast(
         chart_data = {
             "chart_id": "forecast",
             "metadata": {
-                "title": f"Proyección a {actual_periods} {'semanas' if chosen_freq == 'W' else 'días'}",
+                "title": f"Proyección a {actual_periods} {'meses' if chosen_freq in ('MS', 'M') else ('semanas' if chosen_freq == 'W' else 'días')}",
                 "insight_subtitle": f"Tendencia estimada del {trend_pct}% ({'estable/estacionaria' if is_stationary else 'crecimiento/contracción'})",
                 "source_metric": value_col
             },
