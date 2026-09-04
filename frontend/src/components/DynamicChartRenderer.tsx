@@ -246,11 +246,43 @@ export default function DynamicChartRenderer({ payload, height = '100%' }: Dynam
         baseOptions.xAxis = { show: false };
         baseOptions.yAxis = { show: false };
         baseOptions.grid = undefined;
-        baseOptions.tooltip = { trigger: 'item' };
-        baseOptions.legend = { show: dataset.source.length <= 15, bottom: 0 };
+        baseOptions.tooltip = {
+          trigger: 'item',
+          formatter: (params: any) => {
+            const val = params.value ? params.value[dataset.dimensions[1]] : params.value;
+            const percent = params.percent !== undefined ? ` (${params.percent}%)` : '';
+            return `<b>${params.name}</b>: ${val}${percent}`;
+          }
+        };
+        baseOptions.legend = {
+          show: dataset.source.length <= 10,
+          bottom: 10,
+          left: 'center',
+          itemGap: 14,
+          textStyle: { fontWeight: 'bold' }
+        };
         baseOptions.series = [{
           type: 'pie',
-          radius: ['40%', '70%'],
+          radius: ['45%', '72%'],
+          center: ['50%', '46%'],
+          avoidLabelOverlap: true,
+          itemStyle: {
+            borderColor: '#111',
+            borderWidth: 2
+          },
+          label: {
+            show: true,
+            formatter: '{b}\n{d}%',
+            fontWeight: 'bold',
+            fontSize: 12
+          },
+          emphasis: {
+            label: {
+              show: true,
+              fontSize: 14,
+              fontWeight: 'bold'
+            }
+          },
           encode: { itemName: dataset.dimensions[0], value: dataset.dimensions[1] }
         }];
         break;

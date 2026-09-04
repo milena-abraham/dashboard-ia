@@ -1,6 +1,6 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
-import { Users, Target } from 'lucide-react';
+import { PieChart, BarChart3 } from 'lucide-react';
 import { ChartSchema } from '@/types/analysis';
 import ChartErrorBoundary from '@/components/ChartErrorBoundary';
 
@@ -23,27 +23,32 @@ export const SegmentationSection: React.FC<SegmentationSectionProps> = ({
     <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
         <div className="flex items-center gap-3 mb-6">
-          <Users className="w-5 h-5 text-mio-violet" />
-          <h3 className="text-xl font-black uppercase tracking-tight">Distribución</h3>
+          <PieChart className="w-5 h-5 text-mio-violet" />
+          <h3 className="text-xl font-black uppercase tracking-tight">
+            {scatterData.metadata?.title || 'Distribución de Segmentos'}
+          </h3>
         </div>
         <div className="relative w-full min-h-[400px]">
           <ChartErrorBoundary>
             <DynamicChartRenderer
-              key={`seg-scatter-${filename}`}
+              key={`seg-dist-${filename}`}
               payload={scatterData}
             />
           </ChartErrorBoundary>
         </div>
       </div>
+
       <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111]">
         <div className="flex items-center gap-3 mb-6">
-          <Target className="w-5 h-5 text-mio-violet" />
-          <h3 className="text-xl font-black uppercase tracking-tight">Perfil (Radar)</h3>
+          <BarChart3 className="w-5 h-5 text-mio-violet" />
+          <h3 className="text-xl font-black uppercase tracking-tight">
+            {radarData.metadata?.title || 'Perfil de Segmentos'}
+          </h3>
         </div>
         <div className="relative w-full min-h-[400px]">
           <ChartErrorBoundary>
             <DynamicChartRenderer
-              key={`seg-radar-${filename}`}
+              key={`seg-prof-${filename}`}
               payload={radarData}
             />
           </ChartErrorBoundary>

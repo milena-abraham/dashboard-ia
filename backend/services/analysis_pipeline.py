@@ -220,7 +220,7 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
             
             if len(profile.numeric_columns) >= 2:
                 label_c = profile.categorical_columns[0] if profile.categorical_columns else None
-                fut_segmentation = executor.submit(run_clustering, df_ml, numeric_cols=profile.numeric_columns[:6], label_col=label_c)
+                fut_segmentation = executor.submit(run_clustering, df_ml, numeric_cols=profile.numeric_columns[:6], label_col=label_c, target_col=active_target)
                 
             if fut_forecast:
                 try:
