@@ -28,3 +28,23 @@ def test_analyze_numeric():
     assert "profile" in body
     assert "kpis" in body
     assert "charts" in body
+
+def test_narrative_endpoint():
+    payload = {
+        "profile": {"nRows": 150, "nCols": 4},
+        "kpis": {"Ingresos": "$10,000", "Conversión": "4.2%"},
+        "anomalies": {"nAnomalias": 2, "pctAnomalias": 1.3},
+        "forecast": {"tendenciaPct": 12.5, "periodos": 30},
+        "segmentation": {"k": 3},
+        "featureImportance": {"topFeatures": [{"feature": "gasto_marketing", "importance": 0.45}]},
+        "targetCol": "ventas",
+        "filename": "ventas_mensuales.csv"
+    }
+    response = client.post("/api/v1/narrative", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert "text" in data
+    assert "source" in data
+    # Ensure no emojis in the generated narrative
+    for emoji in ["📈", "🎯", "⚠️", "🚀", "⭐"]:
+        assert emoji not in data["text"]

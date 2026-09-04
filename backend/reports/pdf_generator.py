@@ -11,6 +11,7 @@ from typing import Optional, List, Dict, Any
 
 try:
     from fpdf import FPDF
+    from fpdf.enums import XPos, YPos
     FPDF_AVAILABLE = True
 except ImportError:
     FPDF_AVAILABLE = False
@@ -42,7 +43,7 @@ class DashboardPDF(FPDF):
         self.set_font("Helvetica", "B", 12)
         self.set_fill_color(240, 244, 255)
         self.set_text_color(102, 126, 234)
-        self.cell(0, 9, f"  {title}", border=0, ln=1, fill=True)
+        self.cell(0, 9, f"  {title}", border=0, new_x=XPos.LMARGIN, new_y=YPos.NEXT, fill=True)
         self.set_text_color(0, 0, 0)
         self.ln(2)
 
@@ -86,13 +87,13 @@ def generate_pdf_report(
         pdf.set_font("Helvetica", "B", 16)
         pdf.set_text_color(26, 32, 44)
         safe_filename = filename.encode("latin-1", errors="replace").decode("latin-1")
-        pdf.cell(0, 10, f"Informe Ejecutivo: {safe_filename}", ln=1, align="C")
+        pdf.cell(0, 10, f"Informe Ejecutivo: {safe_filename}", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align="C")
         
         pdf.set_font("Helvetica", "", 10)
         pdf.set_text_color(100, 100, 100)
         n_rows = profile.get("n_rows", "N/A")
         n_cols = profile.get("n_cols", "N/A")
-        pdf.cell(0, 6, f"Metrica Analizada: {target_col} | Registros: {n_rows} | Columnas: {n_cols}", ln=1, align="C")
+        pdf.cell(0, 6, f"Metrica Analizada: {target_col} | Registros: {n_rows} | Columnas: {n_cols}", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align="C")
         pdf.ln(6)
 
         pdf.section_title("Indicadores Principales")

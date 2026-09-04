@@ -1,7 +1,7 @@
 """
 routers/chat.py
 Endpoint para interactuar con la API de Gemini (Chat con el dataset).
-Soporta modificaciones de gráficos a través del campo `chart_override`.
+Soporta modificaciones de gráficos compatibles con Apache ECharts (ChartSchema).
 """
 
 from fastapi import APIRouter, HTTPException
@@ -10,27 +10,8 @@ from typing import Dict, Any, List, Optional
 import os
 import json
 import re
-from enum import Enum
 
-class SupportedChartType(str, Enum):
-    bar = "bar"
-    bar_horizontal = "bar_horizontal"
-    doughnut = "doughnut"
-    line_area = "line_area"
-
-class ChartDataset(BaseModel):
-    label: str
-    data: List[float]
-
-class ChartDataDef(BaseModel):
-    type: SupportedChartType
-    labels: List[str]
-    datasets: List[ChartDataset]
-    title: Optional[str] = None
-
-class ChartOverrideDef(BaseModel):
-    index: int
-    chart_data: ChartDataDef
+from schemas.responses import BaseSchema, ChartSchema, ChartMetadataSchema, LayoutDirectivesSchema, DatasetSchema
 
 try:
     import google.generativeai as genai
@@ -40,10 +21,73 @@ except ImportError:
 
 router = APIRouter()
 
-class ChatRequest(BaseModel):
+class ChatRequest(BaseSchema):
     message: str
     context: Dict[str, Any]
-    charts: Optional[List[Dict[str, Any]]] = None  # Lista de gráficos actuales
+    charts: Optional[List[Dict[str, Any]]] = None
+
+def _normalize_chart_data(raw_chart: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Normaliza el chart_data devuelto por el LLM hacia el estándar ChartSchema de ECharts.
+    """
+    # Si ya tiene el formato moderno ECharts
+    if "dataset" in raw_chart and "layoutDirectives" in raw_chart:
+        return raw_chart
+    if "dataset" in raw_chart and "layout_directives" in raw_chart:
+        return raw_chart
+
+    # Si viene en formato legacy (labels + datasets de Chart.js)
+    labels = raw_chart.get("labels", [])
+    datasets = raw_chart.get("datasets", [])
+    title = raw_chart.get("title", "Gráfico Personalizado")
+    chart_type_legacy = str(raw_chart.get("type", "bar")).lower()
+
+    chart_type_map = {
+        "bar": "HorizontalBar",
+        "bar_horizontal": "HorizontalBar",
+        "horizontalbar": "HorizontalBar",
+        "doughnut": "Donut",
+        "donut": "Donut",
+        "pie": "Donut",
+        "line_area": "LineChart",
+        "line": "LineChart",
+        "linechart": "LineChart",
+        "scatter": "Scatter",
+    }
+    target_type = chart_type_map.get(chart_type_legacy, "HorizontalBar")
+
+    source = []
+    if datasets and len(datasets) > 0:
+        first_ds = datasets[0]
+        data_vals = first_ds.get("data", [])
+        for i, val in enumerate(data_vals):
+            lbl = labels[i] if i < len(labels) else f"Item {i+1}"
+            source.append({"categoria": str(lbl), "valor": val})
+    else:
+        for i, lbl in enumerate(labels):
+            source.append({"categoria": str(lbl), "valor": 0})
+
+    return {
+        "chartId": "ai_override",
+        "metadata": {
+            "title": title,
+            "insightSubtitle": "Generado por Asistente IA",
+            "sourceMetric": "valor"
+        },
+        "layoutDirectives": {
+            "chartType": target_type,
+            "xAxisType": "value" if target_type == "HorizontalBar" else "category",
+            "yAxisType": "category" if target_type == "HorizontalBar" else "value",
+            "isLogScale": False,
+            "hasTimeGaps": False,
+            "highCardinality": False,
+            "showConfidenceBands": False
+        },
+        "dataset": {
+            "dimensions": ["categoria", "valor"],
+            "source": source
+        }
+    }
 
 @router.post("/chat")
 async def chat_with_data(request: ChatRequest):
@@ -56,98 +100,114 @@ async def chat_with_data(request: ChatRequest):
 
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-3.6-flash")
+        model = genai.GenerativeModel("gemini-1.5-flash")
 
         ctx = request.context
         
-        # Resumen del contexto
+        # Resumen estructurado del contexto
+        profile_data = ctx.get("profile", {})
         summary_ctx = {
             "filename": ctx.get("filename", "Dataset"),
-            "target": ctx.get("target_col"),
+            "target": ctx.get("target_col") or ctx.get("targetCol"),
             "kpis": ctx.get("kpis", {}),
             "profile": {
-                "rows": ctx.get("profile", {}).get("n_rows"),
-                "cols": ctx.get("profile", {}).get("n_cols"),
-                "numeric": ctx.get("profile", {}).get("numeric_columns"),
-                "categorical": ctx.get("profile", {}).get("categorical_columns"),
+                "rows": profile_data.get("n_rows") or profile_data.get("nRows"),
+                "cols": profile_data.get("n_cols") or profile_data.get("nCols"),
+                "numeric": profile_data.get("numeric_columns") or profile_data.get("numericColumns"),
+                "categorical": profile_data.get("categorical_columns") or profile_data.get("categoricalColumns"),
             }
         }
         
-        if "anomalies" in ctx and "metrics" in ctx["anomalies"]:
-            summary_ctx["anomalies"] = ctx["anomalies"]["metrics"]
+        if "anomalies" in ctx:
+            summary_ctx["anomalies"] = ctx["anomalies"].get("metrics", ctx["anomalies"])
             
-        if "forecast" in ctx and "metrics" in ctx["forecast"]:
-            summary_ctx["forecast"] = ctx["forecast"]["metrics"]
+        if "forecast" in ctx:
+            summary_ctx["forecast"] = ctx["forecast"].get("metrics", ctx["forecast"])
             
-        if "feature_importance" in ctx and "metrics" in ctx["feature_importance"]:
-            summary_ctx["features"] = ctx["feature_importance"]["metrics"]
+        if "feature_importance" in ctx or "featureImportance" in ctx:
+            fi = ctx.get("feature_importance") or ctx.get("featureImportance", {})
+            summary_ctx["features"] = fi.get("metrics", fi)
 
-        # Resumen de gráficos disponibles
+        # Resumen de gráficos actuales de la UI
         charts_info = ""
         if request.charts:
-            charts_summary = [
-                {"index": i, "title": c.get("title",""), "type": c.get("chart_data", {}).get("type", "?")}
-                for i, c in enumerate(request.charts)
-            ]
-            charts_info = f"\nGRÁFICOS ACTUALES: {json.dumps(charts_summary, ensure_ascii=False)}"
+            charts_summary = []
+            for i, c in enumerate(request.charts):
+                meta = c.get("metadata", {})
+                directives = c.get("layoutDirectives") or c.get("layout_directives", {})
+                title = meta.get("title") or c.get("title", f"Gráfico {i+1}")
+                ctype = directives.get("chartType") or directives.get("chart_type") or c.get("type", "Gráfico")
+                charts_summary.append({"index": i, "title": title, "type": ctype})
+            charts_info = f"\nGRÁFICOS ACTUALES EN PANTALLA: {json.dumps(charts_summary, ensure_ascii=False)}"
 
-        # Detectar si el usuario quiere modificar un gráfico
-        chart_request_keywords = ["cambia", "modifica", "convierte", "transforma", "muestra", "chart", "gráfico", "grafico", "barras", "línea", "pie", "radar", "scatter"]
-        is_chart_request = any(kw in request.message.lower() for kw in chart_request_keywords) and any(
-            digit in request.message for digit in ["0","1","2","3","4","5","6","7","8","9","primero","segundo","tercero"]
-        )
+        # Instrucción condicional para modificar gráficos
+        chart_request_keywords = ["cambia", "modifica", "convierte", "transforma", "muestra", "chart", "gráfico", "grafico", "barras", "línea", "pie", "donut", "radar", "scatter"]
+        is_chart_request = any(kw in request.message.lower() for kw in chart_request_keywords)
 
         chart_override_instruction = ""
         if is_chart_request and request.charts:
             chart_override_instruction = """
-Si el usuario pide modificar un gráfico específico, responde en este formato JSON exacto al FINAL de tu respuesta (después de tu texto normal), encerrado entre <CHART_OVERRIDE> y </CHART_OVERRIDE>:
+Si el usuario solicita cambiar o transformar uno de los gráficos en pantalla, incluye al final de tu respuesta el bloque exacto:
 <CHART_OVERRIDE>
-{"index": <número_de_gráfico>, "chart_data": {"type": "<bar|bar_horizontal|line_area|doughnut>", "labels": [...], "datasets": [{"label": "...", "data": [...]}], "title": "..."}}
+{
+  "index": <índice_del_gráfico_0_based>,
+  "chart_data": {
+    "metadata": {"title": "Nuevo título", "insightSubtitle": "Subtítulo descriptivo", "sourceMetric": "valor"},
+    "layoutDirectives": {
+      "chartType": "<HorizontalBar|LineChart|Donut|Scatter>",
+      "xAxisType": "<value|category|time>",
+      "yAxisType": "<category|value>",
+      "isLogScale": false,
+      "hasTimeGaps": false,
+      "highCardinality": false,
+      "showConfidenceBands": false
+    },
+    "dataset": {
+      "dimensions": ["categoria", "valor"],
+      "source": [
+        {"categoria": "Etiqueta 1", "valor": 123},
+        {"categoria": "Etiqueta 2", "valor": 456}
+      ]
+    }
+  }
+}
 </CHART_OVERRIDE>
-
-Si no hay suficiente información para generar datos exactos del gráfico, no incluyas el bloque CHART_OVERRIDE.
 """
 
-        prompt = f"""Eres el "Asistente de Datos MIO", un experto en análisis de datos integrado en un Dashboard de Inteligencia Artificial llamado MIO.
-El usuario está analizando un dataset llamado '{summary_ctx["filename"]}' enfocado en '{summary_ctx["target"]}'.
+        prompt = f"""Eres el "Asistente de Datos MIO", un consultor senior en análisis de datos integrado en el Dashboard MIO.
+El usuario está analizando el dataset '{summary_ctx["filename"]}' con foco en '{summary_ctx["target"]}'.
 
-RESUMEN DE LOS DATOS ANALIZADOS:
+DATOS DISPONIBLES:
 {json.dumps(summary_ctx, indent=2, ensure_ascii=False)}
 {charts_info}
 
 {chart_override_instruction}
 
-El usuario te pregunta:
+Pregunta del usuario:
 "{request.message}"
 
-Responde de manera concisa, analítica, profesional pero amigable. Usa Markdown para formatear tu respuesta (negritas, listas, etc.).
-No menciones el JSON interno. Basa tu respuesta en el contexto proporcionado.
-Si el usuario pregunta algo que no está en el contexto, indícale que con los datos actuales no puedes asegurarlo.
+Instrucciones de formato:
+1. Responde de manera concisa, analítica, profesional y sin emojis.
+2. Usa Markdown prolijo (negritas, tablas o listas).
+3. No reveles la estructura técnica del JSON.
 """
         response = model.generate_content(prompt)
         raw_text = response.text
 
-        # Extraer chart_override si existe
         chart_override = None
         override_match = re.search(r'<CHART_OVERRIDE>(.*?)</CHART_OVERRIDE>', raw_text, re.DOTALL)
         if override_match:
             try:
                 raw_json = json.loads(override_match.group(1).strip())
-                validated_override = ChartOverrideDef(**raw_json)
-                
-                is_valid = True
-                for ds in validated_override.chart_data.datasets:
-                    if len(ds.data) != len(validated_override.chart_data.labels):
-                        is_valid = False
-                        break
-                        
-                if is_valid:
-                    chart_override = raw_json
-                else:
-                    print("Invalid chart_override: labels length and data length mismatch.")
+                idx = int(raw_json.get("index", 0))
+                normalized_chart = _normalize_chart_data(raw_json.get("chart_data", {}))
+                chart_override = {
+                    "index": idx,
+                    "chart_data": normalized_chart
+                }
                 raw_text = raw_text.replace(override_match.group(0), '').strip()
             except Exception as e:
-                print(f"Invalid chart_override discarded: {e}")
+                print(f"Error procesando chart_override: {e}")
                 raw_text = raw_text.replace(override_match.group(0), '').strip()
 
         return {

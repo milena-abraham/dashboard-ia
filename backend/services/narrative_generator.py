@@ -25,7 +25,7 @@ def _init_gemini() -> Optional[object]:
 
     try:
         genai.configure(api_key=api_key)
-        return genai.GenerativeModel("gemini-3.6-flash")
+        return genai.GenerativeModel("gemini-1.5-flash")
     except Exception:
         return None
 
@@ -81,14 +81,14 @@ def _generate_heuristic(context: dict) -> str:
         dir_t = "crecimiento" if trend > 0 else "reducción"
         lines.extend([
             "",
-            "## 📈 Proyección",
+            "## Proyección",
             f"- La tendencia proyectada indica un **{dir_t} del {abs(trend):.1f}%** para los próximos {forecast.get('periodos', 60)} períodos.",
         ])
 
     if top_features:
         lines.extend([
             "",
-            "## 🎯 Factores Determinantes (Machine Learning)",
+            "## Factores Determinantes (Machine Learning)",
             f"Las variables con mayor peso predictivo sobre {target} son:",
         ])
         for f in top_features[:3]:
@@ -97,19 +97,19 @@ def _generate_heuristic(context: dict) -> str:
     if anomalias > 0:
         lines.extend([
             "",
-            "## ⚠️ Alertas",
+            "## Alertas",
             f"- Se detectaron **{anomalias} registros anómalos** ({pct_anom}% de la muestra) que presentan desvíos significativos respecto a la norma.",
         ])
     else:
         lines.extend([
             "",
-            "## ⚠️ Alertas",
+            "## Alertas",
             "- No se detectaron anomalías severas; el comportamiento de los datos es homogéneo.",
         ])
 
     lines.extend([
         "",
-        "## 🚀 Recomendaciones",
+        "## Recomendaciones",
         "1. Priorizar la optimización de los factores determinantes identificados por el modelo.",
         "2. Monitorear los casos señalados como anomalías para detectar oportunidades o errores de registro.",
         "3. Realizar re-evaluaciones periódicas para calibrar las proyecciones.",

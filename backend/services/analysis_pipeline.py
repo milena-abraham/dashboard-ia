@@ -1,3 +1,4 @@
+import csv
 import json
 import math
 import time
@@ -77,15 +78,36 @@ def format_number(n, prefix=""):
 
 def detect_csv_format(file_path: str):
     enc = 'utf-8'
-    sep = None
+    sep = ','
     try:
         with open(file_path, 'rb') as f:
             raw = f.read(100000)
         res = chardet.detect(raw)
         if res and res['encoding']:
             enc = res['encoding']
+
+        # Fast separator detection for C-engine optimization
+        sample_text = raw.decode(enc, errors='ignore')
+        lines = [line for line in sample_text.splitlines()[:10] if line.strip()]
+        if lines:
+            header = lines[0]
+            counts = {
+                ',': header.count(','),
+                ';': header.count(';'),
+                '\t': header.count('\t'),
+                '|': header.count('|')
+            }
+            best_sep = max(counts, key=counts.get)
+            if counts[best_sep] > 0:
+                sep = best_sep
+            else:
+                try:
+                    dialect = csv.Sniffer().sniff(sample_text[:4096])
+                    sep = dialect.delimiter
+                except Exception:
+                    sep = ','
     except Exception as e:
-        logger.warning(f"Error detectando encoding, usando utf-8: {e}")
+        logger.warning(f"Error detectando encoding/delimitador, usando utf-8 y ',': {e}")
     return enc, sep
 
 def _parse_json_intelligent(file_path: str):
@@ -118,12 +140,13 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
         elif fname_lower.endswith(".csv") or not fname_lower.endswith((".xlsx", ".xls")):
             enc, sep = detect_csv_format(file_path)
             try:
-                if sep:
-                    df_raw = pd.read_csv(file_path, encoding=enc, sep=sep, engine='c')
-                else:
-                    df_raw = pd.read_csv(file_path, encoding=enc, sep=None, engine='python')
+                df_raw = pd.read_csv(file_path, encoding=enc, sep=sep, engine='c', on_bad_lines='skip')
             except Exception as e:
-                df_raw = pd.read_csv(file_path, encoding="latin1", sep=None, engine="python")
+                logger.warning(f"Fallo lectura rapida C-engine con sep='{sep}': {e}. Probando engine='python'")
+                try:
+                    df_raw = pd.read_csv(file_path, encoding=enc, sep=None, engine='python')
+                except Exception:
+                    df_raw = pd.read_csv(file_path, encoding="latin1", sep=None, engine="python")
         else:
             df_raw = pd.read_excel(file_path)
 
