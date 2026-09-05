@@ -14,7 +14,55 @@ interface DynamicChartRendererProps {
   height?: string | number;
 }
 
-export default function DynamicChartRenderer({ payload, height = '100%' }: DynamicChartRendererProps) {
+function normalizeChartPayload(raw: any): ChartSchema | null {
+  if (!raw) return null;
+  if (raw.layoutDirectives && raw.dataset) return raw;
+
+  const chartData = raw.chart_data || raw;
+  if (chartData && chartData.labels && chartData.datasets) {
+    const labels: string[] = chartData.labels || [];
+    const ds = chartData.datasets[0] || { data: [], label: 'Valor' };
+    const metricName = ds.label || 'Valor';
+    const chartTypeRaw = String(chartData.type || 'bar').toLowerCase();
+
+    let chartType: any = 'HorizontalBar';
+    if (chartTypeRaw.includes('line')) chartType = 'LineChart';
+    else if (chartTypeRaw.includes('doughnut') || chartTypeRaw.includes('pie') || chartTypeRaw.includes('donut')) chartType = 'Donut';
+    else if (chartTypeRaw.includes('scatter')) chartType = 'Scatter';
+
+    const source = labels.map((lbl, idx) => ({
+      categoria: String(lbl),
+      [metricName]: ds.data[idx] ?? 0
+    }));
+
+    return {
+      chartId: raw.chart_id || `chart-${Math.random().toString(36).substring(7)}`,
+      metadata: {
+        title: raw.title || chartData.title || '',
+        insightSubtitle: raw.description || '',
+        sourceMetric: metricName,
+      },
+      layoutDirectives: {
+        chartType,
+        xAxisType: chartType === 'HorizontalBar' ? 'value' : 'category',
+        yAxisType: chartType === 'HorizontalBar' ? 'category' : 'value',
+        isLogScale: false,
+        hasTimeGaps: false,
+        highCardinality: labels.length > 5,
+        showConfidenceBands: false,
+      },
+      dataset: {
+        dimensions: ['categoria', metricName],
+        source,
+      }
+    };
+  }
+  return null;
+}
+
+export default function DynamicChartRenderer({ payload: rawPayload, height = '100%' }: DynamicChartRendererProps) {
+    const payload = useMemo(() => normalizeChartPayload(rawPayload), [rawPayload]);
+
     const safeDataset = useMemo(() => {
         if (!payload || !payload.dataset) return null;
         const ds = JSON.parse(JSON.stringify(payload.dataset));
