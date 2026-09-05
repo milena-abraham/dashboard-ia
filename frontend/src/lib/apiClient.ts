@@ -8,7 +8,18 @@ export class ApiError extends Error {
   }
 }
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:10000/api/v1';
+const getBaseUrl = (): string => {
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
+  if (!envUrl) {
+    return 'http://localhost:10000/api/v1';
+  }
+  const clean = envUrl.replace(/\/+$/, '');
+  if (clean.endsWith('/api/v1')) return clean;
+  if (clean.endsWith('/api')) return `${clean}/v1`;
+  return `${clean}/api/v1`;
+};
+
+const BASE_URL = getBaseUrl();
 
 async function handleResponse<T>(response: Response, isBlob: boolean = false): Promise<T> {
   const isJson = response.headers.get('content-type')?.includes('application/json');

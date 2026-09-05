@@ -33,10 +33,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Primary API V1 endpoints
 app.include_router(analysis.router, prefix=settings.API_V1_STR)
 app.include_router(export.router, prefix=settings.API_V1_STR)
 app.include_router(chat.router, prefix=settings.API_V1_STR)
 app.include_router(narrative.router, prefix=settings.API_V1_STR)
+
+# Legacy aliases without /v1 prefix for full compatibility
+app.include_router(analysis.router, prefix="/api")
+app.include_router(export.router, prefix="/api")
+app.include_router(chat.router, prefix="/api")
+app.include_router(narrative.router, prefix="/api")
 
 @app.get("/api/health")
 @app.get(f"{settings.API_V1_STR}/health")
