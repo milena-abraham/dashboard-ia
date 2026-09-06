@@ -5,31 +5,34 @@ import { useFrame } from '@react-three/fiber';
 import { RoundedBox, Html } from '@react-three/drei';
 import * as THREE from 'three';
 
-// Modos de pantalla del MIO-Pocket (estilo LCD retro Dot-Matrix)
+// Modos de pantalla OLED MIO originales que le gustaron al usuario
 const SCREEN_MODES = [
   {
     id: 'forecasting',
     title: 'AUTO-ML FORECAST',
-    sub: 'Q4 REVENUE PROJECTION',
-    stat: '+34.8%',
-    note: 'PROPHET MODEL // 99.2%',
-    type: 'bars'
+    tag: 'ARIMA + PROPHET',
+    metric: '+34.8%',
+    sub: 'Proyección Q4',
+    badge: 'CONFIANZA 99.2%',
+    type: 'wave'
   },
   {
     id: 'clustering',
-    title: 'K-MEANS CLUSTERS',
-    sub: 'CUSTOMER SEGMENTATION',
-    stat: '3 GROUPS',
-    note: 'SILHOUETTE SCORE 0.84',
-    type: 'clusters'
+    title: 'K-MEANS CLUSTERING',
+    tag: '3 SEGMENTOS',
+    metric: '3,420',
+    sub: 'Clientes VIP',
+    badge: 'SILHOUETTE 0.84',
+    type: 'bars'
   },
   {
     id: 'anomalies',
     title: 'ANOMALY DETECTOR',
-    sub: 'ISOLATION FOREST',
-    stat: '12 OUTLIERS',
-    note: 'RISK LEVEL: MINIMAL',
-    type: 'matrix'
+    tag: 'ISOLATION FOREST',
+    metric: '12',
+    sub: 'Outliers detectados',
+    badge: 'CRÍTICO: 0',
+    type: 'scatter'
   }
 ];
 
@@ -38,11 +41,13 @@ export function MioDevModel() {
   const [activeModeIdx, setActiveModeIdx] = useState(0);
   const [btnPressed, setBtnPressed] = useState<string | null>(null);
 
-  // Pose fija inspirada en la referencia Pocketfolio:
+  // Pose acostada sobre la mesa (exactamente como en la foto de Pocketfolio):
+  // Apoyada sobre el plano XZ, levantada apenas ~18° hacia la cámara para lectura perfecta,
+  // y con un suave giro casual de ~4° en Z.
   const BASE_ROTATION = {
-    x: 0.12,   // Tilted back slightly
-    y: -0.1,   // Subtle diagonal angle
-    z: 0.015
+    x: -0.22,  // Inclinación hacia la cámara (como apoyada en soporte suave de escritorio)
+    y: 0.04,   // Casi frontal
+    z: -0.05   // Giro casual idéntico a la referencia
   };
 
   const mouseOffset = useRef({ x: 0, y: 0 });
@@ -65,100 +70,92 @@ export function MioDevModel() {
   useFrame((state) => {
     if (!groupRef.current) return;
 
+    // Micro-parallax imperceptible con amortiguación
     const pointerX = state.pointer.x;
     const pointerY = state.pointer.y;
 
-    mouseOffset.current.x = THREE.MathUtils.lerp(mouseOffset.current.x, pointerX * 0.025, 0.04);
-    mouseOffset.current.y = THREE.MathUtils.lerp(mouseOffset.current.y, -pointerY * 0.02, 0.04);
+    mouseOffset.current.x = THREE.MathUtils.lerp(mouseOffset.current.x, pointerX * 0.02, 0.04);
+    mouseOffset.current.y = THREE.MathUtils.lerp(mouseOffset.current.y, -pointerY * 0.015, 0.04);
 
     groupRef.current.rotation.y = BASE_ROTATION.y + mouseOffset.current.x;
     groupRef.current.rotation.x = BASE_ROTATION.x + mouseOffset.current.y;
     groupRef.current.rotation.z = BASE_ROTATION.z;
-    groupRef.current.position.set(0, -0.1, 0);
+    // Firmemente anclada al suelo
+    groupRef.current.position.set(0, -0.05, 0);
   });
 
   return (
-    <group ref={groupRef} scale={[0.92, 0.92, 0.92]} position={[0, -0.1, 0]}>
+    <group ref={groupRef} scale={[0.96, 0.96, 0.96]} position={[0, -0.05, 0]}>
       {/* ==================================================== */}
-      {/* 1. INTERRUPTOR SUPERIOR DE ENCENDIDO (OFF <-> ON) */}
+      {/* 1. INTERRUPTOR SUPERIOR DE HARDWARE (OFF <-> ON) */}
       {/* ==================================================== */}
       <group position={[-0.85, 2.58, -0.05]}>
-        <RoundedBox args={[0.32, 0.14, 0.16]} radius={0.03} smoothness={2} castShadow>
-          <meshStandardMaterial color="#55535c" roughness={0.7} />
+        <RoundedBox args={[0.34, 0.14, 0.16]} radius={0.03} smoothness={2} castShadow>
+          <meshStandardMaterial color="#2d273d" roughness={0.7} />
         </RoundedBox>
-        {[-0.08, 0, 0.08].map((x, i) => (
-          <mesh key={i} position={[x, 0.07, 0]}>
-            <boxGeometry args={[0.025, 0.03, 0.14]} />
-            <meshStandardMaterial color="#2d2b33" roughness={0.8} />
-          </mesh>
-        ))}
       </group>
 
       {/* ==================================================== */}
-      {/* 2. CHASIS RETRO CLASSIC (Off-White / DMG Grey PBR) */}
+      {/* 2. CHASIS MIO VIOLET (#7c4ee6) NEO-BRUTALIST */}
       {/* ==================================================== */}
       <RoundedBox
-        args={[3.45, 5.2, 0.7]}
-        radius={0.25}
+        args={[3.45, 5.2, 0.68]}
+        radius={0.24}
         smoothness={4}
         castShadow
         receiveShadow
         position={[0, 0, 0]}
       >
         <meshStandardMaterial
-          color="#ebe7de"
-          roughness={0.4}
-          metalness={0.03}
+          color="#7647eb" // Violeta oficial de MIO
+          roughness={0.25}
+          metalness={0.08}
         />
       </RoundedBox>
 
-      {/* Ranura decorativa horizontal superior */}
-      <mesh position={[0, 2.32, 0.355]}>
+      {/* Ranura decorativa horizontal superior de ensamble */}
+      <mesh position={[0, 2.32, 0.345]}>
         <planeGeometry args={[3.2, 0.02]} />
-        <meshStandardMaterial color="#c8c4ba" roughness={0.8} />
+        <meshStandardMaterial color="#5e35c7" roughness={0.6} />
       </mesh>
 
       {/* ==================================================== */}
-      {/* 3. MARCO / BEZEL DE PANTALLA OSCURO */}
+      {/* 3. MARCO / BEZEL DE PANTALLA OBSIDIANA CON STRIPES */}
       {/* ==================================================== */}
-      <group position={[0, 0.85, 0.355]}>
+      <group position={[0, 0.85, 0.345]}>
         <RoundedBox args={[3.0, 2.45, 0.05]} radius={0.12} smoothness={3}>
           <meshStandardMaterial
-            color="#5e5c66"
-            roughness={0.35}
-            metalness={0.08}
+            color="#0e0b17" // Obsidiana oscuro
+            roughness={0.2}
+            metalness={0.3}
           />
         </RoundedBox>
 
-        {/* Líneas decorativas superiores en el bezel */}
-        <mesh position={[0, 1.06, 0.028]}>
+        {/* Franja de acento MIO Lima (#bdf559) sobre el bezel */}
+        <mesh position={[0, 1.05, 0.028]}>
           <planeGeometry args={[2.55, 0.025]} />
-          <meshStandardMaterial color="#815ae1" />
-        </mesh>
-        <mesh position={[0, 1.02, 0.028]}>
-          <planeGeometry args={[2.55, 0.015]} />
-          <meshStandardMaterial color="#bdf559" />
+          <meshStandardMaterial color="#bdf559" emissive="#bdf559" emissiveIntensity={0.3} />
         </mesh>
 
-        {/* LED de Batería (Rojo clásico brillante) */}
+        {/* LED de Batería (Verde Lima encendido) */}
         <mesh position={[-1.22, 0.15, 0.035]}>
           <circleGeometry args={[0.045, 16]} />
-          <meshStandardMaterial color="#ff2222" emissive="#ff2222" emissiveIntensity={0.8} />
+          <meshStandardMaterial color="#bdf559" emissive="#bdf559" emissiveIntensity={0.9} />
         </mesh>
 
         {/* ==================================================== */}
-        {/* 4. PANTALLA LCD DOT-MATRIX RETRO OLIVA / VERDE */}
+        {/* 4. PANTALLA OLED CYBERPUNK MIO ORIGINAL */}
         {/* ==================================================== */}
         <mesh position={[0.06, -0.05, 0.026]}>
           <planeGeometry args={[2.24, 1.84]} />
           <meshStandardMaterial
-            color="#8c976d"
-            roughness={0.2}
-            metalness={0.05}
+            color="#0b0914"
+            roughness={0.1}
+            metalness={0.2}
           />
         </mesh>
 
-        {/* Contenido HTML interactivo ÚNICO dentro de la pantalla LCD */}
+        {/* Contenido HTML interactivo MIO (el original que le gustó al usuario) */}
         <Html
           transform
           position={[0.06, -0.05, 0.032]}
@@ -167,36 +164,40 @@ export function MioDevModel() {
         >
           <div
             style={{ width: '340px', height: '280px' }}
-            className="bg-[#8c976d] text-[#1c2214] p-3 font-mono flex flex-col justify-between rounded shadow-inner relative overflow-hidden border border-[#768257]"
+            className="bg-[#0b0914] text-white p-3 font-mono flex flex-col justify-between rounded shadow-2xl relative overflow-hidden border border-mio-lime/30"
           >
-            {/* Grid retro */}
+            {/* Scanline CRT overlay */}
             <div
-              className="absolute inset-0 pointer-events-none opacity-20"
+              className="absolute inset-0 pointer-events-none opacity-25"
               style={{
-                backgroundImage: 'radial-gradient(#1c2214 1px, transparent 1px)',
-                backgroundSize: '4px 4px'
+                backgroundImage: 'linear-gradient(rgba(18, 16, 31, 0) 50%, rgba(0, 0, 0, 0.75) 50%)',
+                backgroundSize: '100% 4px'
               }}
             />
 
-            {/* Header LCD */}
-            <div className="flex items-center justify-between border-b border-[#6c784e] pb-1 relative z-10">
-              <span className="text-[10px] font-black tracking-widest flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-[#1c2214] inline-block" />
-                MIO-OS v2.6
-              </span>
-              <span className="text-[9px] font-bold tracking-wider">
-                {currentMode.title}
+            {/* Header de la pantalla */}
+            <div className="flex items-center justify-between border-b border-gray-800 pb-1.5 relative z-10">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-mio-lime animate-pulse inline-block" />
+                <span className="text-[10px] font-black tracking-wider text-mio-lime">MIO OS v2.6</span>
+              </div>
+              <span className="text-[9px] bg-white/10 px-1.5 py-0.5 rounded text-gray-300 font-bold tracking-wider">
+                {currentMode.tag}
               </span>
             </div>
 
-            {/* Gráfico central estilo Game Boy */}
-            <div className="flex-1 flex flex-col justify-center py-2 relative z-10">
-              {currentMode.type === 'bars' && (
-                <div className="h-24 w-full flex items-end justify-between gap-1.5 px-2 pt-2">
-                  {[25, 38, 30, 52, 48, 68, 62, 85, 78, 100].map((val, i) => (
+            {/* Gráficos dinámicos interactivos con gradiente MIO */}
+            <div className="flex-1 flex flex-col justify-center py-1 relative z-10">
+              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">
+                {currentMode.title}
+              </div>
+
+              {currentMode.type === 'wave' && (
+                <div className="h-24 w-full flex items-end justify-between gap-1.5 px-1 pt-2">
+                  {[22, 35, 28, 48, 44, 65, 58, 82, 75, 96, 92, 100].map((val, i) => (
                     <div key={i} className="flex-1 flex flex-col items-center">
                       <div
-                        className="w-full bg-[#1c2214] transition-all duration-300"
+                        className="w-full bg-gradient-to-t from-mio-violet to-mio-lime rounded-t transition-all duration-300"
                         style={{ height: `${val * 0.72}px` }}
                       />
                     </div>
@@ -204,54 +205,55 @@ export function MioDevModel() {
                 </div>
               )}
 
-              {currentMode.type === 'clusters' && (
-                <div className="h-24 w-full flex items-end justify-around gap-4 px-4 pt-2">
+              {currentMode.type === 'bars' && (
+                <div className="h-24 w-full flex items-end justify-around gap-4 px-3 pt-2">
                   <div className="flex-1 flex flex-col items-center">
-                    <span className="text-[9px] font-black mb-1">58%</span>
-                    <div className="w-full bg-[#1c2214] h-16" />
-                    <span className="text-[8px] font-bold mt-1">SEG-A</span>
+                    <span className="text-[9px] text-mio-lime font-bold mb-1">62%</span>
+                    <div className="w-full bg-mio-lime rounded-t h-16 transition-all duration-500" />
+                    <span className="text-[8px] text-gray-400 mt-1">SEG-1</span>
                   </div>
                   <div className="flex-1 flex flex-col items-center">
-                    <span className="text-[9px] font-black mb-1">29%</span>
-                    <div className="w-full bg-[#2c3720] h-10" />
-                    <span className="text-[8px] font-bold mt-1">SEG-B</span>
+                    <span className="text-[9px] text-white font-bold mb-1">26%</span>
+                    <div className="w-full bg-mio-violet rounded-t h-10 transition-all duration-500" />
+                    <span className="text-[8px] text-gray-400 mt-1">SEG-2</span>
                   </div>
                   <div className="flex-1 flex flex-col items-center">
-                    <span className="text-[9px] font-black mb-1">13%</span>
-                    <div className="w-full bg-[#465436] h-6" />
-                    <span className="text-[8px] font-bold mt-1">SEG-C</span>
+                    <span className="text-[9px] text-gray-400 font-bold mb-1">12%</span>
+                    <div className="w-full bg-gray-700 rounded-t h-6 transition-all duration-500" />
+                    <span className="text-[8px] text-gray-400 mt-1">SEG-3</span>
                   </div>
                 </div>
               )}
 
-              {currentMode.type === 'matrix' && (
-                <div className="h-24 w-full flex flex-col justify-center gap-2 px-2">
-                  <div className="flex justify-between items-center text-[10px] font-bold border-b border-[#6c784e] pb-1">
-                    <span>ANOMALÍAS:</span>
-                    <span className="font-black bg-[#1c2214] text-[#8c976d] px-1">0 CRÍTICAS</span>
-                  </div>
-                  <div className="grid grid-cols-6 gap-1.5 pt-1">
-                    {Array.from({ length: 18 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className={`h-3 rounded-none ${i === 4 || i === 11 ? 'bg-transparent border border-[#1c2214]' : 'bg-[#1c2214]'}`}
-                      />
-                    ))}
-                  </div>
+              {currentMode.type === 'scatter' && (
+                <div className="h-24 w-full relative border border-dashed border-gray-800 rounded p-1.5 overflow-hidden">
+                  <div className="absolute top-2 left-6 w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                  <div className="absolute top-2 left-6 w-2 h-2 rounded-full bg-red-400" />
+                  <div className="absolute bottom-3 right-8 w-2 h-2 rounded-full bg-red-400" />
+
+                  {[
+                    [20, 40], [35, 55], [50, 45], [60, 70], [75, 60], [80, 80], [40, 30], [65, 50]
+                  ].map(([x, y], idx) => (
+                    <div
+                      key={idx}
+                      className="absolute w-1.5 h-1.5 rounded-full bg-mio-lime"
+                      style={{ left: `${x}%`, top: `${y}%` }}
+                    />
+                  ))}
                 </div>
               )}
             </div>
 
-            {/* Footer LCD con métricas */}
-            <div className="border-t border-[#6c784e] pt-1 flex items-center justify-between relative z-10 text-[9px] font-bold">
+            {/* Footer con métricas ejecutivas */}
+            <div className="border-t border-gray-800 pt-1.5 flex items-center justify-between relative z-10">
               <div>
-                <div className="text-[7.5px] uppercase text-[#3b4629]">{currentMode.sub}</div>
-                <div className="text-base font-black leading-none tracking-tight">
-                  {currentMode.stat}
+                <div className="text-[9px] text-gray-400">{currentMode.sub}</div>
+                <div className="text-base font-black text-mio-lime tracking-tight leading-none">
+                  {currentMode.metric}
                 </div>
               </div>
-              <div className="text-[8px] bg-[#1c2214] text-[#8c976d] px-1.5 py-0.5 font-bold">
-                {currentMode.note}
+              <div className="text-[8px] font-bold px-1.5 py-0.5 bg-mio-violet/40 text-mio-lime border border-mio-violet/60 rounded">
+                {currentMode.badge}
               </div>
             </div>
           </div>
@@ -259,27 +261,28 @@ export function MioDevModel() {
       </group>
 
       {/* ==================================================== */}
-      {/* 5. D-PAD (CRUCETA NEGRA CON DISCO CENTRAL) */}
+      {/* 5. CONTROLES: D-PAD EN NEGRO MATE */}
       {/* ==================================================== */}
-      <group position={[-0.88, -1.35, 0.36]}>
+      <group position={[-0.88, -1.35, 0.355]}>
         <RoundedBox args={[0.34, 0.98, 0.16]} radius={0.04} smoothness={2} castShadow>
-          <meshStandardMaterial color="#1a1820" roughness={0.65} />
+          <meshStandardMaterial color="#1a1726" roughness={0.6} />
         </RoundedBox>
         <RoundedBox args={[0.98, 0.34, 0.16]} radius={0.04} smoothness={2} castShadow>
-          <meshStandardMaterial color="#1a1820" roughness={0.65} />
+          <meshStandardMaterial color="#1a1726" roughness={0.6} />
         </RoundedBox>
+        {/* Hendidura central */}
         <mesh position={[0, 0, 0.088]}>
           <cylinderGeometry args={[0.085, 0.085, 0.02, 24]} />
-          <meshStandardMaterial color="#100f14" roughness={0.9} />
+          <meshStandardMaterial color="#110e1a" roughness={0.9} />
         </mesh>
       </group>
 
       {/* ==================================================== */}
-      {/* 6. BOTONES DE ACCIÓN B / A (MAGENTA CLÁSICO) */}
+      {/* 6. BOTONES DE ACCIÓN: BOTÓN A EN LIMA (#bdf559) Y B EN OSCURO */}
       {/* ==================================================== */}
-      {/* Botón B */}
+      {/* Botón B (Dark Graphite con borde MIO) */}
       <group
-        position={[0.55, -1.45, 0.36]}
+        position={[0.55, -1.45, 0.355]}
         onClick={handlePrevMode}
       >
         <mesh
@@ -287,17 +290,17 @@ export function MioDevModel() {
           position={[0, 0, btnPressed === 'b' ? 0.03 : 0.08]}
           castShadow
         >
-          <cylinderGeometry args={[0.3, 0.3, 0.16, 32]} />
+          <cylinderGeometry args={[0.31, 0.31, 0.16, 32]} />
           <meshStandardMaterial
-            color="#8c1f54"
-            roughness={0.3}
+            color="#221b33"
+            roughness={0.35}
           />
         </mesh>
       </group>
 
-      {/* Botón A */}
+      {/* Botón A (MIO LIME #bdf559 ELÉCTRICO) */}
       <group
-        position={[1.08, -1.18, 0.36]}
+        position={[1.08, -1.18, 0.355]}
         onClick={handleNextMode}
       >
         <mesh
@@ -305,34 +308,36 @@ export function MioDevModel() {
           position={[0, 0, btnPressed === 'a' ? 0.03 : 0.08]}
           castShadow
         >
-          <cylinderGeometry args={[0.3, 0.3, 0.16, 32]} />
+          <cylinderGeometry args={[0.31, 0.31, 0.16, 32]} />
           <meshStandardMaterial
-            color="#8c1f54"
-            roughness={0.3}
+            color="#bdf559"
+            emissive="#bdf559"
+            emissiveIntensity={0.25}
+            roughness={0.25}
           />
         </mesh>
       </group>
 
       {/* ==================================================== */}
-      {/* 7. BOTONES SELECT Y START (PILLS INCLINADAS) */}
+      {/* 7. BOTONES SELECT Y START */}
       {/* ==================================================== */}
-      <group position={[-0.15, -2.05, 0.36]} rotation={[0, 0, -0.45]}>
+      <group position={[-0.15, -2.05, 0.355]} rotation={[0, 0, -0.45]}>
         <group position={[-0.22, 0, 0]}>
           <RoundedBox args={[0.38, 0.11, 0.07]} radius={0.04} smoothness={2} castShadow>
-            <meshStandardMaterial color="#6a6773" roughness={0.65} />
+            <meshStandardMaterial color="#221b33" roughness={0.7} />
           </RoundedBox>
         </group>
         <group position={[0.26, 0, 0]}>
           <RoundedBox args={[0.38, 0.11, 0.07]} radius={0.04} smoothness={2} castShadow>
-            <meshStandardMaterial color="#6a6773" roughness={0.65} />
+            <meshStandardMaterial color="#221b33" roughness={0.7} />
           </RoundedBox>
         </group>
       </group>
 
       {/* ==================================================== */}
-      {/* 8. REJILLA DEL ALTAVOZ (6 RANURAS DIAGONALES) */}
+      {/* 8. REJILLA DEL ALTAVOZ (6 RANURAS) */}
       {/* ==================================================== */}
-      <group position={[0.82, -2.05, 0.355]} rotation={[0, 0, -0.45]}>
+      <group position={[0.82, -2.05, 0.35]} rotation={[0, 0, -0.45]}>
         {[-0.32, -0.19, -0.06, 0.07, 0.2, 0.33].map((offsetY, i) => (
           <RoundedBox
             key={i}
@@ -341,7 +346,7 @@ export function MioDevModel() {
             smoothness={2}
             position={[0, offsetY, 0]}
           >
-            <meshStandardMaterial color="#2d2a33" roughness={0.9} />
+            <meshStandardMaterial color="#161224" roughness={0.9} />
           </RoundedBox>
         ))}
       </group>
