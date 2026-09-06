@@ -29,12 +29,16 @@ export default function LoadingAnalysis({
   const [progress, setProgress] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
 
-  // Estimación Data-Driven calibrada con el backend V2 optimizado:
-  // Benchmark real en 200MB (2,075,000 filas): ~16-17 segundos.
-  // Benchmark en 20MB (~85,000 filas): ~3.5 segundos.
-  // Fórmula ajustada: 2.0s base + 0.075s por MB.
-  const fileSizeInMB = (fileSize || 25000000) / (1024 * 1024);
-  const estimatedTotalSeconds = Math.min(90, Math.max(2.5, 2.0 + fileSizeInMB * 0.075));
+  const isCloud = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+  const fileSizeInMB = (fileSize || 20000000) / (1024 * 1024);
+  
+  // En localhost: procesamiento ultrarrápido (2-6s)
+  // En la nube (Render free): subida por internet + cómputo de 4 modelos ML (35-65s)
+  const estimatedTotalSeconds = isCloud
+    ? Math.min(100, Math.max(25, 15 + fileSizeInMB * 1.8))
+    : Math.min(45, Math.max(2.5, 1.5 + fileSizeInMB * 0.08));
+
+  const [overtime, setOvertime] = useState(false);
 
   useEffect(() => {
     const startTime = Date.now();
@@ -42,36 +46,34 @@ export default function LoadingAnalysis({
 
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime;
-
-      // Avance fluido y realista:
-      // - Hasta 85% avanza proporcional al tiempo estimado
-      // - Entre 85% y 98% desacelera asintóticamente sin congelarse en 99%
-      let currentProgress: number;
       const ratio = elapsed / totalMs;
 
+      if (ratio >= 1.0 && !overtime) {
+        setOvertime(true);
+      }
+
+      let currentProgress: number;
       if (ratio <= 0.85) {
         currentProgress = ratio * 100;
       } else {
-        // Asymptote towards 98%
-        const extraTime = (elapsed - totalMs * 0.85) / (totalMs * 0.6);
-        currentProgress = 85 + 13 * (1 - Math.exp(-extraTime));
+        // Desaceleración suave asintótica hacia el 98.5%
+        const extraTime = (elapsed - totalMs * 0.85) / (totalMs * 1.2);
+        currentProgress = 85 + 13.5 * (1 - Math.exp(-extraTime));
       }
 
-      if (currentProgress > 98.5) currentProgress = 98.5;
+      if (currentProgress > 98.8) currentProgress = 98.8;
       setProgress(currentProgress);
 
-      // Tiempo restante
       const remaining = (totalMs - elapsed) / 1000;
       setTimeLeft(remaining > 0 ? remaining : 0);
 
-      // Índice de mensajes descriptivos
       let mIndex = Math.floor((elapsed / totalMs) * MESSAGES.length);
       if (mIndex >= MESSAGES.length) mIndex = MESSAGES.length - 1;
       setMsgIndex(mIndex);
     }, 100);
 
     return () => clearInterval(interval);
-  }, [estimatedTotalSeconds]);
+  }, [estimatedTotalSeconds, overtime]);
 
   return (
     <div className="flex flex-col items-center justify-center p-12 bg-white rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] max-w-lg mx-auto text-center my-8">
@@ -86,7 +88,11 @@ export default function LoadingAnalysis({
         Procesando {totalFiles > 1 ? `archivo ${currentFile} de ${totalFiles}` : 'tus datos'}
       </h3>
       <p className="text-sm text-mio-violet font-medium h-6 transition-all duration-300">
-        {isUploading ? `Subiendo a la nube de manera segura...` : MESSAGES[msgIndex]}
+        {isUploading
+          ? `Subiendo a la nube de manera segura...`
+          : overtime
+          ? 'Finalizando cálculos predictivos en la nube (casi listo)...'
+          : MESSAGES[msgIndex]}
       </p>
 
       <div className="w-full bg-gray-100 h-3 rounded-none mt-6 overflow-hidden border border-[#111] shadow-[2px_2px_0px_#111]">

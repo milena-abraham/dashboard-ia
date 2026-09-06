@@ -1,6 +1,48 @@
 import { AnalysisResponseSchema, NarrativeSchema } from '@/types/analysis';
 import { apiClient } from './apiClient';
 
+function normalizeAnalysisResponse(raw: any): AnalysisResponseSchema {
+  if (!raw) return raw;
+  const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+
+  return {
+    filename: data.filename || '',
+    targetCol: data.targetCol || data.target_col || '',
+    profile: {
+      nRows: data.profile?.nRows ?? data.profile?.n_rows ?? 0,
+      nCols: data.profile?.nCols ?? data.profile?.n_cols ?? 0,
+      qualityScore: data.profile?.qualityScore ?? data.profile?.quality_score ?? 0,
+      qualityLabel: data.profile?.qualityLabel ?? data.profile?.quality_label ?? 'Media',
+      numericColumns: data.profile?.numericColumns || data.profile?.numeric_columns || [],
+      dateColumns: data.profile?.dateColumns || data.profile?.date_columns || [],
+      categoricalColumns: data.profile?.categoricalColumns || data.profile?.categorical_columns || [],
+      suggestedTargets: data.profile?.suggestedTargets || data.profile?.suggested_targets || [],
+    },
+    cleaningReport: data.cleaningReport || data.cleaning_report || { actions: [], duplicatesRemoved: 0, nullsImputed: {} },
+    kpis: data.kpis || {},
+    charts: data.charts || [],
+    forecast: {
+      chartData: data.forecast?.chartData || data.forecast?.chart_data || undefined,
+      metrics: data.forecast?.metrics || {},
+    },
+    segmentation: {
+      scatterData: data.segmentation?.scatterData || data.segmentation?.scatter_data || undefined,
+      radarData: data.segmentation?.radarData || data.segmentation?.radar_data || undefined,
+      metrics: data.segmentation?.metrics || {},
+    },
+    anomalies: {
+      chartData: data.anomalies?.chartData || data.anomalies?.chart_data || undefined,
+      metrics: data.anomalies?.metrics || {},
+    },
+    featureImportance: {
+      chartImportance: data.featureImportance?.chartImportance || data.feature_importance?.chart_importance || undefined,
+      chartShap: data.featureImportance?.chartShap || data.feature_importance?.chart_shap || undefined,
+      metrics: data.featureImportance?.metrics || data.feature_importance?.metrics || {},
+    },
+    narrative: data.narrative || { text: '', source: '' },
+  };
+}
+
 export async function analyzeFile(
   file: File | null,
   fileUrl?: string,
@@ -26,7 +68,8 @@ export async function analyzeFile(
     formData.append('target_col', targetCol);
   }
 
-  return apiClient.post<AnalysisResponseSchema>('/analyze', formData);
+  const res = await apiClient.post<any>('/analyze', formData);
+  return normalizeAnalysisResponse(res);
 }
 
 export async function generateNarrative(data: any): Promise<NarrativeSchema> {
