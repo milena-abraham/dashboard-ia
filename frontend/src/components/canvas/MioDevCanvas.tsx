@@ -5,32 +5,29 @@ import { Canvas } from '@react-three/fiber';
 import { ContactShadows, PerspectiveCamera } from '@react-three/drei';
 import { MioDevModel } from './MioDevModel';
 
-// Fallback 2D Neo-brutalista si WebGL no está disponible
+// Fallback 2D si WebGL no está disponible
 function MioDevFallback() {
   return (
-    <div className="w-full h-full min-h-[480px] flex items-center justify-center p-4">
-      <div className="w-[320px] bg-[#7745e6] border-4 border-[#111] shadow-[10px_10px_0px_#111] p-5 flex flex-col items-center rotate-[-3deg]">
-        <div className="w-full bg-[#0d0a17] border-2 border-[#111] p-4 text-white font-mono rounded mb-4">
-          <div className="flex justify-between items-center text-[10px] text-mio-lime mb-2 border-b border-gray-800 pb-1">
-            <span>MIO-DEV v2.6</span>
-            <span className="animate-pulse">● LIVE</span>
-          </div>
-          <div className="text-xs text-gray-300 font-bold mb-1">AUTO-ML ENGINE</div>
-          <div className="text-xl font-black text-mio-lime mb-2">+34.8% PREDICTION</div>
-          <div className="h-10 w-full bg-gray-900 border border-gray-800 flex items-end gap-1 p-1">
-            {[40, 60, 45, 80, 70, 95, 100].map((h, i) => (
-              <div key={i} className="flex-1 bg-mio-lime" style={{ height: `${h}%` }} />
-            ))}
+    <div className="w-full h-full min-h-[500px] flex items-center justify-center p-4">
+      <div className="w-[320px] bg-[#ebe7de] border-4 border-[#111] shadow-[12px_12px_0px_#111] p-5 flex flex-col items-center">
+        <div className="w-full bg-[#5e5c66] p-3 rounded mb-4">
+          <div className="bg-[#8c976d] p-3 text-[#1c2214] font-mono border border-[#6c784e]">
+            <div className="text-[10px] font-black mb-1">MIO-OS v2.6 // LIVE</div>
+            <div className="text-xl font-black mb-2">+34.8% PREDICTION</div>
+            <div className="h-10 w-full bg-[#6c784e]/30 flex items-end gap-1 p-1">
+              {[30, 50, 40, 75, 65, 90, 100].map((h, i) => (
+                <div key={i} className="flex-1 bg-[#1c2214]" style={{ height: `${h}%` }} />
+              ))}
+            </div>
           </div>
         </div>
-
         <div className="w-full flex justify-between items-center px-2">
-          <div className="w-10 h-10 bg-[#1e1a28] border-2 border-[#111] flex items-center justify-center font-bold text-gray-400">
+          <div className="w-12 h-12 bg-[#1a1820] flex items-center justify-center font-bold text-gray-500">
             +
           </div>
           <div className="flex gap-2">
-            <div className="w-7 h-7 rounded-full bg-mio-lime border-2 border-[#111] shadow-[2px_2px_0px_#111]" />
-            <div className="w-7 h-7 rounded-full bg-[#282236] border-2 border-[#111] shadow-[2px_2px_0px_#111]" />
+            <div className="w-8 h-8 rounded-full bg-[#8c1f54]" />
+            <div className="w-8 h-8 rounded-full bg-[#8c1f54]" />
           </div>
         </div>
       </div>
@@ -60,16 +57,11 @@ export default function MioDevCanvas() {
     setHasWebGL(isWebGLAvailable());
   }, []);
 
-  if (!mounted) {
-    return <MioDevFallback />;
-  }
-
-  if (!hasWebGL) {
-    return <MioDevFallback />;
-  }
+  if (!mounted) return <MioDevFallback />;
+  if (!hasWebGL) return <MioDevFallback />;
 
   return (
-    <div className="w-full h-[520px] sm:h-[580px] md:h-[620px] relative select-none flex items-center justify-center overflow-visible">
+    <div className="w-full h-[540px] sm:h-[620px] lg:h-[680px] relative select-none flex items-center justify-center overflow-visible">
       <Suspense fallback={<MioDevFallback />}>
         <Canvas
           shadows
@@ -77,46 +69,38 @@ export default function MioDevCanvas() {
           gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
           className="w-full h-full"
         >
-          {/* Cámara con distancia calculada para encuadrar la consola completa + cartucho + sombra de suelo sin cortes */}
-          <PerspectiveCamera makeDefault position={[0, 0.2, 10.4]} fov={42} />
+          {/* Cámara frontal con inclinación natural y encuadre amplio */}
+          <PerspectiveCamera makeDefault position={[0, 0.05, 9.4]} fov={38} />
 
-          {/* Iluminación de estudio limpia sobre el fondo blanco */}
-          <ambientLight intensity={1.2} />
-          
-          {/* Key Light (Luz direccional con sombra) */}
+          {/* Iluminación de estudio idéntica al render Pocketfolio */}
+          <ambientLight intensity={1.4} />
+
+          {/* Key light principal proveniente de la izquierda-arriba */}
           <directionalLight
-            position={[5, 8, 6]}
-            intensity={1.9}
+            position={[-4, 8, 5]}
+            intensity={2.1}
             castShadow
             shadow-mapSize={[1024, 1024]}
-            shadow-camera-near={1}
-            shadow-camera-far={25}
-            shadow-camera-left={-5}
-            shadow-camera-right={5}
-            shadow-camera-top={5}
-            shadow-camera-bottom={-5}
+            shadow-bias={-0.0001}
           />
 
-          {/* Rim Light 1: Acento violeta MIO sobre los bordes superiores */}
-          <pointLight position={[-5, 3, 3]} intensity={2.2} color="#815ae1" />
+          {/* Luz de relleno suave desde la derecha */}
+          <directionalLight position={[4, 2, 4]} intensity={0.5} />
 
-          {/* Rim Light 2: Acento lima MIO sobre el lateral derecho */}
-          <pointLight position={[4, -1, 3]} intensity={1.8} color="#bdf559" />
+          {/* Relleno frontal neutro para resaltar los botones y la serigrafía */}
+          <directionalLight position={[0, -1, 5]} intensity={0.4} />
 
-          {/* Relleno frontal neutro */}
-          <directionalLight position={[0, 1, 5]} intensity={0.5} />
-
-          {/* El Modelo MIO-Dev apoyado en diagonal */}
+          {/* Modelo 3D MIO-Pocket */}
           <MioDevModel />
 
-          {/* Sombra de contacto directamente en la base inferior donde apoya la consola */}
+          {/* Sombra de contacto direccional suave que ancla la consola a la mesa */}
           <ContactShadows
-            position={[0, -2.45, 0]}
-            opacity={0.6}
-            scale={11}
+            position={[0.15, -2.62, 0]}
+            opacity={0.48}
+            scale={10}
             blur={2.4}
-            far={4}
-            color="#140e24"
+            far={5}
+            color="#2a2622"
           />
         </Canvas>
       </Suspense>
