@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { RoundedBox, Html, Float } from '@react-three/drei';
+import { RoundedBox, Html } from '@react-three/drei';
 import * as THREE from 'three';
 
 // Modos de pantalla del MIO-Dev
@@ -38,57 +38,107 @@ const SCREEN_MODES = [
 
 export function MioDevModel() {
   const groupRef = useRef<THREE.Group>(null);
-  const cartridgeRef = useRef<THREE.Group>(null);
   const [activeModeIdx, setActiveModeIdx] = useState(0);
   const [btnPressed, setBtnPressed] = useState<string | null>(null);
 
-  // Mouse tilt tracking con lerp suave
-  const mouseTarget = useRef({ x: 0, y: 0 });
+  // Rotación base en diagonal (firme, sin flotar)
+  // Ligero ángulo isométrico/perspectiva de hardware sobre escritorio
+  const BASE_ROTATION = {
+    x: 0.18,
+    y: -0.38,
+    z: 0.03
+  };
+
+  const mouseOffset = useRef({ x: 0, y: 0 });
 
   const currentMode = SCREEN_MODES[activeModeIdx];
 
-  const handleNextMode = () => {
+  const handleNextMode = (e: any) => {
+    e.stopPropagation();
     setActiveModeIdx((prev) => (prev + 1) % SCREEN_MODES.length);
     setBtnPressed('next');
-    setTimeout(() => setBtnPressed(null), 200);
+    setTimeout(() => setBtnPressed(null), 180);
   };
 
-  const handlePrevMode = () => {
+  const handlePrevMode = (e: any) => {
+    e.stopPropagation();
     setActiveModeIdx((prev) => (prev - 1 + SCREEN_MODES.length) % SCREEN_MODES.length);
     setBtnPressed('prev');
-    setTimeout(() => setBtnPressed(null), 200);
+    setTimeout(() => setBtnPressed(null), 180);
   };
 
   useFrame((state) => {
     if (!groupRef.current) return;
 
-    // Normalizar posición del mouse
+    // Micro-reacción al mouse sutil (sin flotar ni perder la posición fija en la mesa)
     const pointerX = state.pointer.x; // -1 to 1
     const pointerY = state.pointer.y; // -1 to 1
 
-    mouseTarget.current.x = THREE.MathUtils.lerp(mouseTarget.current.x, pointerX * 0.35, 0.05);
-    mouseTarget.current.y = THREE.MathUtils.lerp(mouseTarget.current.y, -pointerY * 0.25, 0.05);
+    mouseOffset.current.x = THREE.MathUtils.lerp(mouseOffset.current.x, pointerX * 0.08, 0.05);
+    mouseOffset.current.y = THREE.MathUtils.lerp(mouseOffset.current.y, -pointerY * 0.06, 0.05);
 
-    // Aplicar rotación combinada con una suave respiración
-    const time = state.clock.getElapsedTime();
-    groupRef.current.rotation.y = mouseTarget.current.x + Math.sin(time * 0.8) * 0.03;
-    groupRef.current.rotation.x = mouseTarget.current.y + Math.cos(time * 0.6) * 0.02;
-    groupRef.current.position.y = Math.sin(time * 1.2) * 0.06;
-
-    // Cartucho flotando de forma independiente
-    if (cartridgeRef.current) {
-      cartridgeRef.current.position.y = 1.35 + Math.sin(time * 2 + 1) * 0.08;
-      cartridgeRef.current.rotation.y = Math.sin(time * 1.5) * 0.15;
-    }
+    // Mantenemos la consola firmemente apoyada en su eje Y, solo con micro-rotación en diagonal
+    groupRef.current.rotation.y = BASE_ROTATION.y + mouseOffset.current.x;
+    groupRef.current.rotation.x = BASE_ROTATION.x + mouseOffset.current.y;
+    groupRef.current.rotation.z = BASE_ROTATION.z;
+    groupRef.current.position.y = -0.35; // Apoyado fijo sobre el suelo
   });
 
   return (
-    <group ref={groupRef} position={[0, -0.1, 0]}>
+    <group ref={groupRef} scale={[1.28, 1.28, 1.28]} position={[0, -0.35, 0]}>
       {/* ==================================================== */}
-      {/* 1. CUERPO PRINCIPAL DEL MIO-DEVICE (Neo-Brutalist Violet) */}
+      {/* 1. CARTUCHO INSERTADO EN LA RANURA SUPERIOR */}
+      {/* ==================================================== */}
+      <group position={[0, 2.72, -0.1]} rotation={[-0.05, 0, 0]}>
+        {/* Cuerpo del cartucho (Plástico translúcido mate insertado) */}
+        <RoundedBox args={[1.5, 1.3, 0.28]} radius={0.06} smoothness={3} castShadow>
+          <meshPhysicalMaterial
+            color="#221b33"
+            roughness={0.25}
+            transmission={0.3}
+            thickness={0.4}
+          />
+        </RoundedBox>
+
+        {/* Agarre superior estriado */}
+        <RoundedBox args={[1.1, 0.12, 0.3]} radius={0.03} smoothness={2} position={[0, 0.55, 0]}>
+          <meshStandardMaterial color="#14101e" roughness={0.8} />
+        </RoundedBox>
+
+        {/* Etiqueta del cartucho que sobresale */}
+        <mesh position={[0, 0.05, 0.145]}>
+          <planeGeometry args={[1.2, 0.7]} />
+          <meshStandardMaterial color="#bdf559" roughness={0.4} />
+        </mesh>
+
+        {/* Texto en la etiqueta del cartucho */}
+        <Html
+          transform
+          position={[0, 0.05, 0.15]}
+          distanceFactor={2.5}
+          className="select-none pointer-events-none"
+        >
+          <div className="w-[140px] h-[80px] p-1.5 flex flex-col justify-between font-mono text-gray-950">
+            <div className="flex justify-between items-center border-b border-black pb-0.5">
+              <span className="text-[9px] font-black tracking-wider">MIO-DATA</span>
+              <span className="text-[7px] font-bold bg-black text-white px-1">CSV</span>
+            </div>
+            <div className="bg-black text-mio-lime px-1 py-0.5 text-[8px] font-black text-center">
+              VENTAS_2026.CSV
+            </div>
+            <div className="text-[7px] font-bold flex justify-between text-gray-800">
+              <span>● READY</span>
+              <span>2.4 MB</span>
+            </div>
+          </div>
+        </Html>
+      </group>
+
+      {/* ==================================================== */}
+      {/* 2. CUERPO PRINCIPAL DEL MIO-DEVICE (Neo-Brutalist Violet) */}
       {/* ==================================================== */}
       <RoundedBox
-        args={[3.4, 5.0, 0.7]}
+        args={[3.4, 5.0, 0.72]}
         radius={0.22}
         smoothness={4}
         castShadow
@@ -96,47 +146,57 @@ export function MioDevModel() {
         position={[0, 0, 0]}
       >
         <meshStandardMaterial
-          color="#794de6"
-          roughness={0.25}
-          metalness={0.1}
+          color="#7745e6"
+          roughness={0.22}
+          metalness={0.08}
         />
       </RoundedBox>
 
-      {/* Bisel / Borde posterior contrastante estilo Hardware */}
+      {/* Placa posterior estilo chasis industrial oscuro */}
       <RoundedBox
-        args={[3.44, 5.04, 0.15]}
+        args={[3.44, 5.04, 0.18]}
         radius={0.22}
         smoothness={4}
         position={[0, 0, -0.32]}
       >
         <meshStandardMaterial
-          color="#181424"
-          roughness={0.8}
+          color="#161222"
+          roughness={0.7}
         />
       </RoundedBox>
 
+      {/* Ranura superior para el cartucho (Bevel negro) */}
+      <RoundedBox
+        args={[1.8, 0.2, 0.45]}
+        radius={0.04}
+        smoothness={2}
+        position={[0, 2.45, -0.1]}
+      >
+        <meshStandardMaterial color="#100d1a" roughness={0.9} />
+      </RoundedBox>
+
       {/* ==================================================== */}
-      {/* 2. PANTALLA OLED RETRO-MODERNA */}
+      {/* 3. PANTALLA OLED INTEGRADA */}
       {/* ==================================================== */}
       {/* Marco / Bezel oscuro de la pantalla */}
       <RoundedBox
         args={[2.9, 2.3, 0.08]}
         radius={0.08}
         smoothness={4}
-        position={[0, 1.05, 0.35]}
+        position={[0, 1.05, 0.36]}
       >
         <meshStandardMaterial
-          color="#0f0c18"
-          roughness={0.15}
-          metalness={0.4}
+          color="#0d0a17"
+          roughness={0.12}
+          metalness={0.5}
         />
       </RoundedBox>
 
-      {/* Superficie interna de la pantalla (Cristal LCD) */}
-      <mesh position={[0, 1.05, 0.395]}>
+      {/* Superficie interna de la pantalla */}
+      <mesh position={[0, 1.05, 0.405]}>
         <planeGeometry args={[2.72, 2.12]} />
         <meshStandardMaterial
-          color="#12101f"
+          color="#110e1d"
           roughness={0.05}
           metalness={0.2}
         />
@@ -146,13 +206,13 @@ export function MioDevModel() {
       <Html
         transform
         occlude="blending"
-        position={[0, 1.05, 0.402]}
+        position={[0, 1.05, 0.412]}
         distanceFactor={2.7}
         className="select-none pointer-events-auto"
       >
         <div 
           style={{ width: '420px', height: '325px' }}
-          className="bg-[#0b0914] text-white p-4 font-mono flex flex-col justify-between rounded-lg border-2 border-mio-lime/30 shadow-[inset_0_0_20px_rgba(189,245,89,0.15)] relative overflow-hidden"
+          className="bg-[#0b0914] text-white p-4 font-mono flex flex-col justify-between rounded-lg border-2 border-mio-lime/30 shadow-[inset_0_0_25px_rgba(189,245,89,0.18)] relative overflow-hidden"
         >
           {/* Scanline CRT overlay */}
           <div 
@@ -220,7 +280,6 @@ export function MioDevModel() {
                 <div className="absolute top-2 left-6 w-2 h-2 rounded-full bg-red-400" />
                 <div className="absolute bottom-3 right-8 w-2 h-2 rounded-full bg-red-400" />
                 
-                {/* Puntos normales */}
                 {[
                   [20, 40], [35, 55], [50, 45], [60, 70], [75, 60], [80, 80], [40, 30], [65, 50]
                 ].map(([x, y], idx) => (
@@ -250,132 +309,80 @@ export function MioDevModel() {
       </Html>
 
       {/* ==================================================== */}
-      {/* 3. CONTROLES FÍSICOS (D-PAD & ACTION BUTTONS) */}
+      {/* 4. CONTROLES FÍSICOS TÁCTILES */}
       {/* ==================================================== */}
 
-      {/* D-Pad (Cruceta direccional en negro mate) */}
+      {/* D-Pad (Cruceta direccional) */}
       <group position={[-0.85, -1.15, 0.38]}>
-        {/* Barra vertical del D-Pad */}
-        <RoundedBox args={[0.3, 0.9, 0.16]} radius={0.05} smoothness={2} castShadow>
-          <meshStandardMaterial color="#1f1b29" roughness={0.6} />
+        <RoundedBox args={[0.32, 0.94, 0.16]} radius={0.05} smoothness={2} castShadow>
+          <meshStandardMaterial color="#1e1a28" roughness={0.6} />
         </RoundedBox>
-        {/* Barra horizontal del D-Pad */}
-        <RoundedBox args={[0.9, 0.3, 0.16]} radius={0.05} smoothness={2} castShadow>
-          <meshStandardMaterial color="#1f1b29" roughness={0.6} />
+        <RoundedBox args={[0.94, 0.32, 0.16]} radius={0.05} smoothness={2} castShadow>
+          <meshStandardMaterial color="#1e1a28" roughness={0.6} />
         </RoundedBox>
-        {/* Centro del D-Pad con hendidura */}
         <mesh position={[0, 0, 0.09]}>
           <cylinderGeometry args={[0.07, 0.07, 0.02, 16]} />
-          <meshStandardMaterial color="#14111d" roughness={0.9} />
+          <meshStandardMaterial color="#120f1b" roughness={0.9} />
         </mesh>
       </group>
 
-      {/* Botones de Acción (Estilo Game Boy / Neo-Brutalist) */}
-      {/* Botón A (Electric Lime) - Cambia al siguiente modo */}
+      {/* Botón A (Electric Lime) - Clickeable */}
       <group 
         position={[0.95, -1.0, 0.38]}
         onClick={handleNextMode}
+        className="cursor-pointer"
       >
         <mesh 
           rotation={[Math.PI / 2, 0, 0]} 
           position={[0, 0, btnPressed === 'next' ? 0.04 : 0.08]}
           castShadow
         >
-          <cylinderGeometry args={[0.3, 0.3, 0.18, 32]} />
+          <cylinderGeometry args={[0.32, 0.32, 0.18, 32]} />
           <meshStandardMaterial 
             color="#bdf559" 
-            roughness={0.3} 
+            roughness={0.28} 
             emissive="#bdf559" 
-            emissiveIntensity={0.15} 
+            emissiveIntensity={0.2} 
           />
         </mesh>
       </group>
 
-      {/* Botón B (Dark Graphite) - Cambia al modo anterior */}
+      {/* Botón B (Dark Graphite) - Clickeable */}
       <group 
         position={[0.45, -1.35, 0.38]}
         onClick={handlePrevMode}
+        className="cursor-pointer"
       >
         <mesh 
           rotation={[Math.PI / 2, 0, 0]} 
           position={[0, 0, btnPressed === 'prev' ? 0.04 : 0.08]}
           castShadow
         >
-          <cylinderGeometry args={[0.3, 0.3, 0.18, 32]} />
+          <cylinderGeometry args={[0.32, 0.32, 0.18, 32]} />
           <meshStandardMaterial 
-            color="#2d273d" 
+            color="#282236" 
             roughness={0.4} 
           />
         </mesh>
       </group>
 
-      {/* Speaker Grille (Ranuras de ventilación/altavoz en la base) */}
-      <group position={[0.65, -1.95, 0.36]} rotation={[0, 0, -0.45]}>
+      {/* Rejilla de altavoz / ventilación */}
+      <group position={[0.7, -1.95, 0.36]} rotation={[0, 0, -0.45]}>
         {[-0.24, -0.08, 0.08, 0.24].map((offsetY, i) => (
           <RoundedBox key={i} args={[0.65, 0.05, 0.04]} radius={0.02} smoothness={2} position={[0, offsetY, 0]}>
-            <meshStandardMaterial color="#151220" roughness={0.9} />
+            <meshStandardMaterial color="#14111f" roughness={0.9} />
           </RoundedBox>
         ))}
       </group>
 
-      {/* Pequeños botones metálicos Start / Select (Pills) */}
+      {/* Botones Start / Select */}
       <group position={[-0.3, -1.95, 0.36]} rotation={[0, 0, -0.45]}>
         <RoundedBox args={[0.38, 0.1, 0.08]} radius={0.04} smoothness={2} position={[-0.15, 0, 0]} castShadow>
-          <meshStandardMaterial color="#1f1b29" roughness={0.5} />
+          <meshStandardMaterial color="#1e1a28" roughness={0.5} />
         </RoundedBox>
         <RoundedBox args={[0.38, 0.1, 0.08]} radius={0.04} smoothness={2} position={[0.25, 0, 0]} castShadow>
-          <meshStandardMaterial color="#1f1b29" roughness={0.5} />
+          <meshStandardMaterial color="#1e1a28" roughness={0.5} />
         </RoundedBox>
-      </group>
-
-      {/* ==================================================== */}
-      {/* 4. CARTUCHO LEVITANTE 3D (VENTAS.CSV) */}
-      {/* ==================================================== */}
-      <group ref={cartridgeRef} position={[2.1, 1.3, -0.1]} rotation={[0.1, -0.3, 0.15]}>
-        <Float speed={2} rotationIntensity={0.3} floatIntensity={0.5}>
-          {/* Cuerpo del cartucho (Polímero translúcido oscuro) */}
-          <RoundedBox args={[1.2, 1.5, 0.28]} radius={0.06} smoothness={3} castShadow>
-            <meshPhysicalMaterial
-              color="#231e33"
-              roughness={0.2}
-              transmission={0.4}
-              thickness={0.5}
-            />
-          </RoundedBox>
-
-          {/* Muesca del agarre superior del cartucho */}
-          <RoundedBox args={[0.9, 0.12, 0.3]} radius={0.03} smoothness={2} position={[0, 0.65, 0]}>
-            <meshStandardMaterial color="#14111d" roughness={0.8} />
-          </RoundedBox>
-
-          {/* Etiqueta frontal del cartucho (Neo-Brutalist Lime) */}
-          <mesh position={[0, -0.05, 0.145]}>
-            <planeGeometry args={[0.95, 1.0]} />
-            <meshStandardMaterial color="#bdf559" roughness={0.4} />
-          </mesh>
-
-          {/* Texto en la etiqueta del cartucho */}
-          <Html
-            transform
-            position={[0, -0.05, 0.15]}
-            distanceFactor={2.5}
-            className="select-none pointer-events-none"
-          >
-            <div className="w-[120px] h-[130px] p-2 flex flex-col justify-between font-mono text-gray-950">
-              <div className="border-b-2 border-[#111] pb-1">
-                <div className="text-[10px] font-black leading-tight tracking-tighter">DATASET</div>
-                <div className="text-[8px] font-bold text-gray-700">MIO-CARTRIDGE</div>
-              </div>
-              <div className="bg-black text-mio-lime px-1 py-0.5 text-[8px] font-black tracking-widest text-center border border-black">
-                VENTAS.CSV
-              </div>
-              <div className="text-[7px] font-bold text-gray-800 flex justify-between">
-                <span>2.4 MB</span>
-                <span>CLEAN</span>
-              </div>
-            </div>
-          </Html>
-        </Float>
       </group>
     </group>
   );

@@ -487,17 +487,15 @@ export default function LandingPage() {
 
           <p className="text-xs font-mono font-bold text-gray-500 mt-3 text-center">
             {heroTab === '3d' 
-              ? '✦ Arrastrá con el mouse para rotar la consola 3D. Hacé click en los botones físicos para cambiar de gráfico.' 
+              ? '✦ Hacé click en los botones físicos para cambiar de modo de análisis en la pantalla.' 
               : '✦ Navegación y vista previa en vivo del dashboard corporativo.'}
           </p>
         </div>
 
         {/* Hero Content Showcase */}
         {heroTab === '3d' ? (
-          <div className="mt-6 max-w-5xl mx-auto w-full px-4 relative z-10">
-            <div className="bg-gradient-to-b from-[#f3efff] to-white border-4 border-[#111] shadow-[8px_8px_0px_#111] sm:shadow-[16px_16px_0px_#111] p-2 sm:p-4 overflow-hidden relative">
-              <MioDevCanvas />
-            </div>
+          <div className="mt-2 max-w-6xl mx-auto w-full px-2 relative z-10">
+            <MioDevCanvas />
           </div>
         ) : (
           <HeroMockup />
