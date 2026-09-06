@@ -2,6 +2,7 @@ import csv
 import json
 import math
 import time
+import gc
 import pandas as pd
 import numpy as np
 import chardet
@@ -291,7 +292,13 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
         
         # Use NumpyEncoder to sanitize all nested numpy types into native Python types
         json_str = json.dumps(final_response, cls=NumpyEncoder)
-        return json.loads(json_str)
+        result_dict = json.loads(json_str)
+        
+        # Free memory immediately
+        del df_clean, df_ml, df_raw
+        gc.collect()
+        
+        return result_dict
 
     except HTTPException:
         raise

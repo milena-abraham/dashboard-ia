@@ -20,13 +20,13 @@ ENV HOME=/home/user \
 
 WORKDIR $HOME/app
 
-# Install dependencies
-COPY --chown=user:user requirements.txt .
+# Install dependencies from backend/requirements.txt
+COPY --chown=user:user backend/requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy backend application
-COPY --chown=user:user . .
+# Copy backend source code into container
+COPY --chown=user:user backend/ .
 
 # Ensure uploads directory exists
 RUN mkdir -p uploads
