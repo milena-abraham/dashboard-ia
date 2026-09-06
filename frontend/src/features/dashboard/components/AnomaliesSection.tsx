@@ -6,6 +6,8 @@ import { TriangleAlert, ShieldAlert } from 'lucide-react';
 import { ChartSchema, AnomalyMetricsSchema } from '@/types/analysis';
 import ChartErrorBoundary from '@/components/ChartErrorBoundary';
 
+import { ChartLegendExplainer } from '@/components/ChartLegendExplainer';
+
 const DynamicChartRenderer = dynamic(() => import('@/components/DynamicChartRenderer'), { ssr: false });
 
 interface AnomaliesSectionProps {
@@ -60,6 +62,14 @@ export const AnomaliesSection: React.FC<AnomaliesSectionProps> = ({
           />
         </ChartErrorBoundary>
       </div>
+
+      <ChartLegendExplainer
+        whatItDoes="El algoritmo no supervisado Isolation Forest aisla automáticamente registros con combinaciones de variables que se apartan drásticamente del comportamiento común."
+        whatItShows="Los puntos sutiles representan operaciones predecibles del día a día. Los puntos rojos destacados señalan eventos atípicos (ventas extraordinarias, posibles fraudes o errores humanos de digitación)."
+        actionHint="Revisá la tabla de detalle de casos atípicos para aislar transacciones fallidas o replicar las causas de picos positivos récord."
+        collapsible={true}
+        defaultOpen={true}
+      />
     </div>
   );
 };
