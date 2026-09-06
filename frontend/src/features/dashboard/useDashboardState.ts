@@ -367,7 +367,11 @@ export function useDashboardState() {
       setResult(freshData);
       toast.success('Gráficos y análisis recalculados con el backend');
     } catch (err: any) {
-      toast.error('Error al refrescar análisis: ' + (err.message || 'Desconocido'));
+      if (err.message?.includes('file') || err.status === 400) {
+        toast.error('El servidor en la nube aún no actualizó la caché del archivo. Hacé clic en "Cargar otro archivo" y seleccionalo nuevamente.', { duration: 6000 });
+      } else {
+        toast.error('Error al refrescar análisis: ' + (err.message || 'Desconocido'));
+      }
     } finally {
       setLoading(false);
     }

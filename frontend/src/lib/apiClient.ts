@@ -32,9 +32,7 @@ async function fetchWithFallback(url: string, init?: RequestInit): Promise<Respo
       const legacyUrl = url.replace('/api/v1/', '/api/');
       try {
         const legacyRes = await fetch(legacyUrl, init);
-        if (legacyRes.ok) {
-          return legacyRes;
-        }
+        return legacyRes;
       } catch {
         // fallback failed, return original response
       }
@@ -49,6 +47,12 @@ async function fetchWithFallback(url: string, init?: RequestInit): Promise<Respo
         if (remoteRes.ok) return remoteRes;
       } catch {}
     }
+    if (err.name === 'TypeError' && (err.message?.includes('fetch') || err.message?.includes('Load failed'))) {
+      throw new ApiError(
+        'El servidor en la nube de Render está despertando (plan gratuito). Por favor aguardá 30-60 segundos e intentá nuevamente.',
+        503
+      );
+    }
     throw err;
   }
 }
@@ -58,7 +62,11 @@ async function handleResponse<T>(response: Response, isBlob: boolean = false): P
   
   if (!response.ok) {
     let errorMessage = `HTTP Error ${response.status}`;
-    if (isJson) {
+    if (response.status === 503 || response.headers.get('x-render-routing')?.includes('hibernate')) {
+      errorMessage = 'El servidor de Render está iniciando su contenedor gratuito. Por favor aguardá 30-60 segundos e intentá nuevamente.';
+    } else if (response.status === 413) {
+      errorMessage = 'El archivo supera el límite permitido por la red (máx 100 MB). Por favor seleccioná un archivo más liviano.';
+    } else if (isJson) {
       try {
         const errorData = await response.json();
         if (errorData.error) {
