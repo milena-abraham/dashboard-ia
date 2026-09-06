@@ -225,7 +225,7 @@ def clean_dataframe(df: pd.DataFrame) -> Tuple[pd.DataFrame, CleaningReport]:
     report.final_rows = len(df)
 
     if not report.actions:
-        report.actions.append("✅ El dataset ya estaba en buen estado. No se realizaron cambios significativos.")
+        report.actions.append("[OK] El dataset ya estaba en buen estado. No se realizaron cambios significativos.")
 
     return df, report
 

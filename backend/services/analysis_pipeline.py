@@ -329,7 +329,7 @@ def _analyze_streaming_csv(file_path: str, filename: str, target_col: Optional[s
     }
 
     cleaning_actions = preview_report.actions
-    cleaning_actions.append(f"⚡ Procesamiento streaming activado: {total_rows:,} registros consolidados al 100% de exactitud.")
+    cleaning_actions.append(f"[Streaming] Procesamiento activado: {total_rows:,} registros consolidados al 100% de exactitud.")
 
     final_response = {
         "filename": filename,

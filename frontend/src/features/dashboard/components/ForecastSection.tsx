@@ -104,7 +104,7 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
         <ChartErrorBoundary>
           <DynamicChartRenderer
             key={`forecast-${filename}-${timeRange}`}
-            payload={filteredPayload}
+            payload={filteredPayload!}
             height={450}
           />
         </ChartErrorBoundary>

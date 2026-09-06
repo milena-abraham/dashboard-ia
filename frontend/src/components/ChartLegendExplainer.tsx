@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Info, ChevronDown, ChevronUp, Lightbulb } from 'lucide-react';
+import { Info, ChevronDown, ChevronUp } from 'lucide-react';
 
 export interface ChartLegendExplainerProps {
   whatItDoes: string;
@@ -43,8 +43,8 @@ export const ChartLegendExplainer: React.FC<ChartLegendExplainerProps> = ({
         <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-[#111]/15">
           <div className="bg-white p-2.5 border border-[#111]/30 flex flex-col justify-between">
             <div>
-              <span className="font-bold text-gray-900 uppercase tracking-tight block mb-1 text-[10.5px]">
-                🎯 ¿Qué hace este gráfico?
+              <span className="font-mono font-bold text-gray-900 uppercase tracking-tight block mb-1 text-[10.5px]">
+                Propósito del gráfico
               </span>
               <p className="text-gray-600 leading-relaxed font-medium">
                 {whatItDoes}
@@ -54,8 +54,8 @@ export const ChartLegendExplainer: React.FC<ChartLegendExplainerProps> = ({
 
           <div className="bg-white p-2.5 border border-[#111]/30 flex flex-col justify-between">
             <div>
-              <span className="font-bold text-gray-900 uppercase tracking-tight block mb-1 text-[10.5px]">
-                📊 ¿Qué muestra y cómo leerlo?
+              <span className="font-mono font-bold text-gray-900 uppercase tracking-tight block mb-1 text-[10.5px]">
+                Interpretación y lectura
               </span>
               <p className="text-gray-600 leading-relaxed font-medium">
                 {whatItShows}
@@ -64,10 +64,12 @@ export const ChartLegendExplainer: React.FC<ChartLegendExplainerProps> = ({
           </div>
 
           {actionHint && (
-            <div className="md:col-span-2 bg-[#f7fee7] p-2.5 border border-[#111]/30 flex items-start gap-2">
-              <Lightbulb className="w-3.5 h-3.5 text-[#4d7c0f] shrink-0 mt-0.5" />
-              <p className="text-[#365314] font-medium text-[11px] leading-snug">
-                <strong className="font-bold uppercase">Decisión sugerida:</strong> {actionHint}
+            <div className="md:col-span-2 bg-[#f4f4f6] p-2.5 border border-[#111]/30 flex items-start gap-2">
+              <p className="text-gray-800 font-medium text-[11px] leading-snug">
+                <strong className="font-mono font-black uppercase text-[10px] text-gray-900 mr-1.5">
+                  Acción sugerida:
+                </strong>
+                {actionHint}
               </p>
             </div>
           )}
