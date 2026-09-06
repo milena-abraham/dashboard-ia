@@ -64,9 +64,9 @@ export const AnomaliesSection: React.FC<AnomaliesSectionProps> = ({
       </div>
 
       <ChartLegendExplainer
-        whatItDoes="El algoritmo no supervisado Isolation Forest aisla automáticamente registros con combinaciones de variables que se apartan drásticamente del comportamiento común."
-        whatItShows="Los puntos sutiles representan operaciones predecibles del día a día. Los puntos rojos destacados señalan eventos atípicos (ventas extraordinarias, posibles fraudes o errores humanos de digitación)."
-        actionHint="Revisá la tabla de detalle de casos atípicos para aislar transacciones fallidas o replicar las causas de picos positivos récord."
+        whatItDoes="Detecta de forma automática registros raros o sospechosos que se salen de lo normal."
+        whatItShows="Los puntos violetas representan las operaciones habituales del día a día. Los puntos rojos son valores atípicos (picos récord, caídas abruptas o posibles errores de carga)."
+        actionHint="Revisá las fechas de los puntos rojos para entender qué ocurrió: replicar una gran oportunidad o corregir una falla."
         collapsible={true}
         defaultOpen={true}
       />

@@ -566,11 +566,59 @@ export default function DynamicChartRenderer({ payload: rawPayload, height = '10
               }
             ];
         } else {
-            baseOptions.series = [{
+            const xDim = dataset.dimensions[0];
+            const yDim = dataset.dimensions[1];
+            const trend = (layoutDirectives as any)?.trendline;
+
+            const scatterSeries: any = {
+              name: 'Observaciones',
               type: 'scatter',
-              encode: { x: dataset.dimensions[0], y: dataset.dimensions[1] },
-              itemStyle: { opacity: 0.6 }
-            }];
+              data: dataset.source.map((row: any) => [row[xDim], row[yDim]]),
+              symbolSize: 6,
+              itemStyle: {
+                color: 'rgba(129, 90, 225, 0.55)',
+                borderColor: '#815ae1',
+                borderWidth: 1,
+              },
+            };
+
+            const seriesList: any[] = [scatterSeries];
+
+            if (trend && trend.min_x != null && trend.max_x != null) {
+              const y1 = trend.slope * trend.min_x + trend.intercept;
+              const y2 = trend.slope * trend.max_x + trend.intercept;
+              seriesList.push({
+                name: 'Tendencia',
+                type: 'line',
+                data: [
+                  [trend.min_x, Number(y1.toFixed(3))],
+                  [trend.max_x, Number(y2.toFixed(3))],
+                ],
+                showSymbol: false,
+                lineStyle: {
+                  color: '#111111',
+                  width: 3,
+                  type: 'solid',
+                },
+                z: 20,
+              });
+            }
+
+            baseOptions.dataset = undefined;
+            baseOptions.series = seriesList;
+            baseOptions.tooltip = {
+              trigger: 'item',
+              formatter: (params: any) => {
+                if (params.seriesType === 'line') {
+                  return `<b>Línea de tendencia</b>`;
+                }
+                const pt = params.data || [];
+                return `
+                  <div style="font-weight:bold;margin-bottom:2px;">${xDim}: ${typeof pt[0] === 'number' ? pt[0].toFixed(2) : pt[0]}</div>
+                  <div>${yDim}: <b>${typeof pt[1] === 'number' ? pt[1].toFixed(2) : pt[1]}</b></div>
+                `;
+              },
+            };
         }
         break;
         

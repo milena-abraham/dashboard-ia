@@ -114,9 +114,9 @@ export const ForecastSection: React.FC<ForecastSectionProps> = ({
       {metrics && <ForecastMetricsBar metrics={metrics} />}
 
       <ChartLegendExplainer
-        whatItDoes="El modelo bayesiano descompone la serie de tiempo en tendencias subyacentes, estacionalidades cíclicas y proyecta el horizonte futuro a 60 períodos."
-        whatItShows="La línea continua sólida muestra el historial real. La curva violeta representa la proyección media más probable, mientras que la banda sombreada delimita el intervalo de confianza (escenarios optimista y pesimista)."
-        actionHint="Planificá tus presupuestos y metas comerciales tomando como referencia la banda proyectada y ajustá inventario en las semanas de mayor demanda esperada."
+        whatItDoes="Proyecta hacia adelante cómo evolucionará tu métrica en los próximos meses basándose en lo ocurrido en el pasado."
+        whatItShows="La línea continua muestra los datos reales que ya ocurrieron. La curva violeta es la proyección más probable, y la franja sombreada indica el rango esperado (escenarios optimista y pesimista)."
+        actionHint="Usá esta proyección para planificar tus presupuestos, compras o metas comerciales con anticipación y sin sorpresas."
         collapsible={true}
         defaultOpen={true}
       />

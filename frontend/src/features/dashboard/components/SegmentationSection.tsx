@@ -42,9 +42,9 @@ export const SegmentationSection: React.FC<SegmentationSectionProps> = ({
         </div>
 
         <ChartLegendExplainer
-          whatItDoes="El algoritmo de aprendizaje no supervisado K-Means agrupa registros con comportamientos afines sin preconceptos humanos."
-          whatItShows="La proporción del gráfico circular revela el peso demográfico de cada segmento (ej. grupo mayoritario vs nichos selectos)."
-          actionHint="Enfocá recursos en el cluster principal para retención masiva y diseñá programas premium para los grupos de mayor valor."
+          whatItDoes="Agrupa tus datos en perfiles similares de forma automática."
+          whatItShows="Muestra el tamaño relativo de cada grupo (por ejemplo, qué porcentaje representa el grupo masivo frente a los grupos exclusivos)."
+          actionHint="Priorizá recursos en el grupo mayoritario y diseñá propuestas diferenciadas para los grupos de mayor valor."
           collapsible={true}
           defaultOpen={false}
         />
@@ -70,9 +70,9 @@ export const SegmentationSection: React.FC<SegmentationSectionProps> = ({
         </div>
 
         <ChartLegendExplainer
-          whatItDoes="Compara las métricas promedio de cada cluster para trazar una radiografía precisa de sus hábitos y preferencias."
-          whatItShows="Las barras comparativas destacan las variables donde cada grupo sobresale (ticket alto, sensibilidad a descuentos o frecuencia)."
-          actionHint="Creá campañas de marketing segmentadas personalizando el mensaje para la necesidad específica de cada cluster."
+          whatItDoes="Compara cómo se comporta cada grupo en base a sus características principales."
+          whatItShows="Destaca en qué se diferencia cada grupo del resto (por ejemplo, quién gasta más, quién compra más seguido o quién busca precios bajos)."
+          actionHint="Personalizá tus ofertas y mensajes según lo que busca cada grupo en lugar de tratar a todos por igual."
           collapsible={true}
           defaultOpen={false}
         />

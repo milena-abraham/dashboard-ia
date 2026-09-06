@@ -14,35 +14,43 @@ function getExploratoryChartGuide(c: ChartSchema) {
   const chartType = c.layoutDirectives?.chartType || '';
   const title = (c.metadata?.title || '').toLowerCase();
 
+  if (chartType === 'Scatter' || title.includes('relación') || title.includes('correlación')) {
+    return {
+      whatItDoes: 'Comprueba si dos variables se mueven juntas o si una influye sobre la otra.',
+      whatItShows: 'La línea negra marca la dirección general. Si sube hacia la derecha, ambas variables crecen juntas. Si baja, van en sentido opuesto. Los puntos muestran cada dato real.',
+      actionHint: 'Si la relación es clara, podés accionar sobre la variable horizontal para impulsar directamente la variable objetivo.',
+    };
+  }
+
   if (chartType === 'LineChart' || title.includes('evolución') || title.includes('tiempo') || title.includes('fecha')) {
     return {
-      whatItDoes: 'Rastrea la evolución temporal continua y la velocidad de cambio de la métrica en el calendario.',
-      whatItShows: 'La trayectoria continua destaca picos de actividad, estacionalidad y si la dirección general del negocio es alcista o bajista.',
-      actionHint: 'Identificá los meses o semanas con picos recurrentes para planificar stock, recursos o campañas de marketing con anticipación.',
+      whatItDoes: 'Muestra cómo cambia esta métrica a lo largo de los días, semanas o meses.',
+      whatItShows: 'La curva te indica si la tendencia general va subiendo o bajando, y si existen épocas del año con picos o caídas marcadas.',
+      actionHint: 'Identificá los momentos con mayores subidas para anticipar recursos, compras o campañas con tiempo.',
     };
   }
 
   if (chartType === 'Donut' || chartType === 'Pie' || title.includes('composición') || title.includes('participación')) {
     return {
-      whatItDoes: 'Mide la participación proporcional de cada categoría sobre el 100% del total acumulado.',
-      whatItShows: 'La proporción de cada sección visualiza el nivel de concentración y la dependencia del negocio respecto a las categorías líderes.',
-      actionHint: 'Si una sola categoría concentra más del 50% del volumen, considerá diversificar productos o canales para reducir el riesgo comercial.',
+      whatItDoes: 'Muestra qué porcentaje aporta cada grupo sobre el total.',
+      whatItShows: 'Te permite ver de un vistazo si tus resultados dependen de una sola categoría o si están bien repartidos.',
+      actionHint: 'Si un solo grupo concentra más de la mitad del total, buscá diversificar para no depender de uno solo.',
     };
   }
 
   if (chartType === 'HorizontalBar' || title.includes('ranking') || title.includes('por ') || title.includes('top')) {
     return {
-      whatItDoes: 'Ordena y compara el rendimiento absoluto de las diferentes categorías de mayor a menor.',
-      whatItShows: 'Las barras superiores representan a los líderes de facturación o volumen, evidenciando la brecha respecto a los segmentos rezagados.',
-      actionHint: 'Focalizá tus esfuerzos comerciales en las 3 primeras barras para maximizar el retorno de inversión (Principio de Pareto 80/20).',
+      whatItDoes: 'Compara el rendimiento de las diferentes opciones ordenadas de mayor a menor.',
+      whatItShows: 'Las barras de arriba son las líderes indiscutidas y las que más volumen generan.',
+      actionHint: 'Concentrate en las 3 primeras barras para conseguir la mayor parte de tus resultados.',
     };
   }
 
   // Distribución / Histograma general
   return {
-    whatItDoes: 'Examina la dispersión estadística y la densidad de observaciones a lo largo del espectro de valores.',
-    whatItShows: 'Las columnas más altas señalan el rango donde ocurre la mayoría de las operaciones; los extremos muestran valores mínimos y máximos.',
-    actionHint: 'Alineá tus precios promedio o metas operativas alrededor del rango con mayor concentración de operaciones.',
+    whatItDoes: 'Muestra en qué rango de números se agrupa la mayor parte de tus datos.',
+    whatItShows: 'La barra más alta señala el valor más común y habitual; los extremos son los casos excepcionales o raros.',
+    actionHint: 'Tomá decisiones y fijá metas basadas en el rango más frecuente y no en los valores aislados.',
   };
 }
 

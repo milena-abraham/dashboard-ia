@@ -42,9 +42,9 @@ export const FeatureImportanceSection: React.FC<FeatureImportanceSectionProps> =
         </div>
 
         <ChartLegendExplainer
-          whatItDoes="Entrena un ensamble de árboles de decisión (LightGBM) para medir qué porcentaje del comportamiento de la variable objetivo es explicado por cada factor."
-          whatItShows="Las barras más largas señalan las variables prioritarias del negocio (las palancas que más mueven el resultado final)."
-          actionHint="Enfocá tus decisiones y promociones en las 3 variables líderes para maximizar el impacto comercial directo."
+          whatItDoes="Descubre cuáles son los factores que más mueven la aguja en tu resultado final."
+          whatItShows="Las barras más largas son las variables principales (lo que más influye en el resultado). Las barras cortas casi no tienen peso."
+          actionHint="Enfocá tu tiempo y presupuesto en las 3 variables líderes en lugar de dispersar esfuerzos."
           collapsible={true}
           defaultOpen={false}
         />
@@ -71,9 +71,9 @@ export const FeatureImportanceSection: React.FC<FeatureImportanceSectionProps> =
           </div>
 
           <ChartLegendExplainer
-            whatItDoes="Aplica teoría de juegos cooperativos (Shapley Values) para desglosar la contribución neta y transparente de cada variable individual."
-            whatItShows="Indica si un factor ejerce una presión alcista o bajista sobre la métrica, revelando no solo cuánto influye sino en qué dirección."
-            actionHint="Utilizá esta atribución causal para sustentar decisiones estratégicas ante directores o inversores con total respaldo matemático."
+            whatItDoes="Mide cómo empuja cada factor: si ayuda a subir o a bajar el resultado final."
+            whatItShows="Te indica en qué dirección empuja cada variable y cuánto suma o resta a tu métrica principal."
+            actionHint="Usá esta información para saber exactamente qué palanca mover cuando quieras mejorar tus números."
             collapsible={true}
             defaultOpen={false}
           />
