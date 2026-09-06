@@ -494,8 +494,82 @@ export default function LandingPage() {
 
         {/* Hero Content Showcase */}
         {heroTab === '3d' ? (
-          <div className="mt-2 max-w-6xl mx-auto w-full px-2 relative z-10">
-            <MioDevCanvas />
+          <div className="mt-4 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 items-center gap-6 lg:gap-8">
+              
+              {/* Columna Izquierda: Editorial Pocketfolio style */}
+              <div className="lg:col-span-3 text-left flex flex-col justify-center order-2 lg:order-1">
+                <div className="text-xs font-mono font-bold tracking-widest text-gray-400 uppercase mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-mio-lime border border-[#111]" />
+                  01 / THE POCKET EDITION
+                </div>
+                <h2 className="text-3xl sm:text-4xl font-black text-gray-950 tracking-tighter leading-[1.08] mb-4">
+                  Small screen.<br />Big decisions.
+                </h2>
+                <p className="text-sm font-medium text-gray-600 leading-relaxed mb-6">
+                  Analítica predictiva en tu bolsillo. MIO procesa millones de filas, detecta anomalías y entrena modelos AutoML sin configuraciones complejas.
+                </p>
+                <div className="text-[11px] font-mono font-bold text-gray-400 uppercase tracking-wider">
+                  MIO DATA ANALYTICS SYSTEM™
+                </div>
+              </div>
+
+              {/* Columna Central: Consola 3D */}
+              <div className="lg:col-span-6 flex justify-center order-1 lg:order-2">
+                <MioDevCanvas />
+              </div>
+
+              {/* Columna Derecha: Guía de Controles (How To Operate) */}
+              <div className="lg:col-span-3 text-left bg-white/90 backdrop-blur-sm border-2 sm:border-4 border-[#111] shadow-[4px_4px_0px_#111] p-5 order-3">
+                <div className="text-[11px] font-mono font-black tracking-wider text-gray-900 uppercase border-b-2 border-[#111] pb-2 mb-4 flex justify-between items-center">
+                  <span>HOW TO OPERATE</span>
+                  <span className="text-mio-violet font-bold">● V2.6</span>
+                </div>
+
+                <div className="space-y-3.5 font-mono text-xs">
+                  <div className="flex items-start gap-3">
+                    <div className="w-7 h-7 bg-[#1a1820] text-white flex items-center justify-center font-bold text-[10px] shrink-0 border border-black">
+                      +
+                    </div>
+                    <div>
+                      <div className="font-black text-gray-900">D-PAD</div>
+                      <div className="text-[10.5px] text-gray-600 font-medium">Explorar métricas</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <div className="w-7 h-7 rounded-full bg-[#8c1f54] text-white flex items-center justify-center font-black text-[11px] shrink-0 border border-black shadow-[1px_1px_0px_#111]">
+                      A
+                    </div>
+                    <div>
+                      <div className="font-black text-gray-900">BOTÓN A</div>
+                      <div className="text-[10.5px] text-gray-600 font-medium">Siguiente gráfico</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <div className="w-7 h-7 rounded-full bg-[#8c1f54] text-white flex items-center justify-center font-black text-[11px] shrink-0 border border-black shadow-[1px_1px_0px_#111]">
+                      B
+                    </div>
+                    <div>
+                      <div className="font-black text-gray-900">BOTÓN B</div>
+                      <div className="text-[10.5px] text-gray-600 font-medium">Gráfico anterior</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <div className="px-2 py-0.5 bg-[#6a6773] text-white font-bold text-[8.5px] shrink-0 border border-black rounded-full mt-1">
+                      START
+                    </div>
+                    <div>
+                      <div className="font-black text-gray-900">START</div>
+                      <div className="text-[10.5px] text-gray-600 font-medium">AutoML Predict</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
           </div>
         ) : (
           <HeroMockup />
