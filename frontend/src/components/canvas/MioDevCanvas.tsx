@@ -69,7 +69,7 @@ export default function MioDevCanvas() {
   }
 
   return (
-    <div className="w-full h-[580px] sm:h-[640px] md:h-[700px] relative select-none flex items-center justify-center overflow-visible">
+    <div className="w-full h-[520px] sm:h-[580px] md:h-[620px] relative select-none flex items-center justify-center overflow-visible">
       <Suspense fallback={<MioDevFallback />}>
         <Canvas
           shadows
@@ -78,7 +78,7 @@ export default function MioDevCanvas() {
           className="w-full h-full"
         >
           {/* Cámara con distancia calculada para encuadrar la consola completa + cartucho + sombra de suelo sin cortes */}
-          <PerspectiveCamera makeDefault position={[0, 0.25, 9.6]} fov={44} />
+          <PerspectiveCamera makeDefault position={[0, 0.2, 10.4]} fov={42} />
 
           {/* Iluminación de estudio limpia sobre el fondo blanco */}
           <ambientLight intensity={1.2} />
@@ -111,10 +111,10 @@ export default function MioDevCanvas() {
 
           {/* Sombra de contacto directamente en la base inferior donde apoya la consola */}
           <ContactShadows
-            position={[0, -2.42, 0]}
-            opacity={0.55}
-            scale={10}
-            blur={2.0}
+            position={[0, -2.45, 0]}
+            opacity={0.6}
+            scale={11}
+            blur={2.4}
             far={4}
             color="#140e24"
           />
