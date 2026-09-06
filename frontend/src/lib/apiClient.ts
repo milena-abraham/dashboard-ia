@@ -12,14 +12,13 @@ const getBaseUrl = (): string => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
   if (!envUrl) {
     if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-      return 'https://dashboard-ia-1.onrender.com/api/v1';
+      return 'https://dashboard-ia-1.onrender.com/api';
     }
-    return 'http://localhost:10000/api/v1';
+    return 'http://localhost:10000/api';
   }
   const clean = envUrl.replace(/\/+$/, '');
-  if (clean.endsWith('/api/v1')) return clean;
-  if (clean.endsWith('/api')) return `${clean}/v1`;
-  return `${clean}/api/v1`;
+  if (clean.endsWith('/api/v1') || clean.endsWith('/api')) return clean;
+  return `${clean}/api`;
 };
 
 const BASE_URL = getBaseUrl();
