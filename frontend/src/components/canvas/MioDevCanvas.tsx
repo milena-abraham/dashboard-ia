@@ -58,7 +58,7 @@ export default function MioDevCanvas() {
   if (!hasWebGL) return <MioDevFallback />;
 
   return (
-    <div className="w-[320px] sm:w-[360px] lg:w-[380px] h-[560px] sm:h-[640px] lg:h-[720px] relative select-none flex items-center justify-center overflow-visible">
+    <div className="w-[340px] sm:w-[400px] lg:w-[420px] h-[560px] sm:h-[640px] lg:h-[720px] relative select-none flex items-center justify-center overflow-visible">
       <Suspense fallback={<MioDevFallback />}>
         <Canvas
           shadows
@@ -66,8 +66,8 @@ export default function MioDevCanvas() {
           gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
           className="w-full h-full"
         >
-          {/* Cámara: FOV más estrecho = consola más grande y protagonista */}
-          <PerspectiveCamera makeDefault position={[0, 0, 7.8]} fov={33} />
+          {/* Cámara: FOV amplio para mostrar la consola completa de pantalla a botones */}
+          <PerspectiveCamera makeDefault position={[0, 0, 10.5]} fov={44} />
 
           {/* Iluminación de estudio */}
           <ambientLight intensity={1.3} />
