@@ -41,16 +41,14 @@ export function MioDevModel() {
   const [activeModeIdx, setActiveModeIdx] = useState(0);
   const [btnPressed, setBtnPressed] = useState<string | null>(null);
 
-  // Rotación base en diagonal (firme, sin flotar)
-  // Ligero ángulo isométrico/perspectiva de hardware sobre escritorio
+  // Pose diagonal fija apoyada en el suelo
   const BASE_ROTATION = {
-    x: 0.18,
-    y: -0.38,
-    z: 0.03
+    x: 0.12,   // Inclinación leve hacia atrás (apoyado sobre superficie)
+    y: -0.38,  // Giro en diagonal hacia la izquierda mostrando perspectiva 3/4
+    z: 0.02
   };
 
   const mouseOffset = useRef({ x: 0, y: 0 });
-
   const currentMode = SCREEN_MODES[activeModeIdx];
 
   const handleNextMode = (e: any) => {
@@ -70,28 +68,28 @@ export function MioDevModel() {
   useFrame((state) => {
     if (!groupRef.current) return;
 
-    // Micro-reacción al mouse sutil (sin flotar ni perder la posición fija en la mesa)
-    const pointerX = state.pointer.x; // -1 to 1
-    const pointerY = state.pointer.y; // -1 to 1
+    // Solo un micro-ajuste de perspectiva casi imperceptible, SIN mover posición vertical
+    const pointerX = state.pointer.x;
+    const pointerY = state.pointer.y;
 
-    mouseOffset.current.x = THREE.MathUtils.lerp(mouseOffset.current.x, pointerX * 0.08, 0.05);
-    mouseOffset.current.y = THREE.MathUtils.lerp(mouseOffset.current.y, -pointerY * 0.06, 0.05);
+    mouseOffset.current.x = THREE.MathUtils.lerp(mouseOffset.current.x, pointerX * 0.04, 0.05);
+    mouseOffset.current.y = THREE.MathUtils.lerp(mouseOffset.current.y, -pointerY * 0.03, 0.05);
 
-    // Mantenemos la consola firmemente apoyada en su eje Y, solo con micro-rotación en diagonal
     groupRef.current.rotation.y = BASE_ROTATION.y + mouseOffset.current.x;
     groupRef.current.rotation.x = BASE_ROTATION.x + mouseOffset.current.y;
     groupRef.current.rotation.z = BASE_ROTATION.z;
-    groupRef.current.position.y = -0.35; // Apoyado fijo sobre el suelo
+    // Posición absolutamente quieta (apoyada en el plano base)
+    groupRef.current.position.set(0, 0.1, 0);
   });
 
   return (
-    <group ref={groupRef} scale={[1.28, 1.28, 1.28]} position={[0, -0.35, 0]}>
+    <group ref={groupRef} scale={[1.0, 1.0, 1.0]} position={[0, 0.1, 0]}>
       {/* ==================================================== */}
       {/* 1. CARTUCHO INSERTADO EN LA RANURA SUPERIOR */}
       {/* ==================================================== */}
-      <group position={[0, 2.72, -0.1]} rotation={[-0.05, 0, 0]}>
+      <group position={[0, 2.65, -0.1]} rotation={[-0.04, 0, 0]}>
         {/* Cuerpo del cartucho (Plástico translúcido mate insertado) */}
-        <RoundedBox args={[1.5, 1.3, 0.28]} radius={0.06} smoothness={3} castShadow>
+        <RoundedBox args={[1.5, 1.2, 0.28]} radius={0.06} smoothness={3} castShadow>
           <meshPhysicalMaterial
             color="#221b33"
             roughness={0.25}
@@ -101,13 +99,13 @@ export function MioDevModel() {
         </RoundedBox>
 
         {/* Agarre superior estriado */}
-        <RoundedBox args={[1.1, 0.12, 0.3]} radius={0.03} smoothness={2} position={[0, 0.55, 0]}>
+        <RoundedBox args={[1.1, 0.12, 0.3]} radius={0.03} smoothness={2} position={[0, 0.52, 0]}>
           <meshStandardMaterial color="#14101e" roughness={0.8} />
         </RoundedBox>
 
         {/* Etiqueta del cartucho que sobresale */}
         <mesh position={[0, 0.05, 0.145]}>
-          <planeGeometry args={[1.2, 0.7]} />
+          <planeGeometry args={[1.2, 0.65]} />
           <meshStandardMaterial color="#bdf559" roughness={0.4} />
         </mesh>
 
@@ -115,10 +113,10 @@ export function MioDevModel() {
         <Html
           transform
           position={[0, 0.05, 0.15]}
-          distanceFactor={2.5}
+          distanceFactor={2.7}
           className="select-none pointer-events-none"
         >
-          <div className="w-[140px] h-[80px] p-1.5 flex flex-col justify-between font-mono text-gray-950">
+          <div className="w-[140px] h-[75px] p-1.5 flex flex-col justify-between font-mono text-gray-950">
             <div className="flex justify-between items-center border-b border-black pb-0.5">
               <span className="text-[9px] font-black tracking-wider">MIO-DATA</span>
               <span className="text-[7px] font-bold bg-black text-white px-1">CSV</span>
