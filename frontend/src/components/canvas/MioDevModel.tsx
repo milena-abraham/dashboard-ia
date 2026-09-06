@@ -38,26 +38,25 @@ export function MioDevModel() {
   const [activeModeIdx, setActiveModeIdx] = useState(0);
   const [btnPressed, setBtnPressed] = useState<string | null>(null);
 
-  // Pose sutil idéntica a la referencia:
-  // Apoyado en la mesa, inclinado apenas hacia atrás (~7°) y girado muy sutilmente (~-5°)
+  // Pose fija inspirada en la referencia Pocketfolio:
   const BASE_ROTATION = {
-    x: 0.14,
-    y: -0.08,
+    x: 0.12,   // Tilted back slightly
+    y: -0.1,   // Subtle diagonal angle
     z: 0.015
   };
 
   const mouseOffset = useRef({ x: 0, y: 0 });
   const currentMode = SCREEN_MODES[activeModeIdx];
 
-  const handleNextMode = (e: any) => {
-    e?.stopPropagation();
+  const handleNextMode = (e?: any) => {
+    e?.stopPropagation?.();
     setActiveModeIdx((prev) => (prev + 1) % SCREEN_MODES.length);
     setBtnPressed('a');
     setTimeout(() => setBtnPressed(null), 180);
   };
 
-  const handlePrevMode = (e: any) => {
-    e?.stopPropagation();
+  const handlePrevMode = (e?: any) => {
+    e?.stopPropagation?.();
     setActiveModeIdx((prev) => (prev - 1 + SCREEN_MODES.length) % SCREEN_MODES.length);
     setBtnPressed('b');
     setTimeout(() => setBtnPressed(null), 180);
@@ -66,21 +65,20 @@ export function MioDevModel() {
   useFrame((state) => {
     if (!groupRef.current) return;
 
-    // Micro-parallax del cursor sutilísimo para dar vida al PBR sin despegarlo de la mesa
     const pointerX = state.pointer.x;
     const pointerY = state.pointer.y;
 
-    mouseOffset.current.x = THREE.MathUtils.lerp(mouseOffset.current.x, pointerX * 0.03, 0.04);
+    mouseOffset.current.x = THREE.MathUtils.lerp(mouseOffset.current.x, pointerX * 0.025, 0.04);
     mouseOffset.current.y = THREE.MathUtils.lerp(mouseOffset.current.y, -pointerY * 0.02, 0.04);
 
     groupRef.current.rotation.y = BASE_ROTATION.y + mouseOffset.current.x;
     groupRef.current.rotation.x = BASE_ROTATION.x + mouseOffset.current.y;
     groupRef.current.rotation.z = BASE_ROTATION.z;
-    groupRef.current.position.set(0, -0.15, 0); // Firme en la mesa
+    groupRef.current.position.set(0, -0.1, 0);
   });
 
   return (
-    <group ref={groupRef} scale={[0.95, 0.95, 0.95]} position={[0, -0.15, 0]}>
+    <group ref={groupRef} scale={[0.92, 0.92, 0.92]} position={[0, -0.1, 0]}>
       {/* ==================================================== */}
       {/* 1. INTERRUPTOR SUPERIOR DE ENCENDIDO (OFF <-> ON) */}
       {/* ==================================================== */}
@@ -88,7 +86,6 @@ export function MioDevModel() {
         <RoundedBox args={[0.32, 0.14, 0.16]} radius={0.03} smoothness={2} castShadow>
           <meshStandardMaterial color="#55535c" roughness={0.7} />
         </RoundedBox>
-        {/* Estriado del switch */}
         {[-0.08, 0, 0.08].map((x, i) => (
           <mesh key={i} position={[x, 0.07, 0]}>
             <boxGeometry args={[0.025, 0.03, 0.14]} />
@@ -110,36 +107,21 @@ export function MioDevModel() {
       >
         <meshStandardMaterial
           color="#ebe7de"
-          roughness={0.42}
-          metalness={0.04}
+          roughness={0.4}
+          metalness={0.03}
         />
       </RoundedBox>
 
-      {/* Ranura decorativa horizontal superior (Panel line clásica) */}
+      {/* Ranura decorativa horizontal superior */}
       <mesh position={[0, 2.32, 0.355]}>
         <planeGeometry args={[3.2, 0.02]} />
         <meshStandardMaterial color="#c8c4ba" roughness={0.8} />
       </mesh>
 
-      {/* Texto serigrafiado superior del switch */}
-      <Html
-        transform
-        position={[-0.85, 2.42, 0.355]}
-        distanceFactor={2.7}
-        className="select-none pointer-events-none"
-      >
-        <div className="text-[7px] font-mono font-bold text-gray-500 tracking-wider flex items-center gap-1">
-          <span>OFF</span>
-          <span>◄►</span>
-          <span>ON</span>
-        </div>
-      </Html>
-
       {/* ==================================================== */}
       {/* 3. MARCO / BEZEL DE PANTALLA OSCURO */}
       {/* ==================================================== */}
       <group position={[0, 0.85, 0.355]}>
-        {/* Bezel Gris Pizarra Clásico con esquinas redondeadas */}
         <RoundedBox args={[3.0, 2.45, 0.05]} radius={0.12} smoothness={3}>
           <meshStandardMaterial
             color="#5e5c66"
@@ -148,7 +130,7 @@ export function MioDevModel() {
           />
         </RoundedBox>
 
-        {/* Línea decorativa superior en el bezel (Magenta + Violeta MIO) */}
+        {/* Líneas decorativas superiores en el bezel */}
         <mesh position={[0, 1.06, 0.028]}>
           <planeGeometry args={[2.55, 0.025]} />
           <meshStandardMaterial color="#815ae1" />
@@ -158,51 +140,28 @@ export function MioDevModel() {
           <meshStandardMaterial color="#bdf559" />
         </mesh>
 
-        {/* Texto serigrafiado sobre el bezel: "DOT MATRIX DATA ENGINE" */}
-        <Html
-          transform
-          position={[0, 1.04, 0.03]}
-          distanceFactor={2.7}
-          className="select-none pointer-events-none"
-        >
-          <div className="text-[6.5px] font-mono font-black text-gray-300 tracking-widest uppercase bg-[#5e5c66] px-2">
-            DOT MATRIX DATA ENGINE
-          </div>
-        </Html>
-
-        {/* LED de Batería / AI Indicator (Rojo clásico encendido) */}
-        <mesh position={[-1.22, 0.15, 0.028]}>
+        {/* LED de Batería (Rojo clásico brillante) */}
+        <mesh position={[-1.22, 0.15, 0.035]}>
           <circleGeometry args={[0.045, 16]} />
-          <meshBasicMaterial color="#ff3333" />
+          <meshStandardMaterial color="#ff2222" emissive="#ff2222" emissiveIntensity={0.8} />
         </mesh>
-        <Html
-          transform
-          position={[-1.22, 0.04, 0.03]}
-          distanceFactor={2.7}
-          className="select-none pointer-events-none"
-        >
-          <div className="text-[5.5px] font-mono font-bold text-gray-400 tracking-tighter text-center">
-            BATTERY
-          </div>
-        </Html>
 
         {/* ==================================================== */}
         {/* 4. PANTALLA LCD DOT-MATRIX RETRO OLIVA / VERDE */}
         {/* ==================================================== */}
-        <mesh position={[0.08, -0.05, 0.026]}>
-          <planeGeometry args={[2.2, 1.82]} />
+        <mesh position={[0.06, -0.05, 0.026]}>
+          <planeGeometry args={[2.24, 1.84]} />
           <meshStandardMaterial
             color="#8c976d"
-            roughness={0.25}
+            roughness={0.2}
             metalness={0.05}
           />
         </mesh>
 
-        {/* Contenido HTML interactivo dentro de la pantalla LCD */}
+        {/* Contenido HTML interactivo ÚNICO dentro de la pantalla LCD */}
         <Html
           transform
-          occlude="blending"
-          position={[0.08, -0.05, 0.032]}
+          position={[0.06, -0.05, 0.032]}
           distanceFactor={2.7}
           className="select-none pointer-events-auto"
         >
@@ -210,7 +169,7 @@ export function MioDevModel() {
             style={{ width: '340px', height: '280px' }}
             className="bg-[#8c976d] text-[#1c2214] p-3 font-mono flex flex-col justify-between rounded shadow-inner relative overflow-hidden border border-[#768257]"
           >
-            {/* Matriz de píxeles / Grid retro */}
+            {/* Grid retro */}
             <div
               className="absolute inset-0 pointer-events-none opacity-20"
               style={{
@@ -300,152 +259,78 @@ export function MioDevModel() {
       </group>
 
       {/* ==================================================== */}
-      {/* 5. LOGOTIPO SERIGRAFIADO: "mio POCKET DATA SYSTEM" */}
-      {/* ==================================================== */}
-      <Html
-        transform
-        position={[-0.45, -0.65, 0.355]}
-        distanceFactor={2.7}
-        className="select-none pointer-events-none"
-      >
-        <div className="flex items-baseline gap-1.5 text-[#1b1924]">
-          <span className="text-xl font-black italic tracking-tighter">mio</span>
-          <span className="text-[7.5px] font-mono font-bold tracking-widest text-gray-600 uppercase">
-            DATA ANALYTICS SYSTEM™
-          </span>
-        </div>
-      </Html>
-
-      {/* ==================================================== */}
-      {/* 6. D-PAD (CRUCETA NEGRA EXACTA CON DISCO CENTRAL) */}
+      {/* 5. D-PAD (CRUCETA NEGRA CON DISCO CENTRAL) */}
       {/* ==================================================== */}
       <group position={[-0.88, -1.35, 0.36]}>
-        {/* Barra vertical del D-Pad */}
         <RoundedBox args={[0.34, 0.98, 0.16]} radius={0.04} smoothness={2} castShadow>
           <meshStandardMaterial color="#1a1820" roughness={0.65} />
         </RoundedBox>
-        {/* Barra horizontal del D-Pad */}
         <RoundedBox args={[0.98, 0.34, 0.16]} radius={0.04} smoothness={2} castShadow>
           <meshStandardMaterial color="#1a1820" roughness={0.65} />
         </RoundedBox>
-        {/* Hendidura circular central clásica de Nintendo */}
         <mesh position={[0, 0, 0.088]}>
           <cylinderGeometry args={[0.085, 0.085, 0.02, 24]} />
           <meshStandardMaterial color="#100f14" roughness={0.9} />
         </mesh>
-        {/* Pequeños triángulos direccionales en relieve */}
-        {[-0.38, 0.38].map((offset, i) => (
-          <mesh key={`v-${i}`} position={[0, offset, 0.085]} rotation={[0, 0, i === 0 ? 0 : Math.PI]}>
-            <coneGeometry args={[0.04, 0.04, 3]} />
-            <meshStandardMaterial color="#2d2b33" />
-          </mesh>
-        ))}
-        {[-0.38, 0.38].map((offset, i) => (
-          <mesh key={`h-${i}`} position={[offset, 0, 0.085]} rotation={[0, 0, i === 0 ? Math.PI / 2 : -Math.PI / 2]}>
-            <coneGeometry args={[0.04, 0.04, 3]} />
-            <meshStandardMaterial color="#2d2b33" />
-          </mesh>
-        ))}
       </group>
 
       {/* ==================================================== */}
-      {/* 7. BOTONES DE ACCIÓN B / A (MAGENTA / VIOLETA Y LIMA) */}
+      {/* 6. BOTONES DE ACCIÓN B / A (MAGENTA CLÁSICO) */}
       {/* ==================================================== */}
-      {/* Botón B (MIO Violet / Magenta clásico) */}
+      {/* Botón B */}
       <group
-        position={[0.52, -1.45, 0.36]}
+        position={[0.55, -1.45, 0.36]}
         onClick={handlePrevMode}
-        className="cursor-pointer"
       >
         <mesh
           rotation={[Math.PI / 2, 0, 0]}
-          position={[0, 0, btnPressed === 'b' ? 0.04 : 0.08]}
-          castShadow
-        >
-          <cylinderGeometry args={[0.3, 0.3, 0.16, 32]} />
-          <meshStandardMaterial
-            color="#8c1f54" // Magenta clásico Game Boy / MIO Violet
-            roughness={0.28}
-          />
-        </mesh>
-        <Html
-          transform
-          position={[0.15, -0.28, 0.09]}
-          distanceFactor={2.7}
-          className="select-none pointer-events-none"
-        >
-          <div className="text-[9px] font-mono font-black text-gray-700">B</div>
-        </Html>
-      </group>
-
-      {/* Botón A (Magenta Clásico) */}
-      <group
-        position={[1.05, -1.18, 0.36]}
-        onClick={handleNextMode}
-        className="cursor-pointer"
-      >
-        <mesh
-          rotation={[Math.PI / 2, 0, 0]}
-          position={[0, 0, btnPressed === 'a' ? 0.04 : 0.08]}
+          position={[0, 0, btnPressed === 'b' ? 0.03 : 0.08]}
           castShadow
         >
           <cylinderGeometry args={[0.3, 0.3, 0.16, 32]} />
           <meshStandardMaterial
             color="#8c1f54"
-            roughness={0.28}
+            roughness={0.3}
           />
         </mesh>
-        <Html
-          transform
-          position={[0.15, -0.28, 0.09]}
-          distanceFactor={2.7}
-          className="select-none pointer-events-none"
+      </group>
+
+      {/* Botón A */}
+      <group
+        position={[1.08, -1.18, 0.36]}
+        onClick={handleNextMode}
+      >
+        <mesh
+          rotation={[Math.PI / 2, 0, 0]}
+          position={[0, 0, btnPressed === 'a' ? 0.03 : 0.08]}
+          castShadow
         >
-          <div className="text-[9px] font-mono font-black text-gray-700">A</div>
-        </Html>
+          <cylinderGeometry args={[0.3, 0.3, 0.16, 32]} />
+          <meshStandardMaterial
+            color="#8c1f54"
+            roughness={0.3}
+          />
+        </mesh>
       </group>
 
       {/* ==================================================== */}
-      {/* 8. BOTONES SELECT Y START (PILLS DE GOMA INCLINADAS) */}
+      {/* 7. BOTONES SELECT Y START (PILLS INCLINADAS) */}
       {/* ==================================================== */}
       <group position={[-0.15, -2.05, 0.36]} rotation={[0, 0, -0.45]}>
-        {/* SELECT */}
         <group position={[-0.22, 0, 0]}>
           <RoundedBox args={[0.38, 0.11, 0.07]} radius={0.04} smoothness={2} castShadow>
             <meshStandardMaterial color="#6a6773" roughness={0.65} />
           </RoundedBox>
-          <Html
-            transform
-            position={[0, -0.16, 0.04]}
-            distanceFactor={2.7}
-            className="select-none pointer-events-none"
-          >
-            <div className="text-[5.5px] font-mono font-black text-gray-500 tracking-wider">
-              SELECT
-            </div>
-          </Html>
         </group>
-
-        {/* START */}
         <group position={[0.26, 0, 0]}>
           <RoundedBox args={[0.38, 0.11, 0.07]} radius={0.04} smoothness={2} castShadow>
             <meshStandardMaterial color="#6a6773" roughness={0.65} />
           </RoundedBox>
-          <Html
-            transform
-            position={[0, -0.16, 0.04]}
-            distanceFactor={2.7}
-            className="select-none pointer-events-none"
-          >
-            <div className="text-[5.5px] font-mono font-black text-gray-500 tracking-wider">
-              START
-            </div>
-          </Html>
         </group>
       </group>
 
       {/* ==================================================== */}
-      {/* 9. REJILLA DEL ALTAVOZ (6 RANURAS DIAGONALES REALES) */}
+      {/* 8. REJILLA DEL ALTAVOZ (6 RANURAS DIAGONALES) */}
       {/* ==================================================== */}
       <group position={[0.82, -2.05, 0.355]} rotation={[0, 0, -0.45]}>
         {[-0.32, -0.19, -0.06, 0.07, 0.2, 0.33].map((offsetY, i) => (
@@ -460,18 +345,6 @@ export function MioDevModel() {
           </RoundedBox>
         ))}
       </group>
-
-      {/* Modelo / Código de serie impreso abajo a la izquierda */}
-      <Html
-        transform
-        position={[-1.15, -2.35, 0.355]}
-        distanceFactor={2.7}
-        className="select-none pointer-events-none"
-      >
-        <div className="text-[5.5px] font-mono font-bold text-gray-400">
-          MD-2026
-        </div>
-      </Html>
     </group>
   );
 }

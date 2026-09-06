@@ -5,11 +5,10 @@ import { Canvas } from '@react-three/fiber';
 import { ContactShadows, PerspectiveCamera } from '@react-three/drei';
 import { MioDevModel } from './MioDevModel';
 
-// Fallback 2D si WebGL no está disponible
 function MioDevFallback() {
   return (
-    <div className="w-full h-full min-h-[500px] flex items-center justify-center p-4">
-      <div className="w-[320px] bg-[#ebe7de] border-4 border-[#111] shadow-[12px_12px_0px_#111] p-5 flex flex-col items-center">
+    <div className="w-full h-full min-h-[480px] flex items-center justify-center p-4">
+      <div className="w-[320px] bg-[#ebe7de] border-4 border-[#111] shadow-[10px_10px_0px_#111] p-5 flex flex-col items-center">
         <div className="w-full bg-[#5e5c66] p-3 rounded mb-4">
           <div className="bg-[#8c976d] p-3 text-[#1c2214] font-mono border border-[#6c784e]">
             <div className="text-[10px] font-black mb-1">MIO-OS v2.6 // LIVE</div>
@@ -22,12 +21,12 @@ function MioDevFallback() {
           </div>
         </div>
         <div className="w-full flex justify-between items-center px-2">
-          <div className="w-12 h-12 bg-[#1a1820] flex items-center justify-center font-bold text-gray-500">
+          <div className="w-10 h-10 bg-[#1a1820] flex items-center justify-center font-bold text-gray-500">
             +
           </div>
           <div className="flex gap-2">
-            <div className="w-8 h-8 rounded-full bg-[#8c1f54]" />
-            <div className="w-8 h-8 rounded-full bg-[#8c1f54]" />
+            <div className="w-7 h-7 rounded-full bg-[#8c1f54]" />
+            <div className="w-7 h-7 rounded-full bg-[#8c1f54]" />
           </div>
         </div>
       </div>
@@ -61,7 +60,7 @@ export default function MioDevCanvas() {
   if (!hasWebGL) return <MioDevFallback />;
 
   return (
-    <div className="w-full h-[540px] sm:h-[620px] lg:h-[680px] relative select-none flex items-center justify-center overflow-visible">
+    <div className="w-full h-[520px] sm:h-[580px] lg:h-[620px] relative select-none flex items-center justify-center overflow-hidden">
       <Suspense fallback={<MioDevFallback />}>
         <Canvas
           shadows
@@ -87,7 +86,7 @@ export default function MioDevCanvas() {
           {/* Luz de relleno suave desde la derecha */}
           <directionalLight position={[4, 2, 4]} intensity={0.5} />
 
-          {/* Relleno frontal neutro para resaltar los botones y la serigrafía */}
+          {/* Relleno frontal neutro para resaltar los botones */}
           <directionalLight position={[0, -1, 5]} intensity={0.4} />
 
           {/* Modelo 3D MIO-Pocket */}
@@ -95,8 +94,8 @@ export default function MioDevCanvas() {
 
           {/* Sombra de contacto direccional suave que ancla la consola a la mesa */}
           <ContactShadows
-            position={[0.15, -2.62, 0]}
-            opacity={0.48}
+            position={[0.12, -2.62, 0]}
+            opacity={0.45}
             scale={10}
             blur={2.4}
             far={5}
