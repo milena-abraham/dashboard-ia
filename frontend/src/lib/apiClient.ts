@@ -49,7 +49,7 @@ async function fetchWithFallback(url: string, init?: RequestInit): Promise<Respo
     }
     if (err.name === 'TypeError' && (err.message?.includes('fetch') || err.message?.includes('Load failed'))) {
       throw new ApiError(
-        'El servidor en la nube de Render está despertando (plan gratuito). Por favor aguardá 30-60 segundos e intentá nuevamente.',
+        'El servidor en la nube está iniciando su contenedor. Por favor aguardá 30-45 segundos e intentá nuevamente.',
         503
       );
     }
@@ -63,7 +63,7 @@ async function handleResponse<T>(response: Response, isBlob: boolean = false): P
   if (!response.ok) {
     let errorMessage = `HTTP Error ${response.status}`;
     if (response.status === 503 || response.headers.get('x-render-routing')?.includes('hibernate')) {
-      errorMessage = 'El servidor de Render está iniciando su contenedor gratuito. Por favor aguardá 30-60 segundos e intentá nuevamente.';
+      errorMessage = 'El servidor en la nube está iniciando su contenedor. Por favor aguardá unos segundos e intentá nuevamente.';
     } else if (response.status === 413) {
       errorMessage = 'El archivo supera el límite permitido por la red (máx 100 MB). Por favor seleccioná un archivo más liviano.';
     } else if (isJson) {
