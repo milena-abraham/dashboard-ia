@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import {
   Sparkles,
@@ -18,6 +19,15 @@ import {
   Download
 } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
+
+const MioDevCanvas = dynamic(() => import('@/components/canvas/MioDevCanvas'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[520px] flex items-center justify-center font-mono text-xs font-bold text-gray-400 bg-gray-50 border-4 border-[#111]">
+      CARGANDO MIO-DEV 3D...
+    </div>
+  )
+});
 
 
 function FloatingIcons() {
@@ -391,6 +401,8 @@ function AboutUs() {
 }
 
 export default function LandingPage() {
+  const [heroTab, setHeroTab] = useState<'3d' | 'preview'>('3d');
+
   return (
     <div className="min-h-screen bg-[#fafafc] flex flex-col selection:bg-mio-lime selection:text-black">
       <Navbar />
@@ -444,8 +456,52 @@ export default function LandingPage() {
 
         </div>
 
-        {/* Scroll-scrubbing Mockup */}
-        <HeroMockup />
+        {/* Switcher de Vista Hero (3D Hardware vs Plataforma) */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 sm:mt-16 flex flex-col items-center relative z-20">
+          <div className="inline-flex p-1.5 bg-white border-4 border-[#111] shadow-[6px_6px_0px_#111] gap-2">
+            <button
+              type="button"
+              onClick={() => setHeroTab('3d')}
+              className={`px-4 sm:px-6 py-2 sm:py-2.5 font-black text-xs sm:text-sm tracking-wider uppercase transition-all flex items-center gap-2 ${
+                heroTab === '3d'
+                  ? 'bg-mio-violet text-white border-2 border-[#111] shadow-[3px_3px_0px_#111] -translate-y-0.5'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <Sparkles className="w-4 h-4 text-mio-lime" />
+              <span>🕹️ MIO-Dev 3D</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setHeroTab('preview')}
+              className={`px-4 sm:px-6 py-2 sm:py-2.5 font-black text-xs sm:text-sm tracking-wider uppercase transition-all flex items-center gap-2 ${
+                heroTab === 'preview'
+                  ? 'bg-mio-lime text-gray-950 border-2 border-[#111] shadow-[3px_3px_0px_#111] -translate-y-0.5'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4 text-gray-900" />
+              <span>💻 Vista Plataforma</span>
+            </button>
+          </div>
+
+          <p className="text-xs font-mono font-bold text-gray-500 mt-3 text-center">
+            {heroTab === '3d' 
+              ? '✦ Arrastrá con el mouse para rotar la consola 3D. Hacé click en los botones físicos para cambiar de gráfico.' 
+              : '✦ Navegación y vista previa en vivo del dashboard corporativo.'}
+          </p>
+        </div>
+
+        {/* Hero Content Showcase */}
+        {heroTab === '3d' ? (
+          <div className="mt-6 max-w-5xl mx-auto w-full px-4 relative z-10">
+            <div className="bg-gradient-to-b from-[#f3efff] to-white border-4 border-[#111] shadow-[8px_8px_0px_#111] sm:shadow-[16px_16px_0px_#111] p-2 sm:p-4 overflow-hidden relative">
+              <MioDevCanvas />
+            </div>
+          </div>
+        ) : (
+          <HeroMockup />
+        )}
         
       </section>
 
