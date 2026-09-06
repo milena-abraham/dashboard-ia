@@ -456,8 +456,8 @@ export default function LandingPage() {
 
         </div>
 
-        {/* Switcher de Vista Hero (3D Hardware vs Plataforma) */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 sm:mt-16 flex flex-col items-center relative z-20">
+        {/* Switcher de Vista Hero */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10 sm:mt-14 flex flex-col items-center relative z-20">
           <div className="inline-flex p-1.5 bg-white border-4 border-[#111] shadow-[6px_6px_0px_#111] gap-2">
             <button
               type="button"
@@ -484,18 +484,148 @@ export default function LandingPage() {
               <span>💻 Vista Plataforma</span>
             </button>
           </div>
-
-          <p className="text-xs font-mono font-bold text-gray-500 mt-3 text-center">
-            {heroTab === '3d' 
-              ? '✦ Hacé click en los botones físicos para cambiar de modo de análisis en la pantalla.' 
-              : '✦ Navegación y vista previa en vivo del dashboard corporativo.'}
-          </p>
         </div>
 
-        {/* Hero Content Showcase */}
+        {/* Hero Content */}
         {heroTab === '3d' ? (
-          <div className="mt-4 max-w-4xl mx-auto w-full px-4 relative z-10 flex justify-center">
-            <MioDevCanvas />
+          // ============================================================
+          // LAYOUT POCKETFOLIO: 3 columnas — editorial | consola | guía
+          // ============================================================
+          <div className="mt-6 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] items-center gap-8 lg:gap-12">
+
+              {/* ─── COLUMNA IZQUIERDA: Editorial ─── */}
+              <motion.div
+                initial={{ opacity: 0, x: -24 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3, duration: 0.7 }}
+                className="hidden lg:flex flex-col justify-center text-left"
+              >
+                {/* Eyebrow label */}
+                <div className="flex items-center gap-2 mb-5">
+                  <span className="w-2 h-2 rounded-full bg-mio-lime border border-[#111]" />
+                  <span className="text-[11px] font-mono font-black tracking-[0.2em] text-gray-400 uppercase">
+                    01 / the pocket edition
+                  </span>
+                </div>
+
+                {/* Headline editorial */}
+                <h2 className="text-4xl xl:text-5xl font-black text-gray-950 tracking-tight leading-[1.05] mb-4">
+                  Small screen.<br />
+                  <span className="italic" style={{ backgroundImage: "linear-gradient(to right, #815ae1, #bdf559)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                    Big decisions.
+                  </span>
+                </h2>
+
+                {/* Descripción */}
+                <p className="text-sm text-gray-600 font-medium leading-relaxed mb-8 max-w-xs">
+                  Analítica predictiva en tu bolsillo. MIO entrena modelos AutoML, detecta anomalías y segmenta tus clientes — sin escribir una línea de código.
+                </p>
+
+                {/* Firma de proyecto */}
+                <div className="border-t-2 border-[#111] pt-4">
+                  <div className="text-[10px] font-mono font-black text-gray-400 uppercase tracking-widest mb-0.5">
+                    + MIO DATA ANALYTICS SYSTEM™
+                  </div>
+                  <div className="text-[10px] font-mono text-gray-400">
+                    Ciencia de Datos · Inteligencia Artificial
+                  </div>
+                </div>
+
+                {/* Nota curva estilo Pocketfolio */}
+                <div className="mt-6 relative">
+                  <span className="italic font-semibold text-gray-400 text-sm">
+                    Hecho para explorar. →
+                  </span>
+                </div>
+              </motion.div>
+
+              {/* ─── COLUMNA CENTRAL: Consola 3D protagonista ─── */}
+              <motion.div
+                initial={{ opacity: 0, y: 32 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15, duration: 0.8 }}
+                className="flex justify-center"
+              >
+                <MioDevCanvas />
+              </motion.div>
+
+              {/* ─── COLUMNA DERECHA: How To Operate ─── */}
+              <motion.div
+                initial={{ opacity: 0, x: 24 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4, duration: 0.7 }}
+                className="hidden lg:flex flex-col justify-center text-left"
+              >
+                {/* Panel de controles estilo neo-brutalista MIO */}
+                <div className="border-4 border-[#111] shadow-[6px_6px_0px_#111] p-5 bg-white">
+                  <div className="flex items-center justify-between border-b-2 border-[#111] pb-2 mb-4">
+                    <span className="text-[11px] font-mono font-black tracking-[0.15em] text-gray-900 uppercase">
+                      HOW TO OPERATE
+                    </span>
+                    <span className="text-[9px] font-mono font-bold text-mio-violet">● V2.6</span>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* D-PAD */}
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-[#1a1726] text-white flex items-center justify-center font-black text-base shrink-0 border-2 border-[#111] shadow-[2px_2px_0px_#111]">
+                        +
+                      </div>
+                      <div>
+                        <div className="text-xs font-black text-gray-900">D-PAD</div>
+                        <div className="text-[11px] text-gray-500 font-medium">Navegar visualizaciones</div>
+                      </div>
+                    </div>
+
+                    {/* Botón A */}
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-mio-lime border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center font-black text-[11px] shrink-0 text-gray-900">
+                        A
+                      </div>
+                      <div>
+                        <div className="text-xs font-black text-gray-900">BOTÓN A</div>
+                        <div className="text-[11px] text-gray-500 font-medium">Siguiente gráfico</div>
+                      </div>
+                    </div>
+
+                    {/* Botón B */}
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-mio-violet border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center font-black text-[11px] shrink-0 text-white">
+                        B
+                      </div>
+                      <div>
+                        <div className="text-xs font-black text-gray-900">BOTÓN B</div>
+                        <div className="text-[11px] text-gray-500 font-medium">Gráfico anterior</div>
+                      </div>
+                    </div>
+
+                    {/* START */}
+                    <div className="flex items-start gap-3">
+                      <div className="px-2 h-6 bg-white border-2 border-[#111] shadow-[1px_1px_0px_#111] flex items-center font-black text-[9px] shrink-0 text-gray-700 tracking-widest mt-0.5">
+                        START
+                      </div>
+                      <div>
+                        <div className="text-xs font-black text-gray-900">START</div>
+                        <div className="text-[11px] text-gray-500 font-medium">Ejecutar AutoML Predict</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Link secundario estilo Pocketfolio */}
+                <div className="mt-5 flex items-center gap-2 text-gray-400 hover:text-mio-violet transition-colors cursor-pointer group">
+                  <div className="w-8 h-8 border-2 border-gray-300 group-hover:border-mio-violet flex items-center justify-center transition-colors">
+                    <BarChart3 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-black text-gray-700">Ver dashboard en vivo →</div>
+                    <div className="text-[10px] text-gray-400">Explorá la plataforma completa</div>
+                  </div>
+                </div>
+              </motion.div>
+
+            </div>
           </div>
         ) : (
           <HeroMockup />

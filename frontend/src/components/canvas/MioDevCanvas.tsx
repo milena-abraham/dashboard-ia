@@ -58,7 +58,7 @@ export default function MioDevCanvas() {
   if (!hasWebGL) return <MioDevFallback />;
 
   return (
-    <div className="w-full h-[500px] sm:h-[560px] lg:h-[600px] relative select-none flex items-center justify-center overflow-visible">
+    <div className="w-[320px] sm:w-[360px] lg:w-[380px] h-[560px] sm:h-[640px] lg:h-[720px] relative select-none flex items-center justify-center overflow-visible">
       <Suspense fallback={<MioDevFallback />}>
         <Canvas
           shadows
@@ -66,8 +66,8 @@ export default function MioDevCanvas() {
           gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
           className="w-full h-full"
         >
-          {/* Cámara con ángulo cómodo y frontal idéntico a Pocketfolio */}
-          <PerspectiveCamera makeDefault position={[0, 0, 8.8]} fov={38} />
+          {/* Cámara: FOV más estrecho = consola más grande y protagonista */}
+          <PerspectiveCamera makeDefault position={[0, 0, 7.8]} fov={33} />
 
           {/* Iluminación de estudio */}
           <ambientLight intensity={1.3} />
