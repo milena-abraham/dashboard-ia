@@ -85,7 +85,7 @@ export function MioDevModel() {
   });
 
   return (
-    <group ref={groupRef} scale={[0.96, 0.96, 0.96]} position={[0, -0.05, 0]}>
+    <group ref={groupRef} scale={[1.04, 1.04, 1.04]} position={[0, -0.05, 0]}>
       {/* ==================================================== */}
       {/* 1. INTERRUPTOR SUPERIOR DE HARDWARE (OFF <-> ON) */}
       {/* ==================================================== */}
