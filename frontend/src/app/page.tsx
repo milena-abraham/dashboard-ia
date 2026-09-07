@@ -19,7 +19,8 @@ import {
   Lock,
   CheckCircle2,
   MessageSquare,
-  Cpu
+  Cpu,
+  Files
 } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
@@ -338,25 +339,47 @@ function BentoGrid() {
   );
 }
 
-// Banner de compatibilidad de archivos
+// Banner de compatibilidad universal y multi-archivo
 function FormatBanner() {
   return (
-    <div className="w-full bg-[#111] text-white py-6 border-y-4 border-gray-900 overflow-hidden relative">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <FileSpreadsheet className="w-8 h-8 text-mio-lime" />
+    <div className="w-full bg-[#111] text-white py-7 border-y-4 border-gray-900 overflow-hidden relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center justify-between gap-6">
+        <div className="flex items-center gap-4 text-center sm:text-left">
+          <div className="w-12 h-12 bg-mio-lime/20 border-2 border-mio-lime flex items-center justify-center shrink-0">
+            <Files className="w-6 h-6 text-mio-lime" />
+          </div>
           <div>
-            <h4 className="text-lg font-black tracking-tight">Carga de Datos Universal</h4>
-            <p className="text-xs text-gray-400 font-medium">Compatible con archivos .CSV y .XLSX (Excel)</p>
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
+              <h4 className="text-lg font-black tracking-tight text-white">
+                Carga de Datos Universal y Multi-Archivo
+              </h4>
+              <span className="px-2 py-0.5 bg-mio-lime text-black font-mono text-[10px] font-black uppercase tracking-wider">
+                Batch Processing
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-gray-400 font-medium max-w-xl">
+              Subí uno o múltiples archivos en simultáneo. Compatible con <span className="text-white font-bold">.CSV</span>, <span className="text-white font-bold">.XLSX (Excel)</span> y <span className="text-white font-bold">.JSON</span> sin necesidad de limpieza ni formateo previo.
+            </p>
           </div>
         </div>
         
-        <div className="flex gap-3">
-          <div className="bg-white/10 px-4 py-2 border-2 border-white/20 font-mono text-sm font-bold flex items-center gap-2">
-            <span className="text-green-400">.xlsx</span>
+        {/* Formatos y multi-archivo badges */}
+        <div className="flex flex-wrap items-center justify-center gap-2.5">
+          <div className="bg-white/10 px-3.5 py-1.5 border-2 border-white/20 font-mono text-xs font-bold flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-mio-lime"></span>
+            <span className="text-mio-lime font-mono">.csv</span>
           </div>
-          <div className="bg-white/10 px-4 py-2 border-2 border-white/20 font-mono text-sm font-bold flex items-center gap-2">
-            <span className="text-mio-lime">.csv</span>
+          <div className="bg-white/10 px-3.5 py-1.5 border-2 border-white/20 font-mono text-xs font-bold flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green-400"></span>
+            <span className="text-green-400 font-mono">.xlsx</span>
+          </div>
+          <div className="bg-white/10 px-3.5 py-1.5 border-2 border-white/20 font-mono text-xs font-bold flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span className="text-amber-400 font-mono">.json</span>
+          </div>
+          <div className="bg-mio-violet/30 px-3.5 py-1.5 border-2 border-mio-violet/60 font-mono text-xs font-bold flex items-center gap-2 text-white">
+            <Layers className="w-3.5 h-3.5 text-mio-lime" />
+            <span>Varios archivos a la vez</span>
           </div>
         </div>
       </div>
@@ -419,8 +442,8 @@ function HowItWorks() {
                 <FileSpreadsheet className="w-6 h-6 md:w-8 md:h-8 text-blue-600" />
               </div>
               <div>
-                <h2 className="text-2xl md:text-4xl font-black text-gray-950 tracking-tight mb-1 md:mb-2">1. Subí tu CSV</h2>
-                <p className="text-base md:text-lg text-gray-600 font-medium">Soltá tu archivo crudo. MIO limpia nulos y duplicados automáticamente.</p>
+                <h2 className="text-2xl md:text-4xl font-black text-gray-950 tracking-tight mb-1 md:mb-2">1. Subí tus datos</h2>
+                <p className="text-base md:text-lg text-gray-600 font-medium">Soltá tus archivos .CSV, .XLSX o .JSON (uno o varios en lote). MIO limpia nulos y prepara la matriz automáticamente.</p>
               </div>
             </motion.div>
             
@@ -472,6 +495,46 @@ function HowItWorks() {
 
         </div>
 
+      </div>
+    </section>
+  );
+}
+
+// Llamado a la acción de alta conversión
+function FinalCallToAction() {
+  return (
+    <section className="py-20 sm:py-28 bg-[#0b0914] text-white border-y-4 border-[#111] relative overflow-hidden">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-mio-lime/20 border border-mio-lime/40 text-mio-lime font-mono text-[11px] font-black uppercase tracking-widest mb-6">
+          <Sparkles className="w-3.5 h-3.5 text-mio-lime" />
+          <span>EMPEZÁ HOY SIN FRICCIÓN</span>
+        </div>
+
+        <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-tight leading-[1.05] mb-6">
+          Dejá de adivinar.<br />
+          <span className="text-mio-lime">Empezá a predecir.</span>
+        </h2>
+
+        <p className="text-base sm:text-lg text-gray-400 max-w-xl mx-auto mb-10 font-medium leading-relaxed">
+          Probá MIO gratis con tus propios archivos y obtené modelos predictivos y respuestas ejecutivas en menos de un minuto.
+        </p>
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <Link
+            href="/login"
+            className="w-full sm:w-auto px-10 py-5 bg-mio-lime text-gray-950 font-black text-lg border-4 border-[#111] shadow-[6px_6px_0px_#fff] hover:shadow-none hover:translate-x-[6px] hover:translate-y-[6px] transition-all flex items-center justify-center gap-3 tracking-tight"
+          >
+            <span>Crear Cuenta Gratis</span>
+            <ArrowRight className="w-5 h-5" strokeWidth={3} />
+          </Link>
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="w-full sm:w-auto px-8 py-5 bg-white/10 text-white font-black text-base border-2 border-white/20 hover:bg-white/20 transition-all"
+          >
+            Explorar Consola 3D ↑
+          </button>
+        </div>
       </div>
     </section>
   );
@@ -765,19 +828,22 @@ export default function LandingPage() {
         )}
       </section>
 
-      {/* Banner de formatos */}
+      {/* 1. Banner de Carga de Datos Universal y Multi-Archivo */}
       <FormatBanner />
 
-      {/* Cómo Funciona MIO (Sticky Scroll Original) */}
-      <HowItWorks />
-
-      {/* Bento Grid Features */}
+      {/* 2. Arquitectura de Cómputo (Bento Grid con AutoML, Latencia 60s, Privacidad Zero-Knowledge y Copiloto) */}
       <BentoGrid />
 
-      {/* Quiénes Somos */}
+      {/* 3. Cómo Funciona MIO (Paso a Paso interactivo con Sticky Scroll) */}
+      <HowItWorks />
+
+      {/* 4. Llamado a la Acción de Alta Conversión */}
+      <FinalCallToAction />
+
+      {/* 5. Quiénes Somos (Dossier Fundadores) */}
       <AboutUs />
 
-      {/* Footer */}
+      {/* 6. Footer */}
       <footer className="py-12 bg-white border-t-4 border-[#111] text-center text-sm font-bold text-gray-500">
         <p>© 2026 MIO. Neo-Brutal Analytics. Creado con ❤️ en Argentina.</p>
       </footer>
