@@ -80,12 +80,12 @@ export function MioDevModel() {
     groupRef.current.rotation.y = BASE_ROTATION.y + mouseOffset.current.x;
     groupRef.current.rotation.x = BASE_ROTATION.x + mouseOffset.current.y;
     groupRef.current.rotation.z = BASE_ROTATION.z;
-    // Firmemente anclada al suelo
-    groupRef.current.position.set(0, -0.05, 0);
+    // Anclada perfectamente con margen seguro para no recortar la base
+    groupRef.current.position.set(0, 0.06, 0);
   });
 
   return (
-    <group ref={groupRef} scale={[1.04, 1.04, 1.04]} position={[0, -0.05, 0]}>
+    <group ref={groupRef} scale={[0.96, 0.96, 0.96]} position={[0, 0.06, 0]}>
       {/* ==================================================== */}
       {/* 1. INTERRUPTOR SUPERIOR DE HARDWARE (OFF <-> ON) */}
       {/* ==================================================== */}
@@ -270,27 +270,33 @@ export function MioDevModel() {
         <RoundedBox args={[0.98, 0.34, 0.16]} radius={0.04} smoothness={2} castShadow>
           <meshStandardMaterial color="#1a1726" roughness={0.6} />
         </RoundedBox>
-        {/* Hendidura central */}
-        <mesh position={[0, 0, 0.088]}>
-          <cylinderGeometry args={[0.085, 0.085, 0.02, 24]} />
+        {/* Hendidura central circular (orientada hacia adelante) */}
+        <mesh position={[0, 0, 0.088]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.075, 0.075, 0.015, 32]} />
           <meshStandardMaterial color="#110e1a" roughness={0.9} />
         </mesh>
       </group>
 
       {/* ==================================================== */}
-      {/* 6. BOTONES DE ACCIÓN: BOTÓN A EN LIMA (#bdf559) Y B EN OSCURO */}
+      {/* 6. BOTONES DE ACCIÓN (A & B) CON ESPACIADO REAL Y BISEL */}
       {/* ==================================================== */}
-      {/* Botón B (Dark Graphite con borde MIO) */}
+      {/* Botón B (Dark Graphite inferior-izquierdo) */}
       <group
-        position={[0.55, -1.45, 0.355]}
+        position={[0.48, -1.42, 0.355]}
         onClick={handlePrevMode}
       >
+        {/* Pozo/Bisel de encastre */}
+        <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.005]}>
+          <cylinderGeometry args={[0.29, 0.29, 0.015, 32]} />
+          <meshStandardMaterial color="#5530b8" roughness={0.7} />
+        </mesh>
+        {/* Botón táctil */}
         <mesh
           rotation={[Math.PI / 2, 0, 0]}
-          position={[0, 0, btnPressed === 'b' ? 0.03 : 0.08]}
+          position={[0, 0, btnPressed === 'b' ? 0.03 : 0.075]}
           castShadow
         >
-          <cylinderGeometry args={[0.31, 0.31, 0.16, 32]} />
+          <cylinderGeometry args={[0.26, 0.26, 0.14, 32]} />
           <meshStandardMaterial
             color="#221b33"
             roughness={0.35}
@@ -298,17 +304,23 @@ export function MioDevModel() {
         </mesh>
       </group>
 
-      {/* Botón A (MIO LIME #bdf559 ELÉCTRICO) */}
+      {/* Botón A (MIO LIME #bdf559 superior-derecho) */}
       <group
-        position={[1.08, -1.18, 0.355]}
+        position={[1.06, -1.14, 0.355]}
         onClick={handleNextMode}
       >
+        {/* Pozo/Bisel de encastre */}
+        <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.005]}>
+          <cylinderGeometry args={[0.29, 0.29, 0.015, 32]} />
+          <meshStandardMaterial color="#5530b8" roughness={0.7} />
+        </mesh>
+        {/* Botón táctil */}
         <mesh
           rotation={[Math.PI / 2, 0, 0]}
-          position={[0, 0, btnPressed === 'a' ? 0.03 : 0.08]}
+          position={[0, 0, btnPressed === 'a' ? 0.03 : 0.075]}
           castShadow
         >
-          <cylinderGeometry args={[0.31, 0.31, 0.16, 32]} />
+          <cylinderGeometry args={[0.26, 0.26, 0.14, 32]} />
           <meshStandardMaterial
             color="#bdf559"
             emissive="#bdf559"
@@ -321,28 +333,28 @@ export function MioDevModel() {
       {/* ==================================================== */}
       {/* 7. BOTONES SELECT Y START */}
       {/* ==================================================== */}
-      <group position={[-0.15, -2.05, 0.355]} rotation={[0, 0, -0.45]}>
-        <group position={[-0.22, 0, 0]}>
-          <RoundedBox args={[0.38, 0.11, 0.07]} radius={0.04} smoothness={2} castShadow>
+      <group position={[-0.08, -2.05, 0.355]} rotation={[0, 0, -0.45]}>
+        <group position={[-0.23, 0, 0]}>
+          <RoundedBox args={[0.34, 0.10, 0.06]} radius={0.035} smoothness={2} castShadow>
             <meshStandardMaterial color="#221b33" roughness={0.7} />
           </RoundedBox>
         </group>
-        <group position={[0.26, 0, 0]}>
-          <RoundedBox args={[0.38, 0.11, 0.07]} radius={0.04} smoothness={2} castShadow>
+        <group position={[0.23, 0, 0]}>
+          <RoundedBox args={[0.34, 0.10, 0.06]} radius={0.035} smoothness={2} castShadow>
             <meshStandardMaterial color="#221b33" roughness={0.7} />
           </RoundedBox>
         </group>
       </group>
 
       {/* ==================================================== */}
-      {/* 8. REJILLA DEL ALTAVOZ (6 RANURAS) */}
+      {/* 8. REJILLA DEL ALTAVOZ (RANURAS LIMPIAS EN ESQUINA INFERIOR) */}
       {/* ==================================================== */}
-      <group position={[0.82, -2.05, 0.35]} rotation={[0, 0, -0.45]}>
-        {[-0.32, -0.19, -0.06, 0.07, 0.2, 0.33].map((offsetY, i) => (
+      <group position={[1.05, -2.08, 0.35]} rotation={[0, 0, -0.45]}>
+        {[-0.18, -0.09, 0.0, 0.09, 0.18].map((offsetY, i) => (
           <RoundedBox
             key={i}
-            args={[0.62, 0.05, 0.03]}
-            radius={0.02}
+            args={[0.42, 0.04, 0.025]}
+            radius={0.015}
             smoothness={2}
             position={[0, offsetY, 0]}
           >
