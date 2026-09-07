@@ -6,6 +6,8 @@ import { collection, query, orderBy, limit, onSnapshot, where, getDocs, writeBat
 import { onAuthStateChanged } from 'firebase/auth';
 import toast from 'react-hot-toast';
 
+const ADMIN_EMAILS = ['tadeomunozgarces@gmail.com', 'milenapabraham@gmail.com'];
+
 export function useAdminState() {
   const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [logs, setLogs] = useState<any[]>([]);
@@ -22,9 +24,14 @@ export function useAdminState() {
       }
       try {
         const token = await user.getIdTokenResult();
-        if (isMounted) setAuthorized(token.claims.admin === true);
+        const isAdminClaim = token.claims.admin === true;
+        const userEmail = (user.email || '').toLowerCase().trim();
+        const isAdminEmail = ADMIN_EMAILS.includes(userEmail);
+        if (isMounted) setAuthorized(isAdminClaim || isAdminEmail);
       } catch {
-        if (isMounted) setAuthorized(false);
+        const userEmail = (user.email || '').toLowerCase().trim();
+        const isAdminEmail = ADMIN_EMAILS.includes(userEmail);
+        if (isMounted) setAuthorized(isAdminEmail);
       }
     });
 
