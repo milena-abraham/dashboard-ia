@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
-import { DM_Serif_Display, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
+import { Syne, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import './globals.css';
 
-const serifFont = DM_Serif_Display({
-  weight: ['400'],
+const displayFont = Syne({
+  weight: ['700', '800'],
   subsets: ['latin'],
-  variable: '--font-serif',
+  variable: '--font-display',
   display: 'swap',
 });
 
@@ -23,8 +23,8 @@ const monoFont = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Dashboard IA | Analisis Inteligente de Datos',
-  description: 'Convierte tus datos en decisiones inteligentes con IA. Analisis automatico, graficos y predicciones.',
+  title: 'MIO // Intelligent Data Operations & AutoML',
+  description: 'Transformá planillas complejas en decisiones autónomas de negocio mediante Machine Learning y visualización ejecutiva en 60 segundos.',
 };
 
 export default function RootLayout({
@@ -33,7 +33,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={`${serifFont.variable} ${sansFont.variable} ${monoFont.variable}`}>
+    <html lang="es" className={`${displayFont.variable} ${sansFont.variable} ${monoFont.variable}`}>
       <body className={`${sansFont.className} antialiased bg-[#faf8f5] text-[#111111]`}>
         {children}
         <Toaster

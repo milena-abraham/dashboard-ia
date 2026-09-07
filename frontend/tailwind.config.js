@@ -14,7 +14,7 @@ module.exports = {
         }
       },
       fontFamily: {
-        serif: ['var(--font-serif)', 'Georgia', 'serif'],
+        display: ['var(--font-display)', 'sans-serif'],
         sans: ['var(--font-sans)', 'sans-serif'],
         mono: ['var(--font-mono)', 'monospace'],
       }
