@@ -14,6 +14,14 @@ function getExploratoryChartGuide(c: ChartSchema) {
   const chartType = c.layoutDirectives?.chartType || '';
   const title = (c.metadata?.title || '').toLowerCase();
 
+  if (chartType === 'BoxPlot' || title.includes('dispersión') || title.includes('cuartiles') || title.includes('boxplot')) {
+    return {
+      whatItDoes: 'Compara la dispersión estadística, la mediana y los valores atípicos entre grupos o variables.',
+      whatItShows: 'La línea central de la caja es la mediana (el 50% típico). La caja encierra la mitad central de los datos (IQR). Los bigotes marcan los límites normales y los puntos rojos señalan casos atípicos.',
+      actionHint: 'Compará la altura y posición de las cajas: un grupo con la caja más arriba tiene valores superiores, y una caja más alta indica mayor variabilidad.',
+    };
+  }
+
   if (chartType === 'Scatter' || title.includes('relación') || title.includes('correlación')) {
     return {
       whatItDoes: 'Comprueba si dos variables se mueven juntas o si una influye sobre la otra.',

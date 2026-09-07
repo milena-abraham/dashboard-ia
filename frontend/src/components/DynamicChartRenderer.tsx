@@ -29,6 +29,7 @@ function normalizeChartPayload(raw: any): ChartSchema | null {
     if (chartTypeRaw.includes('line')) chartType = 'LineChart';
     else if (chartTypeRaw.includes('doughnut') || chartTypeRaw.includes('pie') || chartTypeRaw.includes('donut')) chartType = 'Donut';
     else if (chartTypeRaw.includes('scatter')) chartType = 'Scatter';
+    else if (chartTypeRaw.includes('box')) chartType = 'BoxPlot';
 
     const source = labels.map((lbl, idx) => ({
       categoria: String(lbl),
@@ -92,7 +93,7 @@ export default function DynamicChartRenderer({ payload: rawPayload, height = '10
     const dataset = safeDataset;
     
     // Configuración Base
-    const isLegendChart = ['FanChart', 'Scatter'].includes(layoutDirectives.chartType);
+    const isLegendChart = ['FanChart', 'Scatter', 'BoxPlot'].includes(layoutDirectives.chartType);
     const baseOptions: any = {
       dataset: dataset,
       grid: { 
@@ -694,6 +695,110 @@ export default function DynamicChartRenderer({ payload: rawPayload, height = '10
           encode: { itemName: dataset.dimensions[0], value: dataset.dimensions[1] }
         }];
         break;
+
+      case 'BoxPlot': {
+        const sourceRows = dataset?.source || [];
+        const categories = sourceRows.map((r: any) => String(r.categoria ?? ''));
+        const boxData = sourceRows.map((r: any) => r.box || []);
+
+        const outlierPoints: [number, number][] = [];
+        sourceRows.forEach((r: any, catIdx: number) => {
+          if (Array.isArray(r.outliers)) {
+            r.outliers.forEach((val: number) => {
+              outlierPoints.push([catIdx, val]);
+            });
+          }
+        });
+
+        baseOptions.dataset = undefined;
+        baseOptions.grid = { containLabel: true, left: 15, right: 25, top: 30, bottom: 40 };
+        baseOptions.xAxis = {
+          type: 'category',
+          data: categories,
+          axisLabel: {
+            hideOverlap: true,
+            formatter: (v: any) => String(v).length > 15 ? String(v).substring(0, 15) + '...' : v
+          }
+        };
+        baseOptions.yAxis = {
+          type: 'value',
+          scale: true,
+          axisLabel: {
+            formatter: (value: any) => {
+              if (typeof value === 'number') {
+                if (Math.abs(value) >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+                if (Math.abs(value) >= 1000) return (value / 1000).toFixed(1) + 'K';
+                return Number.isInteger(value) ? value.toString() : value.toFixed(1);
+              }
+              return String(value);
+            }
+          }
+        };
+
+        baseOptions.tooltip = {
+          trigger: 'item',
+          formatter: (param: any) => {
+            if (param.seriesType === 'boxplot') {
+              const d = param.data || [];
+              const catName = param.name || categories[param.dataIndex] || '';
+              return `
+                <div style="font-weight:900;text-transform:uppercase;margin-bottom:6px;border-bottom:1px solid #ddd;padding-bottom:2px;">${catName}</div>
+                <div style="display:flex;justify-content:space-between;gap:14px;margin-bottom:2px;"><span>Máximo Normal:</span><b>${d[5] ?? d[4]}</b></div>
+                <div style="display:flex;justify-content:space-between;gap:14px;margin-bottom:2px;"><span>Q3 (75%):</span><b>${d[4] ?? d[3]}</b></div>
+                <div style="display:flex;justify-content:space-between;gap:14px;margin-bottom:2px;color:#815ae1;"><span>Mediana (50%):</span><b>${d[3] ?? d[2]}</b></div>
+                <div style="display:flex;justify-content:space-between;gap:14px;margin-bottom:2px;"><span>Q1 (25%):</span><b>${d[2] ?? d[1]}</b></div>
+                <div style="display:flex;justify-content:space-between;gap:14px;"><span>Mínimo Normal:</span><b>${d[1] ?? d[0]}</b></div>
+              `;
+            }
+            if (param.seriesType === 'scatter') {
+              const pt = param.data || [];
+              const catName = categories[pt[0]] || '';
+              return `
+                <div style="font-weight:900;text-transform:uppercase;margin-bottom:4px;">${catName}</div>
+                <div style="color:#ff6b6b;font-weight:bold;">Valor Atípico: ${typeof pt[1] === 'number' ? pt[1].toFixed(2) : pt[1]}</div>
+              `;
+            }
+            return '';
+          }
+        };
+
+        baseOptions.series = [
+          {
+            name: 'Distribución',
+            type: 'boxplot',
+            data: boxData,
+            itemStyle: {
+              color: '#bdf559',
+              borderColor: '#111111',
+              borderWidth: 2,
+            },
+            emphasis: {
+              itemStyle: {
+                borderColor: '#815ae1',
+                borderWidth: 2.5,
+                shadowBlur: 6,
+                shadowColor: 'rgba(0,0,0,0.15)'
+              }
+            }
+          }
+        ];
+
+        if (outlierPoints.length > 0) {
+          baseOptions.series.push({
+            name: 'Atípicos',
+            type: 'scatter',
+            data: outlierPoints,
+            symbolSize: 7,
+            itemStyle: {
+              color: '#ff6b6b',
+              borderColor: '#111111',
+              borderWidth: 1.5,
+            },
+            z: 15
+          });
+        }
+        break;
+      }
         
       default:
         baseOptions.series = [{
