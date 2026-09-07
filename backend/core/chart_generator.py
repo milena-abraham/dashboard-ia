@@ -304,17 +304,16 @@ def auto_charts(df: pd.DataFrame, profile, target_col: str) -> List[Dict[str, An
         # ─────────────────────────────────────────────────────────────
         # CASO B: Target Numérico
         # ─────────────────────────────────────────────────────────────
-        # B1. Target por Categoría Principal
+        # B1. Target por Categoría Principal (Siempre HorizontalBar para comparar medias de forma clara)
         if chosen_cat and df[chosen_cat].nunique() >= 2:
             agg = df.groupby(chosen_cat)[target_col].mean().reset_index().sort_values(target_col, ascending=False)
             agg[target_col] = agg[target_col].round(2)
-            ctype = "Donut" if len(agg) < 5 else "HorizontalBar"
             top_group = str(agg.iloc[0][chosen_cat])
             top_val = float(agg.iloc[0][target_col])
             add_chart(build_autoviz_payload(
-                df=df, chart_id="num_cat", title=f"{target_col} por {chosen_cat}",
+                df=df, chart_id="num_cat", title=f"Promedio de {target_col} por {chosen_cat}",
                 insight=f"'{top_group}' lidera con un promedio de {top_val:,.2f}.",
-                chart_type=ctype, dimensions=[chosen_cat, target_col], source_df=agg.head(15)
+                chart_type="HorizontalBar", dimensions=[chosen_cat, target_col], source_df=agg.head(15)
             ))
 
             # B2. BOXPLOT: Target por Categoría Principal

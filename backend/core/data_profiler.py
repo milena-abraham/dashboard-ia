@@ -59,6 +59,15 @@ def _infer_column_type(series: pd.Series, n_unique: Optional[int] = None) -> str
     # Identificadores: columnas con tokens típicos de ID (palabras separadas por _ o espacios)
     import re
     tokens = set(re.split(r"[\s_]+", name_lower))
+
+    # Códigos geográficos, postales, teléfonos o documentos que no deben ser tratados como métricas numéricas
+    postal_geo_keywords = {
+        "postal", "zip", "zipcode", "postcode", "cp", "cod_postal", "codigo_postal",
+        "phone", "telefono", "teléfono", "celular", "fax", "dni", "ssn", "cuit", "cuil"
+    }
+    if any(k in name_lower for k in postal_geo_keywords) or bool(tokens & postal_geo_keywords):
+        return COLUMN_TYPE_CATEGORICAL
+
     id_keywords = {"id", "cod", "codigo", "código", "code", "key", "uuid", "numero", "número"}
     has_id_keyword = bool(tokens & id_keywords)
 
