@@ -68,7 +68,7 @@ export function useDashboardState() {
         const stored = localStorage.getItem(`mio_result_${projectId}`);
         if (stored) {
           setResult(JSON.parse(stored));
-          toast.success('📂 Proyecto restaurado al instante');
+          toast.success('Proyecto restaurado al instante');
           return;
         }
 
@@ -239,7 +239,7 @@ export function useDashboardState() {
               }
             }
             logSystemEvent('project_saved', { uid: user.uid, filename: data.filename, auto: true });
-            toast.success('💾 Guardado automáticamente en Mis Proyectos');
+            toast.success('Guardado automáticamente en Mis Proyectos');
           } catch (e) {
             console.error('Auto-save error:', e);
           }
@@ -252,6 +252,20 @@ export function useDashboardState() {
           uid: user?.uid,
         });
         toast.error(err.message || `Error al analizar ${file.name}`);
+
+        const errMsg = String(err?.message || '').toLowerCase();
+        const isNetworkOrServerError =
+          errMsg.includes('servidor') ||
+          errMsg.includes('conexión') ||
+          errMsg.includes('conexion') ||
+          errMsg.includes('failed to fetch') ||
+          errMsg.includes('network') ||
+          errMsg.includes('503') ||
+          errMsg.includes('500');
+
+        if (isNetworkOrServerError) {
+          break;
+        }
       } finally {
         setLoading(false);
       }
@@ -415,13 +429,13 @@ export function useDashboardState() {
       }
 
       logSystemEvent('project_saved', { uid: user.uid, filename: result.filename });
-      toast.success('✅ Proyecto guardado en Mis Proyectos');
+      toast.success('Proyecto guardado en Mis Proyectos');
     } catch (e: any) {
       console.error('Firestore save error:', e);
       if (e.message?.includes('Timeout')) {
-        toast.error('⏱ Tiempo de espera agotado. Verificá los permisos de Firestore.');
+        toast.error('Tiempo de espera agotado. Verificá los permisos de Firestore.');
       } else if (e.code === 'permission-denied') {
-        toast.error('🔒 Sin permiso de escritura en Firestore. Actualizá las Rules en Firebase Console.');
+        toast.error('Sin permiso de escritura en Firestore. Actualizá las Rules en Firebase Console.');
       } else {
         toast.error(`Error: ${e.message || 'No se pudo guardar el proyecto.'}`);
       }

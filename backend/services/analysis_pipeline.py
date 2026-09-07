@@ -82,6 +82,7 @@ def format_number(n, prefix=""):
 def detect_csv_format(file_path: str):
     enc = 'utf-8'
     sep = ','
+    skiprows = 0
     try:
         with open(file_path, 'rb') as f:
             raw = f.read(100000)
@@ -89,9 +90,8 @@ def detect_csv_format(file_path: str):
         if res and res['encoding']:
             enc = res['encoding']
 
-        # Fast separator detection for C-engine optimization
         sample_text = raw.decode(enc, errors='ignore')
-        lines = [line for line in sample_text.splitlines()[:10] if line.strip()]
+        lines = [line for line in sample_text.splitlines()[:15] if line.strip()]
         if lines:
             header = lines[0]
             counts = {
@@ -101,17 +101,27 @@ def detect_csv_format(file_path: str):
                 '|': header.count('|')
             }
             best_sep = max(counts, key=counts.get)
-            if counts[best_sep] > 0:
-                sep = best_sep
-            else:
+            sep = best_sep if counts[best_sep] > 0 else ','
+
+            # Detección inteligente de bloques resumen / multi-headers (común en datasets de Kaggle)
+            if len(lines) >= 4:
                 try:
-                    dialect = csv.Sniffer().sniff(sample_text[:4096])
-                    sep = dialect.delimiter
+                    reader = list(csv.reader(lines[:10], delimiter=sep))
+                    lengths = [len(r) for r in reader if len(r) > 1]
+                    if len(lengths) >= 4:
+                        from collections import Counter
+                        counts_len = Counter(lengths[1:])
+                        dominant_len, dominant_count = counts_len.most_common(1)[0]
+                        if lengths[0] != dominant_len and dominant_count >= 3:
+                            for idx, r_len in enumerate(lengths):
+                                if r_len == dominant_len:
+                                    skiprows = idx
+                                    break
                 except Exception:
-                    sep = ','
+                    pass
     except Exception as e:
-        logger.warning(f"Error detectando encoding/delimitador, usando utf-8 y ',': {e}")
-    return enc, sep
+        logger.warning(f"Error detectando encoding/delimitador, usando defaults: {e}")
+    return enc, sep, skiprows
 
 def _parse_json_intelligent(file_path: str):
     try:
@@ -132,15 +142,15 @@ def _parse_json_intelligent(file_path: str):
         logger.error(f"Error parsing JSON: {e}")
         return pd.DataFrame()
 
-def _analyze_streaming_csv(file_path: str, filename: str, target_col: Optional[str], enc: str, sep: str):
+def _analyze_streaming_csv(file_path: str, filename: str, target_col: Optional[str], enc: str, sep: str, skiprows: int = 0):
     logger.info(f"[Modo Streaming] Archivo grande detectado ({filename}). Activando procesamiento en bloques.")
     t_start = time.time()
     
     # 1. Preview chunk para inferir estructura y tipos
     try:
-        df_preview = pd.read_csv(file_path, encoding=enc, sep=sep, nrows=2500, engine='c', on_bad_lines='skip')
+        df_preview = pd.read_csv(file_path, encoding=enc, sep=sep, skiprows=skiprows, nrows=2500, engine='c', on_bad_lines='skip')
     except Exception:
-        df_preview = pd.read_csv(file_path, encoding=enc, sep=None, nrows=2500, engine='python')
+        df_preview = pd.read_csv(file_path, encoding=enc, sep=None, skiprows=skiprows, nrows=2500, engine='python')
         
     df_clean_preview, preview_report = clean_dataframe(df_preview)
     preview_profile = profile_dataframe(df_clean_preview, duplicate_rows=0)
@@ -184,7 +194,7 @@ def _analyze_streaming_csv(file_path: str, filename: str, target_col: Optional[s
     samples = []
     CHUNK_SIZE = 40000
     
-    for chunk in pd.read_csv(file_path, encoding=enc, sep=sep, chunksize=CHUNK_SIZE, engine='c', on_bad_lines='skip'):
+    for chunk in pd.read_csv(file_path, encoding=enc, sep=sep, skiprows=skiprows, chunksize=CHUNK_SIZE, engine='c', on_bad_lines='skip'):
         # Downcast numérico en el chunk para mínimo consumo de RAM
         for c in chunk.columns:
             if pd.api.types.is_float_dtype(chunk[c]):
@@ -371,18 +381,21 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
         if fname_lower.endswith(".json"):
             df_raw = _parse_json_intelligent(file_path)
         elif fname_lower.endswith(".csv") or not fname_lower.endswith((".xlsx", ".xls")):
-            enc, sep = detect_csv_format(file_path)
+            enc, sep, skiprows = detect_csv_format(file_path)
             # Archivos grandes (>15MB) se procesan automáticamente en modo streaming por bloques
             if os.path.exists(file_path) and os.path.getsize(file_path) > 15 * 1024 * 1024:
-                return _analyze_streaming_csv(file_path, filename, target_col, enc, sep)
+                return _analyze_streaming_csv(file_path, filename, target_col, enc, sep, skiprows=skiprows)
             try:
-                df_raw = pd.read_csv(file_path, encoding=enc, sep=sep, engine='c', on_bad_lines='skip')
+                df_raw = pd.read_csv(file_path, encoding=enc, sep=sep, skiprows=skiprows, engine='c', on_bad_lines='skip')
             except Exception as e:
                 logger.warning(f"Fallo lectura rapida C-engine con sep='{sep}': {e}. Probando engine='python'")
                 try:
-                    df_raw = pd.read_csv(file_path, encoding=enc, sep=None, engine='python')
+                    df_raw = pd.read_csv(file_path, encoding=enc, sep=None, skiprows=skiprows, engine='python', on_bad_lines='skip')
                 except Exception:
-                    df_raw = pd.read_csv(file_path, encoding="latin1", sep=None, engine="python")
+                    try:
+                        df_raw = pd.read_csv(file_path, encoding="latin1", sep=None, skiprows=skiprows, engine="python", on_bad_lines='skip')
+                    except Exception:
+                        df_raw = pd.read_csv(file_path, encoding=enc, sep=sep, engine='c', on_bad_lines='skip')
         else:
             df_raw = pd.read_excel(file_path)
 
