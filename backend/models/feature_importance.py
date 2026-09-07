@@ -69,11 +69,12 @@ def run_feature_importance(
         X = X[available]
 
         model = lgb.LGBMRegressor(
-            n_estimators=100,
-            learning_rate=0.05,
+            n_estimators=40,
+            learning_rate=0.08,
             max_depth=4,
             random_state=42,
             verbose=-1,
+            n_jobs=1,
         )
         model.fit(X, y)
 
@@ -96,7 +97,7 @@ def run_feature_importance(
         if SHAP_AVAILABLE:
             try:
                 explainer = shap.TreeExplainer(model)
-                X_sample = X.sample(min(2000, len(X)), random_state=42)
+                X_sample = X.sample(min(250, len(X)), random_state=42)
                 shap_values = explainer.shap_values(X_sample)
                 mean_shap = np.abs(shap_values).mean(axis=0)
                 

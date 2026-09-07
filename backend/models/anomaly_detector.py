@@ -48,9 +48,11 @@ def run_anomaly_detection(
         dynamic_contamination = max(0.001, min(0.015, target_anomalies / n_samples))
         
         iso = IsolationForest(
-            n_estimators=100,
+            n_estimators=40,
+            max_samples=min(256, n_samples),
             contamination=dynamic_contamination,
             random_state=42,
+            n_jobs=1,
         )
         labels = iso.fit_predict(X_scaled)
 

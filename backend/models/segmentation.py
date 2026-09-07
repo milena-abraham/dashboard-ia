@@ -29,14 +29,14 @@ def _find_optimal_k(X_scaled: np.ndarray, max_k: int = 5) -> int:
     if len(X_scaled) < max_k * 2:
         return min(3, max(2, len(X_scaled) // 2))
 
-    X_sample = X_scaled[np.random.choice(X_scaled.shape[0], min(5000, len(X_scaled)), replace=False)]
+    X_sample = X_scaled[np.random.choice(X_scaled.shape[0], min(1000, len(X_scaled)), replace=False)]
 
     best_k, best_score = 3, -1
     for k in range(2, min(max_k + 1, len(X_sample))):
         try:
             km = KMeans(n_clusters=k, random_state=42, n_init="auto")
             labels = km.fit_predict(X_sample)
-            score = silhouette_score(X_sample, labels, sample_size=min(2000, len(X_sample)), random_state=42)
+            score = silhouette_score(X_sample, labels, sample_size=min(300, len(X_sample)), random_state=42)
             if score > best_score:
                 best_score = score
                 best_k = k
