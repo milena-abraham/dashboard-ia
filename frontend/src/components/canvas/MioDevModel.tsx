@@ -113,35 +113,10 @@ export function MioDevModel() {
         />
       </RoundedBox>
 
-      {/* Tornillos de precisión en las 4 esquinas del chasis */}
-      {[
-        [-1.48, 2.32],
-        [1.48, 2.32],
-        [-1.48, -2.32],
-        [1.48, -2.32],
-      ].map(([sx, sy], idx) => (
-        <group key={idx} position={[sx, sy, 0.342]}>
-          <mesh>
-            <cylinderGeometry args={[0.045, 0.045, 0.015, 12]} />
-            <meshStandardMaterial color="#2d2248" roughness={0.4} metalness={0.8} />
-          </mesh>
-          <mesh position={[0, 0, 0.009]}>
-            <planeGeometry args={[0.05, 0.01]} />
-            <meshBasicMaterial color="#1a122e" />
-          </mesh>
-        </group>
-      ))}
-
       {/* Ranura decorativa horizontal superior de ensamble */}
       <mesh position={[0, 2.32, 0.345]}>
-        <planeGeometry args={[2.7, 0.018]} />
-        <meshStandardMaterial color="#5530b8" roughness={0.7} />
-      </mesh>
-
-      {/* Grabado serigrafiado técnico inferior */}
-      <mesh position={[0, -2.42, 0.342]}>
-        <planeGeometry args={[1.6, 0.04]} />
-        <meshStandardMaterial color="#663dc9" roughness={0.8} />
+        <planeGeometry args={[3.2, 0.02]} />
+        <meshStandardMaterial color="#5e35c7" roughness={0.6} />
       </mesh>
 
       {/* ==================================================== */}

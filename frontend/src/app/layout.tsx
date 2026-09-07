@@ -1,30 +1,13 @@
 import type { Metadata } from 'next';
-import { Syne, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import './globals.css';
 
-const displayFont = Syne({
-  weight: ['700', '800'],
-  subsets: ['latin'],
-  variable: '--font-display',
-  display: 'swap',
-});
-
-const sansFont = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  variable: '--font-sans',
-  display: 'swap',
-});
-
-const monoFont = JetBrains_Mono({
-  subsets: ['latin'],
-  variable: '--font-mono',
-  display: 'swap',
-});
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'MIO // Intelligent Data Operations & AutoML',
-  description: 'Transformá planillas complejas en decisiones autónomas de negocio mediante Machine Learning y visualización ejecutiva en 60 segundos.',
+  description: 'Transformá planillas de datos en decisiones inteligentes con IA. Análisis automático, gráficos y predicciones en 60 segundos.',
 };
 
 export default function RootLayout({
@@ -33,8 +16,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={`${displayFont.variable} ${sansFont.variable} ${monoFont.variable}`}>
-      <body className={`${sansFont.className} antialiased bg-[#faf8f5] text-[#111111]`}>
+    <html lang="es">
+      <body className={inter.className}>
         {children}
         <Toaster
           position="top-right"
