@@ -11,6 +11,7 @@ import { logSystemEvent } from '@/lib/logger';
 import { analyzeFile, generateNarrative, exportPDF, exportPPTX } from '@/lib/api';
 import { AnalysisResponseSchema, ChartSchema } from '@/types/analysis';
 import { Message as ChatMessage } from '@/components/DataChatbot';
+import { normalizeChartPayload } from '@/components/DynamicChartRenderer';
 
 const ADMIN_EMAILS = ['tadeomunozgarces@gmail.com', 'milenapabraham@gmail.com'];
 
@@ -449,8 +450,9 @@ export function useDashboardState() {
       toast.error('Asistente IA: No pude identificar ese gráfico.');
       return;
     }
-    setChartOverrides((prev) => ({ ...prev, [index]: chartData }));
-    toast.success(`✏️ Gráfico ${index + 1} actualizado por el Asistente IA`);
+    const normalized = normalizeChartPayload(chartData) || chartData;
+    setChartOverrides((prev) => ({ ...prev, [index]: normalized }));
+    toast.success(`Gráfico ${index + 1} actualizado por el Asistente IA`);
   };
 
   const handleLoadSample = (sampleFile: File, sampleTarget: string) => {

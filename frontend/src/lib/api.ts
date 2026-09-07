@@ -1,5 +1,6 @@
-import { AnalysisResponseSchema, NarrativeSchema } from '@/types/analysis';
+import { AnalysisResponseSchema, NarrativeSchema, ChartSchema } from '@/types/analysis';
 import { apiClient } from './apiClient';
+import { normalizeChartPayload } from '@/components/DynamicChartRenderer';
 
 function normalizeAnalysisResponse(raw: any): AnalysisResponseSchema {
   if (!raw) return raw;
@@ -21,23 +22,23 @@ function normalizeAnalysisResponse(raw: any): AnalysisResponseSchema {
     },
     cleaningReport: data.cleaningReport || data.cleaning_report || { actions: [], duplicatesRemoved: 0, nullsImputed: {} },
     kpis: data.kpis || {},
-    charts: data.charts || [],
+    charts: (data.charts || []).map((c: any) => normalizeChartPayload(c)).filter(Boolean) as ChartSchema[],
     forecast: {
-      chartData: data.forecast?.chartData || data.forecast?.chart_data || undefined,
+      chartData: (normalizeChartPayload(data.forecast?.chartData || data.forecast?.chart_data) || undefined) as ChartSchema | undefined,
       metrics: data.forecast?.metrics || {},
     },
     segmentation: {
-      scatterData: data.segmentation?.scatterData || data.segmentation?.scatter_data || undefined,
-      radarData: data.segmentation?.radarData || data.segmentation?.radar_data || undefined,
+      scatterData: (normalizeChartPayload(data.segmentation?.scatterData || data.segmentation?.scatter_data) || undefined) as ChartSchema | undefined,
+      radarData: (normalizeChartPayload(data.segmentation?.radarData || data.segmentation?.radar_data) || undefined) as ChartSchema | undefined,
       metrics: data.segmentation?.metrics || {},
     },
     anomalies: {
-      chartData: data.anomalies?.chartData || data.anomalies?.chart_data || undefined,
+      chartData: (normalizeChartPayload(data.anomalies?.chartData || data.anomalies?.chart_data) || undefined) as ChartSchema | undefined,
       metrics: data.anomalies?.metrics || {},
     },
     featureImportance: {
-      chartImportance: data.featureImportance?.chartImportance || data.feature_importance?.chart_importance || undefined,
-      chartShap: data.featureImportance?.chartShap || data.feature_importance?.chart_shap || undefined,
+      chartImportance: (normalizeChartPayload(data.featureImportance?.chartImportance || data.feature_importance?.chart_importance) || undefined) as ChartSchema | undefined,
+      chartShap: (normalizeChartPayload(data.featureImportance?.chartShap || data.feature_importance?.chart_shap) || undefined) as ChartSchema | undefined,
       metrics: data.featureImportance?.metrics || data.feature_importance?.metrics || {},
     },
     narrative: data.narrative || { text: '', source: '' },

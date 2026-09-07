@@ -11,8 +11,8 @@ interface ExploratoryChartsProps {
 }
 
 function getExploratoryChartGuide(c: ChartSchema) {
-  const chartType = c.layoutDirectives?.chartType || '';
-  const title = (c.metadata?.title || '').toLowerCase();
+  const chartType = c.layoutDirectives?.chartType || (c as any).layout_directives?.chart_type || '';
+  const title = (c.metadata?.title || (c as any).title || '').toLowerCase();
 
   if (chartType === 'BoxPlot' || title.includes('dispersión') || title.includes('cuartiles') || title.includes('boxplot')) {
     return {
@@ -106,11 +106,11 @@ export const ExploratoryCharts: React.FC<ExploratoryChartsProps> = ({
           >
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-lg font-black tracking-tight text-gray-900 leading-tight uppercase">
-                {c.metadata?.title}
+                {c.metadata?.title || (c as any).title || `Grafico ${i + 1}`}
               </h4>
             </div>
             <p className="text-sm text-gray-500 mb-6 flex-1 font-medium">
-              {c.metadata?.insightSubtitle}
+              {c.metadata?.insightSubtitle || (c as any).metadata?.insight_subtitle || (c as any).description || ''}
             </p>
             <div className="mt-auto relative w-full flex-1 h-[420px]">
               <DynamicChartRenderer key={`${filename}-${i}`} payload={c} height={420} />
