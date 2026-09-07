@@ -15,7 +15,11 @@ import {
   Zap,
   Github,
   Linkedin,
-  Layers
+  Layers,
+  Lock,
+  CheckCircle2,
+  MessageSquare,
+  Cpu
 } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
@@ -100,67 +104,235 @@ function HeroMockup() {
   );
 }
 
-// BentoGrid sin bugs de scroll, fiel al estilo neo-brutalista de MIO
+// BentoGrid con arquitectura técnica completa y contenido enriquecido
 function BentoGrid() {
+  const [bentoTab, setBentoTab] = useState<'forecast' | 'cluster' | 'anomalies'>('forecast');
+
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
-      <div className="text-center mb-16">
-        <h2 className="text-4xl md:text-5xl font-black text-gray-950 tracking-tighter mb-4">
-          Una suite analítica en un solo click.
+      {/* Header de Sección */}
+      <div className="text-center max-w-3xl mx-auto mb-16 sm:mb-20">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border-2 border-[#111] shadow-[3px_3px_0px_#111] mb-5 font-mono text-[11px] font-black uppercase tracking-widest text-mio-violet">
+          <Cpu className="w-3.5 h-3.5 text-mio-violet" />
+          <span>02 / ARQUITECTURA DE CÓMPUTO</span>
+        </div>
+
+        <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-gray-950 tracking-tight leading-[1.05] mb-4">
+          Poder corporativo.<br />
+          <span className="text-mio-violet">Diseño tangible.</span>
         </h2>
-        <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto font-medium">
-          Robusto como una herramienta corporativa, simple como un chat.
+
+        <p className="text-base sm:text-lg text-gray-600 font-medium leading-relaxed">
+          Eliminamos la fricción entre la recolección de datos y la toma de decisiones. Cuatro motores autónomos ensamblados en una sola plataforma.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Card 1: Large Feature */}
-        <div className="md:col-span-2 bg-white border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between hover:translate-x-1 hover:translate-y-1 hover:shadow-[4px_4px_0px_#111] transition-all">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-mio-violet text-white flex items-center justify-center border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6">
-            <BrainCircuit className="w-6 h-6 sm:w-8 sm:h-8" />
-          </div>
+      {/* Grid de 4 Celdas */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+        
+        {/* CELDA 1 (2 Columnas): Visualizador Interactivo AutoML */}
+        <div className="lg:col-span-2 bg-white border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[6px_6px_0px_#111] transition-all">
           <div>
-            <h3 className="text-xl sm:text-2xl font-black text-gray-900 mb-2 tracking-tight">Motores Predictivos (AutoML)</h3>
-            <p className="text-sm sm:text-base text-gray-600 font-medium leading-relaxed max-w-md">
-              MIO entrena modelos de Forecasting, Detección de Anomalías y Segmentación K-Means sin que escribas una sola línea de código Python.
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-[#111] pb-4 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-mio-violet text-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center">
+                  <BrainCircuit className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-black text-gray-950 tracking-tight">Motor AutoML Continuo</h3>
+                  <span className="font-mono text-[11px] font-bold text-gray-500">SELECCIÓN Y ENTRENAMIENTO DINÁMICO</span>
+                </div>
+              </div>
+
+              {/* Selector de modo interactivo */}
+              <div className="flex bg-[#faf8f5] border-2 border-[#111] p-1 gap-1">
+                {(['forecast', 'cluster', 'anomalies'] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setBentoTab(m)}
+                    className={`px-3 py-1 font-mono text-[10px] font-bold uppercase transition-all ${
+                      bentoTab === m
+                        ? 'bg-mio-lime text-black border border-[#111] shadow-[1px_1px_0px_#111]'
+                        : 'text-gray-500 hover:text-gray-900'
+                    }`}
+                  >
+                    {m === 'forecast' ? 'Forecasting' : m === 'cluster' ? 'K-Means' : 'Anomalías'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Pantalla interactiva interna */}
+            <div className="bg-[#0b0914] border-2 border-[#111] p-4 text-white font-mono rounded-none">
+              <div className="flex items-center justify-between text-[11px] text-gray-400 border-b border-gray-800 pb-2 mb-3">
+                <span className="text-mio-lime font-bold">ALGORITMO EN EJECUCIÓN:</span>
+                <span className="text-white font-bold">
+                  {bentoTab === 'forecast' ? 'PROPHET + AUTO-ARIMA (Q4)' : bentoTab === 'cluster' ? 'K-MEANS (k=3 OPTIMIZADO)' : 'ISOLATION FOREST'}
+                </span>
+              </div>
+
+              {/* Visualización según pestaña */}
+              {bentoTab === 'forecast' && (
+                <div className="h-36 flex items-end justify-between gap-2 pt-2 px-1">
+                  {[28, 42, 36, 58, 52, 70, 65, 88, 80, 94, 98, 100].map((val, idx) => (
+                    <div key={idx} className="flex-1 flex flex-col items-center">
+                      <div
+                        className="w-full bg-gradient-to-t from-mio-violet to-mio-lime"
+                        style={{ height: `${val * 1.2}px` }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {bentoTab === 'cluster' && (
+                <div className="h-36 flex items-center justify-around gap-4 px-4">
+                  <div className="flex flex-col items-center gap-1.5 flex-1">
+                    <span className="text-xs text-mio-lime font-bold">62%</span>
+                    <div className="w-full h-24 bg-mio-lime border border-[#111]" />
+                    <span className="text-[10px] text-gray-400 font-bold">VIP</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1.5 flex-1">
+                    <span className="text-xs text-white font-bold">26%</span>
+                    <div className="w-full h-16 bg-mio-violet border border-[#111]" />
+                    <span className="text-[10px] text-gray-400 font-bold">Medio</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1.5 flex-1">
+                    <span className="text-xs text-gray-400 font-bold">12%</span>
+                    <div className="w-full h-8 bg-gray-700 border border-[#111]" />
+                    <span className="text-[10px] text-gray-400 font-bold">Casual</span>
+                  </div>
+                </div>
+              )}
+
+              {bentoTab === 'anomalies' && (
+                <div className="h-36 relative border border-dashed border-gray-800 p-2 overflow-hidden flex items-center justify-center">
+                  <div className="absolute top-4 left-6 text-red-400 text-xs font-bold animate-pulse">
+                    ● OUTLIER DETECTADO (Fila 842: Importe atípico)
+                  </div>
+                  <div className="w-full h-full flex items-center justify-around opacity-75">
+                    {[40, 42, 39, 41, 120, 40, 43, 38, 41].map((val, idx) => (
+                      <div
+                        key={idx}
+                        className={`w-3 ${val > 100 ? 'bg-red-500 animate-bounce' : 'bg-mio-lime'}`}
+                        style={{ height: `${Math.min(val, 110)}px` }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <p className="text-sm text-gray-600 font-medium mt-5 leading-relaxed">
+            MIO compara iterativamente múltiples familias de modelos estadísticos y escoge el que maximiza la métrica R² para tus datos particulares.
+          </p>
+        </div>
+
+        {/* CELDA 2 (1 Columna): Ingesta Universal de Ultra-Velocidad */}
+        <div className="bg-mio-lime border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[6px_6px_0px_#111] transition-all">
+          <div>
+            <div className="w-12 h-12 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center mb-6">
+              <Zap className="w-6 h-6 text-gray-950" />
+            </div>
+            <span className="font-mono text-[10px] font-black text-gray-950 uppercase tracking-widest block mb-1">
+              LATENCIA MÍNIMA
+            </span>
+            <h3 className="text-2xl sm:text-3xl font-black text-gray-950 mb-3 leading-tight tracking-tight">
+              De archivo bruto a dashboard en 60s
+            </h3>
+            <p className="text-sm text-gray-900 font-medium leading-relaxed mb-6">
+              Carga tus planillas .CSV o .XLSX sin limpiar. El pipeline parsea formatos de fecha rotos, imputa vacíos y genera visualizaciones autónomas.
             </p>
           </div>
-        </div>
 
-        {/* Card 2: Small Feature */}
-        <div className="bg-mio-lime border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between hover:translate-x-1 hover:translate-y-1 hover:shadow-[4px_4px_0px_#111] transition-all">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white text-gray-900 flex items-center justify-center border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6">
-            <Zap className="w-6 h-6 sm:w-8 sm:h-8" />
-          </div>
-          <div>
-            <h3 className="text-xl sm:text-2xl font-black text-gray-900 mb-2 tracking-tight">Velocidad</h3>
-            <p className="text-sm sm:text-base text-gray-800 font-bold">Limpieza y dashboard en menos de 60s.</p>
-          </div>
-        </div>
-
-        {/* Card 3: Small Feature */}
-        <div className="bg-white border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between hover:translate-x-1 hover:translate-y-1 hover:shadow-[4px_4px_0px_#111] transition-all">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#ff6b6b] text-white flex items-center justify-center border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6">
-            <ShieldCheck className="w-6 h-6 sm:w-8 sm:h-8" />
-          </div>
-          <div>
-            <h3 className="text-xl sm:text-2xl font-black text-gray-900 mb-2 tracking-tight">Privacidad</h3>
-            <p className="text-sm sm:text-base text-gray-600 font-medium">Tus CSVs crudos nunca se guardan.</p>
+          <div className="bg-white border-2 border-[#111] p-3 font-mono text-xs space-y-1.5 shadow-[2px_2px_0px_#111]">
+            <div className="flex justify-between text-gray-600 text-[11px]">
+              <span>Ingesta & Limpieza:</span>
+              <span className="font-bold text-gray-950">0.42s</span>
+            </div>
+            <div className="flex justify-between text-gray-600 text-[11px]">
+              <span>Entrenamiento ML:</span>
+              <span className="font-bold text-gray-950">1.84s</span>
+            </div>
+            <div className="flex justify-between border-t-2 border-gray-200 pt-1 text-gray-950 font-bold text-xs">
+              <span>Total Pipeline:</span>
+              <span className="text-mio-violet font-black">Listo</span>
+            </div>
           </div>
         </div>
 
-        {/* Card 4: Large Feature */}
-        <div className="md:col-span-2 bg-[#0b0914] text-white border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between hover:translate-x-1 hover:translate-y-1 hover:shadow-[4px_4px_0px_#111] transition-all">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-mio-violet flex items-center justify-center border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6">
-            <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-          </div>
+        {/* CELDA 3 (1 Columna): Arquitectura Privada Zero-Knowledge */}
+        <div className="bg-white border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[6px_6px_0px_#111] transition-all">
           <div>
-            <h3 className="text-xl sm:text-2xl font-black text-white mb-2 tracking-tight">IA Generativa Integrada</h3>
-            <p className="text-sm sm:text-base text-gray-300 font-medium leading-relaxed max-w-md">
-              Chateá con tus datos. Nuestra IA analiza las métricas, redacta un informe ejecutivo y redibuja los gráficos si se lo pedís.
+            <div className="w-12 h-12 bg-[#ff5f56] text-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center mb-6">
+              <Lock className="w-6 h-6" />
+            </div>
+            <span className="font-mono text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1">
+              SEGURIDAD CORPORATIVA
+            </span>
+            <h3 className="text-2xl sm:text-3xl font-black text-gray-950 mb-3 leading-tight tracking-tight">
+              Tus datos crudos nunca se guardan
+            </h3>
+            <p className="text-sm text-gray-600 font-medium leading-relaxed">
+              El análisis se procesa de forma transitoria en memoria volátil protegida. Las planillas de tus clientes no se usan para entrenar modelos públicos.
             </p>
           </div>
+
+          <div className="border-2 border-[#111] bg-[#faf8f5] p-3 mt-6 flex items-center gap-3 shadow-[2px_2px_0px_#111]">
+            <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+            <span className="font-mono text-[11px] font-bold text-gray-800">
+              Cifrado en tránsito y en reposo
+            </span>
+          </div>
         </div>
+
+        {/* CELDA 4 (2 Columnas): Copiloto IA Conversacional */}
+        <div className="lg:col-span-2 bg-[#0b0914] text-white border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[6px_6px_0px_#111] transition-all">
+          <div>
+            <div className="flex items-center justify-between border-b border-gray-800 pb-4 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-mio-violet text-white border border-mio-lime/40 flex items-center justify-center shadow-[2px_2px_0px_rgba(0,0,0,0.5)]">
+                  <MessageSquare className="w-5 h-5 text-mio-lime" />
+                </div>
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">Copiloto Ejecutivo MIO</h3>
+                  <span className="font-mono text-[11px] font-bold text-gray-400">CHATEÁ DIRECTAMENTE CON TUS TABLAS</span>
+                </div>
+              </div>
+              <span className="font-mono text-[10px] bg-mio-lime/20 text-mio-lime border border-mio-lime/40 px-2.5 py-1 font-bold uppercase tracking-wider">
+                LLM AGENT READY
+              </span>
+            </div>
+
+            {/* Simulación de chat interactivo */}
+            <div className="space-y-3 font-mono text-xs">
+              {/* Mensaje Usuario */}
+              <div className="bg-gray-900 border border-gray-800 p-3 text-gray-200 flex items-start gap-2.5">
+                <span className="text-mio-lime font-bold">TÚ:</span>
+                <span>¿Cuáles fueron los 2 productos con menor margen en el último trimestre?</span>
+              </div>
+              {/* Mensaje IA */}
+              <div className="bg-mio-violet/20 border border-mio-violet/50 p-3.5 text-white flex items-start gap-2.5">
+                <span className="text-mio-lime font-bold">MIO:</span>
+                <div className="space-y-1">
+                  <p>
+                    Los productos con menor margen fueron <strong className="text-white">SKU-402 (11.2%)</strong> y <strong className="text-white">SKU-119 (14.8%)</strong> debido a un alza imprevista del 18% en costos logísticos.
+                  </p>
+                  <p className="text-[11px] text-mio-lime">
+                    ✦ Generé una simulación de ajuste de precio sugerida (+6%) para recuperar margen sin perder demanda.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-sm text-gray-400 font-medium mt-6 leading-relaxed">
+            No pierdas horas creando fórmulas complejas: hacé preguntas en lenguaje natural y obtené respuestas de nivel consultor de datos en el acto.
+          </p>
+        </div>
+
       </div>
     </section>
   );
