@@ -23,34 +23,40 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 const MioDevCanvas = dynamic(() => import('@/components/canvas/MioDevCanvas'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-[520px] flex items-center justify-center font-mono text-xs font-bold text-gray-400 bg-gray-50 border-4 border-[#111]">
-      CARGANDO MIO-DEV 3D...
+    <div className="w-[360px] lg:w-[480px] h-[620px] lg:h-[780px] flex flex-col items-center justify-center font-mono text-xs font-bold text-gray-400 bg-white/60 border-4 border-[#111] shadow-[6px_6px_0px_#111]">
+      <span className="animate-pulse text-mio-violet mb-2">● HARDWARE BOOTING</span>
+      <span className="text-[10px] text-gray-400">CARGANDO MIO-DEV 3D...</span>
     </div>
   )
 });
 
+// Físicas de resorte de alta gama (Spring Physics basadas en masa, rigidez e inercia real)
+const springHeavy = { type: 'spring' as const, mass: 1.2, stiffness: 75, damping: 18 };
+const springMedium = { type: 'spring' as const, mass: 0.8, stiffness: 105, damping: 15 };
+const springSnappy = { type: 'spring' as const, mass: 0.35, stiffness: 280, damping: 16 };
+const springGentle = { type: 'spring' as const, mass: 1.0, stiffness: 85, damping: 16 };
 
 function FloatingIcons() {
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden hidden md:flex items-center justify-center z-[-1]">
       <motion.div 
-        animate={{ y: [-15, 15, -15], rotate: [-5, 5, -5] }}
-        transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
-        className="absolute top-[20%] left-[10%] bg-white p-4 border-4 border-[#111] shadow-[6px_6px_0px_#111] rounded-none"
+        animate={{ y: [-18, 18, -18], rotate: [-6, 6, -6] }}
+        transition={{ repeat: Infinity, duration: 7, ease: "easeInOut" }}
+        className="absolute top-[20%] left-[8%] bg-white p-4 border-4 border-[#111] shadow-[6px_6px_0px_#111] rounded-none"
       >
         <BarChart3 className="w-10 h-10 text-mio-violet" />
       </motion.div>
       <motion.div 
-        animate={{ y: [15, -15, 15], rotate: [5, -5, 5] }}
-        transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
-        className="absolute top-[30%] right-[10%] bg-mio-lime p-4 border-4 border-[#111] shadow-[6px_6px_0px_#111] rounded-none"
+        animate={{ y: [18, -18, 18], rotate: [6, -6, 6] }}
+        transition={{ repeat: Infinity, duration: 9, ease: "easeInOut" }}
+        className="absolute top-[28%] right-[8%] bg-mio-lime p-4 border-4 border-[#111] shadow-[6px_6px_0px_#111] rounded-none"
       >
         <TrendingUp className="w-10 h-10 text-gray-900" />
       </motion.div>
       <motion.div 
-        animate={{ y: [-10, 10, -10], rotate: [-10, 10, -10] }}
-        transition={{ repeat: Infinity, duration: 7, ease: "easeInOut" }}
-        className="absolute bottom-[40%] left-[20%] bg-white p-4 border-4 border-[#111] shadow-[6px_6px_0px_#111] rounded-none"
+        animate={{ y: [-12, 12, -12], rotate: [-8, 8, -8] }}
+        transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
+        className="absolute bottom-[35%] left-[16%] bg-white p-4 border-4 border-[#111] shadow-[6px_6px_0px_#111] rounded-none"
       >
         <FileSpreadsheet className="w-10 h-10 text-blue-500" />
       </motion.div>
@@ -131,29 +137,34 @@ function BentoGrid() {
   const opacity = useTransform(scrollYProgress, [0, 0.5], [0, 1]);
 
   return (
-    <div ref={targetRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
-      <div className="text-center mb-12 sm:mb-16">
-        <h2 className="text-4xl md:text-5xl font-black text-gray-950 tracking-tighter mb-4">
+    <div ref={targetRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 lg:py-44">
+      <div className="text-center mb-16 sm:mb-20">
+        <span className="text-[11px] font-mono font-bold tracking-[0.2em] text-mio-violet uppercase mb-3 block">
+          02 / Capacidades del Sistema
+        </span>
+        <h2 className="font-serif text-4xl sm:text-5xl lg:text-6xl text-gray-950 tracking-tight mb-5">
           Una suite analítica en un solo click.
         </h2>
-        <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto font-medium">
-          Robusto como una herramienta corporativa, simple como un chat.
+        <p className="font-sans text-base sm:text-lg text-gray-600 max-w-2xl mx-auto font-normal leading-relaxed">
+          Robusto como una infraestructura corporativa, simple como un chat.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-auto md:auto-rows-[280px]">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 auto-rows-auto md:auto-rows-[300px]">
         
         {/* Card 1: Large Feature */}
         <motion.div 
           style={{ y: y1, opacity, willChange: "transform, opacity" }}
-          className="md:col-span-2 bg-white border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between group hover:shadow-none hover:translate-y-2 hover:translate-x-2 transition-all duration-300"
+          whileHover={{ y: -4, x: -4 }}
+          transition={springSnappy}
+          className="md:col-span-2 bg-white border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] hover:shadow-[12px_12px_0px_#111] p-8 sm:p-10 flex flex-col justify-between transition-shadow cursor-default"
         >
           <div className="w-14 h-14 sm:w-16 sm:h-16 bg-mio-violet text-white flex items-center justify-center border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6">
-            <BrainCircuit className="w-6 h-6 sm:w-8 sm:h-8" />
+            <BrainCircuit className="w-7 h-7 sm:w-8 sm:h-8" />
           </div>
           <div>
-            <h3 className="text-xl sm:text-2xl font-black text-gray-900 mb-2 tracking-tight">Motores Predictivos (AutoML)</h3>
-            <p className="text-sm sm:text-base text-gray-600 font-medium leading-relaxed max-w-md">
+            <h3 className="font-serif text-2xl sm:text-3xl text-gray-950 mb-2.5 tracking-tight">Motores Predictivos (AutoML)</h3>
+            <p className="font-sans text-sm sm:text-base text-gray-600 font-normal leading-relaxed max-w-lg">
               MIO entrena modelos de Forecasting, Detección de Anomalías y Segmentación K-Means sin que escribas una sola línea de código Python.
             </p>
           </div>
@@ -162,43 +173,49 @@ function BentoGrid() {
         {/* Card 2: Small Feature */}
         <motion.div 
           style={{ y: y2, opacity, willChange: "transform, opacity" }}
-          className="bg-mio-lime border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between group hover:shadow-none hover:translate-y-2 hover:translate-x-2 transition-all duration-300"
+          whileHover={{ y: -4, x: -4 }}
+          transition={springSnappy}
+          className="bg-mio-lime border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] hover:shadow-[12px_12px_0px_#111] p-8 sm:p-10 flex flex-col justify-between transition-shadow cursor-default"
         >
           <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white text-gray-900 flex items-center justify-center border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6">
-            <Zap className="w-6 h-6 sm:w-8 sm:h-8" />
+            <Zap className="w-7 h-7 sm:w-8 sm:h-8" />
           </div>
           <div>
-            <h3 className="text-xl sm:text-2xl font-black text-gray-900 mb-2 tracking-tight">Velocidad</h3>
-            <p className="text-sm sm:text-base text-gray-800 font-bold">Limpieza y dashboard en menos de 60s.</p>
+            <h3 className="font-serif text-2xl sm:text-3xl text-gray-950 mb-2.5 tracking-tight">Velocidad</h3>
+            <p className="font-sans text-sm sm:text-base text-gray-900 font-bold">Limpieza y dashboard completo en menos de 60 segundos.</p>
           </div>
         </motion.div>
 
         {/* Card 3: Small Feature */}
         <motion.div 
           style={{ y: y3, opacity, willChange: "transform, opacity" }}
-          className="bg-white border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between group hover:shadow-none hover:translate-y-2 hover:translate-x-2 transition-all duration-300"
+          whileHover={{ y: -4, x: -4 }}
+          transition={springSnappy}
+          className="bg-white border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] hover:shadow-[12px_12px_0px_#111] p-8 sm:p-10 flex flex-col justify-between transition-shadow cursor-default"
         >
-          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-red-400 text-white flex items-center justify-center border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6">
-            <ShieldCheck className="w-6 h-6 sm:w-8 sm:h-8" />
+          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#ff6b6b] text-white flex items-center justify-center border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6">
+            <ShieldCheck className="w-7 h-7 sm:w-8 sm:h-8" />
           </div>
           <div>
-            <h3 className="text-xl sm:text-2xl font-black text-gray-900 mb-2 tracking-tight">Privacidad</h3>
-            <p className="text-sm sm:text-base text-gray-600 font-medium">Tus CSVs crudos nunca se guardan.</p>
+            <h3 className="font-serif text-2xl sm:text-3xl text-gray-950 mb-2.5 tracking-tight">Privacidad</h3>
+            <p className="font-sans text-sm sm:text-base text-gray-600 font-normal">Tus archivos y datos crudos no se almacenan en servidores externos.</p>
           </div>
         </motion.div>
 
         {/* Card 4: Large Feature */}
         <motion.div 
           style={{ y: y4, opacity, willChange: "transform, opacity" }}
-          className="md:col-span-2 bg-gray-900 text-white border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between group hover:shadow-none hover:translate-y-2 hover:translate-x-2 transition-all duration-300"
+          whileHover={{ y: -4, x: -4 }}
+          transition={springSnappy}
+          className="md:col-span-2 bg-[#0b0914] text-white border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] hover:shadow-[12px_12px_0px_#111] p-8 sm:p-10 flex flex-col justify-between transition-shadow cursor-default"
         >
           <div className="w-14 h-14 sm:w-16 sm:h-16 bg-mio-violet flex items-center justify-center border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6">
-            <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+            <Sparkles className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
           </div>
           <div>
-            <h3 className="text-xl sm:text-2xl font-black text-white mb-2 tracking-tight">IA Generativa Integrada</h3>
-            <p className="text-sm sm:text-base text-gray-300 font-medium leading-relaxed max-w-md">
-              Chateá con tus datos. Nuestra IA analiza las métricas, redacta un informe ejecutivo y redibuja los gráficos si se lo pedís.
+            <h3 className="font-serif text-2xl sm:text-3xl text-white mb-2.5 tracking-tight">IA Generativa Integrada</h3>
+            <p className="font-sans text-sm sm:text-base text-gray-300 font-normal leading-relaxed max-w-lg">
+              Conversá con tus números. MIO analiza las métricas, redacta resúmenes ejecutivos y reconstruye los gráficos que necesites en tiempo real.
             </p>
           </div>
         </motion.div>
@@ -343,57 +360,88 @@ function HowItWorks() {
 }
 function AboutUs() {
   return (
-    <section className="py-20 lg:py-32 bg-white border-t-4 border-[#111]">
+    <section className="py-28 lg:py-44 bg-white border-t-4 border-[#111]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-black text-gray-950 tracking-tighter mb-4">
+        <div className="text-center mb-16 sm:mb-20">
+          <span className="text-[11px] font-mono font-bold tracking-[0.2em] text-mio-violet uppercase mb-3 block">
+            04 / El Equipo
+          </span>
+          <h2 className="font-serif text-4xl sm:text-5xl lg:text-6xl text-gray-950 tracking-tight mb-4">
             Quiénes Somos
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto font-medium">
-            Estudiantes con la visión de democratizar la analítica de datos avanzada para emprendedores y PyMEs.
+          <p className="font-sans text-base sm:text-lg text-gray-600 max-w-2xl mx-auto font-normal leading-relaxed">
+            Estudiantes con la visión de democratizar la analítica de datos avanzada para emprendedores y empresas.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-4xl mx-auto">
           {/* Tadeo */}
-          <div className="bg-[#fafafc] border-4 border-[#111] shadow-[8px_8px_0px_#111] p-8 flex flex-col items-center text-center">
-            <div className="w-24 h-24 bg-mio-violet rounded-full border-4 border-[#111] mb-6 flex items-center justify-center text-white text-3xl font-black">
+          <motion.div 
+            whileHover={{ y: -4, x: -4 }}
+            transition={springSnappy}
+            className="bg-[#faf8f5] border-4 border-[#111] shadow-[8px_8px_0px_#111] hover:shadow-[12px_12px_0px_#111] p-8 sm:p-10 flex flex-col items-center text-center transition-shadow cursor-default"
+          >
+            <div className="w-24 h-24 bg-mio-violet rounded-full border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6 flex items-center justify-center text-white text-3xl font-serif">
               T
             </div>
-            <h3 className="text-2xl font-black text-gray-900 mb-1">Tadeo Muñoz Garcés</h3>
-            <p className="text-gray-500 font-bold text-sm mb-4">Co-Founder & Developer</p>
-            <p className="text-gray-600 text-sm font-medium mb-6">
+            <h3 className="font-serif text-2xl sm:text-3xl text-gray-900 mb-1 tracking-tight">Tadeo Muñoz Garcés</h3>
+            <p className="font-mono text-xs font-bold text-mio-violet tracking-wider uppercase mb-5">Co-Founder & Developer</p>
+            <p className="font-sans text-sm text-gray-600 font-normal leading-relaxed mb-8">
               Estudiante de Ciencia de Datos. Apasionado por analizar, visualizar y dar vida a los datos mediante arquitecturas de software sólidas e inteligencia artificial.
             </p>
             <div className="flex gap-4 mt-auto">
-              <a href="#" className="w-10 h-10 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center hover:translate-y-1 hover:shadow-none transition-all">
+              <motion.a 
+                whileHover={{ y: -2, x: -2 }}
+                transition={springSnappy}
+                href="#" 
+                className="w-10 h-10 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center"
+              >
                 <Github className="w-5 h-5 text-gray-900" />
-              </a>
-              <a href="#" className="w-10 h-10 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center hover:translate-y-1 hover:shadow-none transition-all">
+              </motion.a>
+              <motion.a 
+                whileHover={{ y: -2, x: -2 }}
+                transition={springSnappy}
+                href="#" 
+                className="w-10 h-10 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center"
+              >
                 <Linkedin className="w-5 h-5 text-blue-600" />
-              </a>
+              </motion.a>
             </div>
-          </div>
+          </motion.div>
 
           {/* Milena */}
-          <div className="bg-[#fafafc] border-4 border-[#111] shadow-[8px_8px_0px_#111] p-8 flex flex-col items-center text-center">
-            <div className="w-24 h-24 bg-mio-lime rounded-full border-4 border-[#111] mb-6 flex items-center justify-center text-black text-3xl font-black">
+          <motion.div 
+            whileHover={{ y: -4, x: -4 }}
+            transition={springSnappy}
+            className="bg-[#faf8f5] border-4 border-[#111] shadow-[8px_8px_0px_#111] hover:shadow-[12px_12px_0px_#111] p-8 sm:p-10 flex flex-col items-center text-center transition-shadow cursor-default"
+          >
+            <div className="w-24 h-24 bg-mio-lime rounded-full border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6 flex items-center justify-center text-black text-3xl font-serif">
               M
             </div>
-            <h3 className="text-2xl font-black text-gray-900 mb-1">Milena Abraham</h3>
-            <p className="text-gray-500 font-bold text-sm mb-4">Co-Founder & Developer</p>
-            <p className="text-gray-600 text-sm font-medium mb-6">
+            <h3 className="font-serif text-2xl sm:text-3xl text-gray-900 mb-1 tracking-tight">Milena Abraham</h3>
+            <p className="font-mono text-xs font-bold text-mio-violet tracking-wider uppercase mb-5">Co-Founder & Developer</p>
+            <p className="font-sans text-sm text-gray-600 font-normal leading-relaxed mb-8">
               Estudiante de Ciencia de Datos. Apasionada por analizar, visualizar y construir modelos predictivos para encontrar valor estratégico en el caos de la información.
             </p>
             <div className="flex gap-4 mt-auto">
-              <a href="#" className="w-10 h-10 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center hover:translate-y-1 hover:shadow-none transition-all">
+              <motion.a 
+                whileHover={{ y: -2, x: -2 }}
+                transition={springSnappy}
+                href="#" 
+                className="w-10 h-10 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center"
+              >
                 <Github className="w-5 h-5 text-gray-900" />
-              </a>
-              <a href="#" className="w-10 h-10 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center hover:translate-y-1 hover:shadow-none transition-all">
+              </motion.a>
+              <motion.a 
+                whileHover={{ y: -2, x: -2 }}
+                transition={springSnappy}
+                href="#" 
+                className="w-10 h-10 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center"
+              >
                 <Linkedin className="w-5 h-5 text-blue-600" />
-              </a>
+              </motion.a>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>
@@ -404,60 +452,68 @@ export default function LandingPage() {
   const [heroTab, setHeroTab] = useState<'3d' | 'preview'>('3d');
 
   return (
-    <div className="min-h-screen bg-[#fafafc] flex flex-col selection:bg-mio-lime selection:text-black">
+    <div className="min-h-screen bg-[#faf8f5] flex flex-col selection:bg-mio-lime selection:text-black relative">
+      {/* Textura analógica de grano SVG de fondo */}
+      <div className="noise-overlay" aria-hidden="true" />
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative pt-16 sm:pt-24 pb-10 lg:pt-32 lg:pb-16 overflow-hidden" style={{ perspective: '1200px' }}>
+      <section className="relative pt-20 sm:pt-28 pb-14 lg:pt-36 lg:pb-24 overflow-hidden" style={{ perspective: '1200px' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           
           <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-white border-2 sm:border-4 border-[#111] text-mio-violet text-xs sm:text-sm font-bold mb-6 sm:mb-10 shadow-[2px_2px_0px_#111] sm:shadow-[4px_4px_0px_#111]"
+            transition={springGentle}
+            className="inline-flex items-center gap-2.5 px-4 py-2 bg-white border-2 sm:border-3 border-[#111] text-mio-violet text-xs sm:text-sm font-mono font-bold mb-8 sm:mb-12 shadow-[3px_3px_0px_#111] tracking-wide"
           >
-            <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span>Inteligencia Artificial para Negocios</span>
+            <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-mio-lime fill-mio-lime" />
+            <span className="uppercase tracking-[0.15em] text-[11px] sm:text-xs">Inteligencia Artificial para Negocios</span>
           </motion.div>
 
           <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.8, type: 'spring', damping: 12, stiffness: 100 }}
-            className="text-4xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black text-gray-950 tracking-tighter max-w-6xl mx-auto leading-[1.1] sm:leading-[1.05]  mb-6 sm:mb-8"
+            transition={{ ...springHeavy, delay: 0.1 }}
+            className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-gray-950 tracking-tight max-w-6xl mx-auto leading-[1.04] mb-8 sm:mb-10"
           >
-            Convertí planillas de datos en <span style={{ backgroundImage: "linear-gradient(to right, #bdf559 45%, #815ae1 55%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>decisiones inteligentes.</span>
+            Convertí planillas de datos en <span className="italic font-normal" style={{ backgroundImage: "linear-gradient(135deg, #7647eb 25%, #bdf559 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>decisiones inteligentes.</span>
           </motion.h1>
 
           <motion.p 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
-            className="text-base sm:text-xl text-gray-600 max-w-2xl mx-auto mb-10 sm:mb-12 font-medium leading-relaxed"
+            transition={{ ...springHeavy, delay: 0.25 }}
+            className="font-sans text-base sm:text-xl text-gray-600 max-w-2xl mx-auto mb-12 sm:mb-16 font-normal leading-relaxed"
           >
-            Subí tus datos. MIO limpia la información, corre modelos predictivos y selecciona automáticamente los gráficos más óptimos para vos en 60 segundos.
+            Subí tus datos. MIO limpia la información, entrena modelos predictivos y genera los gráficos óptimos para tu empresa en 60 segundos.
           </motion.p>
 
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8, duration: 0.5 }}
+            transition={{ ...springHeavy, delay: 0.35 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6"
           >
-            <Link
-              href="/login"
-              className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-mio-lime text-gray-950 font-black text-base sm:text-lg border-4 border-[#111] shadow-[4px_4px_0px_#111] sm:shadow-[6px_6px_0px_#111] hover:shadow-none hover:translate-y-[4px] hover:translate-x-[4px] sm:hover:translate-y-[6px] sm:hover:translate-x-[6px] transition-all flex items-center justify-center gap-3"
+            <motion.div
+              whileHover={{ x: -2, y: -2 }}
+              whileTap={{ x: 2, y: 2 }}
+              transition={springSnappy}
             >
-              <span>Comenzar Gratis</span>
-              <ArrowRight className="w-5 h-5" strokeWidth={3} />
-            </Link>
+              <Link
+                href="/login"
+                className="w-full sm:w-auto px-9 sm:px-11 py-4 sm:py-5 bg-mio-lime text-gray-950 font-sans font-black text-base sm:text-lg border-4 border-[#111] shadow-[5px_5px_0px_#111] sm:shadow-[6px_6px_0px_#111] hover:shadow-none transition-shadow flex items-center justify-center gap-3 tracking-tight"
+              >
+                <span>Comenzar Gratis</span>
+                <ArrowRight className="w-5 h-5" strokeWidth={2.8} />
+              </Link>
+            </motion.div>
           </motion.div>
 
         </div>
 
         {/* Switcher de Vista Hero */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10 sm:mt-14 flex flex-col items-center relative z-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 sm:mt-18 flex flex-col items-center relative z-20">
           <div className="inline-flex p-1.5 bg-white border-4 border-[#111] shadow-[6px_6px_0px_#111] gap-2">
             <button
               type="button"
@@ -491,40 +547,40 @@ export default function LandingPage() {
           // ============================================================
           // LAYOUT POCKETFOLIO: 3 columnas — editorial | consola | guía
           // ============================================================
-          <div className="mt-6 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] items-center gap-8 lg:gap-12">
+          <div className="mt-8 sm:mt-12 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] items-center gap-8 lg:gap-14">
 
               {/* ─── COLUMNA IZQUIERDA: Editorial ─── */}
               <motion.div
-                initial={{ opacity: 0, x: -24 }}
+                initial={{ opacity: 0, x: -30 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3, duration: 0.7 }}
+                transition={springHeavy}
                 className="hidden lg:flex flex-col justify-center text-left"
               >
                 {/* Eyebrow label */}
-                <div className="flex items-center gap-2 mb-5">
-                  <span className="w-2 h-2 rounded-full bg-mio-lime border border-[#111]" />
-                  <span className="text-[11px] font-mono font-black tracking-[0.2em] text-gray-400 uppercase">
+                <div className="flex items-center gap-2.5 mb-6">
+                  <span className="w-2.5 h-2.5 rounded-full bg-mio-lime border border-[#111]" />
+                  <span className="text-[11px] font-mono font-bold tracking-[0.22em] text-gray-400 uppercase">
                     01 / the pocket edition
                   </span>
                 </div>
 
                 {/* Headline editorial */}
-                <h2 className="text-4xl xl:text-5xl font-black text-gray-950 tracking-tight leading-[1.05] mb-4">
+                <h2 className="font-serif text-4xl xl:text-5xl text-gray-950 tracking-tight leading-[1.04] mb-5">
                   Small screen.<br />
-                  <span className="italic" style={{ backgroundImage: "linear-gradient(to right, #815ae1, #bdf559)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                  <span className="italic font-normal" style={{ backgroundImage: "linear-gradient(to right, #7647eb, #bdf559)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                     Big decisions.
                   </span>
                 </h2>
 
                 {/* Descripción */}
-                <p className="text-sm text-gray-600 font-medium leading-relaxed mb-8 max-w-xs">
-                  Analítica predictiva en tu bolsillo. MIO entrena modelos AutoML, detecta anomalías y segmenta tus clientes — sin escribir una línea de código.
+                <p className="font-sans text-sm text-gray-600 font-normal leading-relaxed mb-10 max-w-xs">
+                  Analítica predictiva en tu bolsillo. MIO entrena modelos AutoML, detecta anomalías y segmenta tus clientes — sin escribir una sola línea de código.
                 </p>
 
                 {/* Firma de proyecto */}
-                <div className="border-t-2 border-[#111] pt-4">
-                  <div className="text-[10px] font-mono font-black text-gray-400 uppercase tracking-widest mb-0.5">
+                <div className="border-t-2 border-[#111] pt-5">
+                  <div className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-widest mb-1">
                     + MIO DATA ANALYTICS SYSTEM™
                   </div>
                   <div className="text-[10px] font-mono text-gray-400">
@@ -533,8 +589,8 @@ export default function LandingPage() {
                 </div>
 
                 {/* Nota curva estilo Pocketfolio */}
-                <div className="mt-6 relative">
-                  <span className="italic font-semibold text-gray-400 text-sm">
+                <div className="mt-8 relative">
+                  <span className="font-serif italic font-normal text-gray-400 text-base">
                     Hecho para explorar. →
                   </span>
                 </div>
@@ -542,9 +598,9 @@ export default function LandingPage() {
 
               {/* ─── COLUMNA CENTRAL: Consola 3D protagonista ─── */}
               <motion.div
-                initial={{ opacity: 0, y: 32 }}
+                initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15, duration: 0.8 }}
+                transition={springHeavy}
                 className="flex justify-center"
               >
                 <MioDevCanvas />
@@ -552,15 +608,15 @@ export default function LandingPage() {
 
               {/* ─── COLUMNA DERECHA: How To Operate ─── */}
               <motion.div
-                initial={{ opacity: 0, x: 24 }}
+                initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4, duration: 0.7 }}
+                transition={{ ...springHeavy, delay: 0.15 }}
                 className="hidden lg:flex flex-col justify-center text-left"
               >
                 {/* Panel de controles estilo neo-brutalista MIO */}
-                <div className="border-4 border-[#111] shadow-[6px_6px_0px_#111] p-5 bg-white">
-                  <div className="flex items-center justify-between border-b-2 border-[#111] pb-2 mb-4">
-                    <span className="text-[11px] font-mono font-black tracking-[0.15em] text-gray-900 uppercase">
+                <div className="border-4 border-[#111] shadow-[6px_6px_0px_#111] p-6 bg-white">
+                  <div className="flex items-center justify-between border-b-2 border-[#111] pb-3 mb-5">
+                    <span className="text-[11px] font-mono font-bold tracking-[0.2em] text-gray-900 uppercase">
                       HOW TO OPERATE
                     </span>
                     <span className="text-[9px] font-mono font-bold text-mio-violet">● V2.6</span>
@@ -569,60 +625,64 @@ export default function LandingPage() {
                   <div className="space-y-4">
                     {/* D-PAD */}
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 bg-[#1a1726] text-white flex items-center justify-center font-black text-base shrink-0 border-2 border-[#111] shadow-[2px_2px_0px_#111]">
+                      <div className="w-8 h-8 bg-[#1a1726] text-white flex items-center justify-center font-mono font-bold text-base shrink-0 border-2 border-[#111] shadow-[2px_2px_0px_#111]">
                         +
                       </div>
                       <div>
-                        <div className="text-xs font-black text-gray-900">D-PAD</div>
-                        <div className="text-[11px] text-gray-500 font-medium">Navegar visualizaciones</div>
+                        <div className="text-xs font-mono font-bold text-gray-900">D-PAD</div>
+                        <div className="text-[11px] font-sans text-gray-500 font-normal">Navegar visualizaciones</div>
                       </div>
                     </div>
 
                     {/* Botón A */}
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-mio-lime border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center font-black text-[11px] shrink-0 text-gray-900">
+                      <div className="w-8 h-8 rounded-full bg-mio-lime border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center font-mono font-bold text-[11px] shrink-0 text-gray-900">
                         A
                       </div>
                       <div>
-                        <div className="text-xs font-black text-gray-900">BOTÓN A</div>
-                        <div className="text-[11px] text-gray-500 font-medium">Siguiente gráfico</div>
+                        <div className="text-xs font-mono font-bold text-gray-900">BOTÓN A</div>
+                        <div className="text-[11px] font-sans text-gray-500 font-normal">Siguiente gráfico</div>
                       </div>
                     </div>
 
                     {/* Botón B */}
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-mio-violet border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center font-black text-[11px] shrink-0 text-white">
+                      <div className="w-8 h-8 rounded-full bg-mio-violet border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center font-mono font-bold text-[11px] shrink-0 text-white">
                         B
                       </div>
                       <div>
-                        <div className="text-xs font-black text-gray-900">BOTÓN B</div>
-                        <div className="text-[11px] text-gray-500 font-medium">Gráfico anterior</div>
+                        <div className="text-xs font-mono font-bold text-gray-900">BOTÓN B</div>
+                        <div className="text-[11px] font-sans text-gray-500 font-normal">Gráfico anterior</div>
                       </div>
                     </div>
 
                     {/* START */}
                     <div className="flex items-start gap-3">
-                      <div className="px-2 h-6 bg-white border-2 border-[#111] shadow-[1px_1px_0px_#111] flex items-center font-black text-[9px] shrink-0 text-gray-700 tracking-widest mt-0.5">
+                      <div className="px-2.5 h-6 bg-white border-2 border-[#111] shadow-[1px_1px_0px_#111] flex items-center font-mono font-bold text-[9px] shrink-0 text-gray-700 tracking-widest mt-0.5">
                         START
                       </div>
                       <div>
-                        <div className="text-xs font-black text-gray-900">START</div>
-                        <div className="text-[11px] text-gray-500 font-medium">Ejecutar AutoML Predict</div>
+                        <div className="text-xs font-mono font-bold text-gray-900">START</div>
+                        <div className="text-[11px] font-sans text-gray-500 font-normal">Ejecutar AutoML Predict</div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Link secundario estilo Pocketfolio */}
-                <div className="mt-5 flex items-center gap-2 text-gray-400 hover:text-mio-violet transition-colors cursor-pointer group">
-                  <div className="w-8 h-8 border-2 border-gray-300 group-hover:border-mio-violet flex items-center justify-center transition-colors">
-                    <BarChart3 className="w-4 h-4" />
+                {/* Link secundario con resorte */}
+                <motion.div
+                  whileHover={{ x: 3 }}
+                  transition={springSnappy}
+                  className="mt-6 flex items-center gap-2.5 text-gray-400 hover:text-mio-violet transition-colors cursor-pointer group"
+                >
+                  <div className="w-8 h-8 border-2 border-gray-300 group-hover:border-mio-violet flex items-center justify-center transition-colors bg-white">
+                    <BarChart3 className="w-4 h-4 text-gray-700 group-hover:text-mio-violet" />
                   </div>
                   <div>
-                    <div className="text-xs font-black text-gray-700">Ver dashboard en vivo →</div>
-                    <div className="text-[10px] text-gray-400">Explorá la plataforma completa</div>
+                    <div className="text-xs font-sans font-bold text-gray-800">Ver dashboard en vivo →</div>
+                    <div className="text-[10px] font-mono text-gray-400">Explorá la plataforma completa</div>
                   </div>
-                </div>
+                </motion.div>
               </motion.div>
 
             </div>
@@ -646,8 +706,9 @@ export default function LandingPage() {
       <AboutUs />
 
       {/* Footer */}
-      <footer className="py-12 bg-white border-t-4 border-[#111] text-center text-sm font-bold text-gray-500">
-        <p>© 2026 MIO. Neo-Brutal Analytics. Creado con ❤️ en Argentina.</p>
+      <footer className="py-16 bg-[#faf8f5] border-t-4 border-[#111] text-center">
+        <p className="font-serif text-xl text-gray-950 mb-2 tracking-tight">MIO Data Analytics System™</p>
+        <p className="font-mono text-xs text-gray-500 uppercase tracking-widest">© 2026 · Neo-Brutal Machine Learning · Diseñado en Argentina.</p>
       </footer>
     </div>
   );

@@ -96,7 +96,7 @@ export function MioDevModel() {
       </group>
 
       {/* ==================================================== */}
-      {/* 2. CHASIS MIO VIOLET (#7c4ee6) NEO-BRUTALIST */}
+      {/* 2. CHASIS MIO VIOLET SATINADO PRO */}
       {/* ==================================================== */}
       <RoundedBox
         args={[3.45, 5.2, 0.68]}
@@ -108,15 +108,40 @@ export function MioDevModel() {
       >
         <meshStandardMaterial
           color="#7647eb" // Violeta oficial de MIO
-          roughness={0.25}
-          metalness={0.08}
+          roughness={0.3}
+          metalness={0.12}
         />
       </RoundedBox>
 
+      {/* Tornillos de precisión en las 4 esquinas del chasis */}
+      {[
+        [-1.48, 2.32],
+        [1.48, 2.32],
+        [-1.48, -2.32],
+        [1.48, -2.32],
+      ].map(([sx, sy], idx) => (
+        <group key={idx} position={[sx, sy, 0.342]}>
+          <mesh>
+            <cylinderGeometry args={[0.045, 0.045, 0.015, 12]} />
+            <meshStandardMaterial color="#2d2248" roughness={0.4} metalness={0.8} />
+          </mesh>
+          <mesh position={[0, 0, 0.009]}>
+            <planeGeometry args={[0.05, 0.01]} />
+            <meshBasicMaterial color="#1a122e" />
+          </mesh>
+        </group>
+      ))}
+
       {/* Ranura decorativa horizontal superior de ensamble */}
       <mesh position={[0, 2.32, 0.345]}>
-        <planeGeometry args={[3.2, 0.02]} />
-        <meshStandardMaterial color="#5e35c7" roughness={0.6} />
+        <planeGeometry args={[2.7, 0.018]} />
+        <meshStandardMaterial color="#5530b8" roughness={0.7} />
+      </mesh>
+
+      {/* Grabado serigrafiado técnico inferior */}
+      <mesh position={[0, -2.42, 0.342]}>
+        <planeGeometry args={[1.6, 0.04]} />
+        <meshStandardMaterial color="#663dc9" roughness={0.8} />
       </mesh>
 
       {/* ==================================================== */}
@@ -125,22 +150,22 @@ export function MioDevModel() {
       <group position={[0, 0.85, 0.345]}>
         <RoundedBox args={[3.0, 2.45, 0.05]} radius={0.12} smoothness={3}>
           <meshStandardMaterial
-            color="#0e0b17" // Obsidiana oscuro
-            roughness={0.2}
-            metalness={0.3}
+            color="#0b0914" // Obsidiana profundo
+            roughness={0.18}
+            metalness={0.4}
           />
         </RoundedBox>
 
         {/* Franja de acento MIO Lima (#bdf559) sobre el bezel */}
         <mesh position={[0, 1.05, 0.028]}>
-          <planeGeometry args={[2.55, 0.025]} />
-          <meshStandardMaterial color="#bdf559" emissive="#bdf559" emissiveIntensity={0.3} />
+          <planeGeometry args={[2.55, 0.022]} />
+          <meshStandardMaterial color="#bdf559" emissive="#bdf559" emissiveIntensity={0.4} />
         </mesh>
 
-        {/* LED de Batería (Verde Lima encendido) */}
+        {/* LED de Batería (Verde Lima encendido con resplandor) */}
         <mesh position={[-1.22, 0.15, 0.035]}>
           <circleGeometry args={[0.045, 16]} />
-          <meshStandardMaterial color="#bdf559" emissive="#bdf559" emissiveIntensity={0.9} />
+          <meshStandardMaterial color="#bdf559" emissive="#bdf559" emissiveIntensity={1.2} />
         </mesh>
 
         {/* ==================================================== */}
