@@ -2,6 +2,10 @@ import { AnalysisResponseSchema, NarrativeSchema, ChartSchema } from '@/types/an
 import { apiClient } from './apiClient';
 import { normalizeChartPayload } from '@/components/DynamicChartRenderer';
 
+// ---------------------------------------------------------------------------
+// Response normalizer — camelCase + snake_case adapter
+// ---------------------------------------------------------------------------
+
 function normalizeAnalysisResponse(raw: any): AnalysisResponseSchema {
   if (!raw) return raw;
   const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
@@ -42,48 +46,97 @@ function normalizeAnalysisResponse(raw: any): AnalysisResponseSchema {
       metrics: data.featureImportance?.metrics || data.feature_importance?.metrics || {},
     },
     narrative: data.narrative || { text: '', source: '' },
+    joinSummary: data.joinSummary || data.join_summary || undefined,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Single-file analysis
+// ---------------------------------------------------------------------------
 
 export async function analyzeFile(
   file: File | null,
   fileUrl?: string,
   filenameOverride?: string,
   targetCol?: string,
-  uploadId?: string
+  uploadId?: string,
+  columnRoles?: Record<string, string>
 ): Promise<AnalysisResponseSchema> {
   const formData = new FormData();
+
   if (file) {
     formData.append('file', file);
   } else if (uploadId) {
     formData.append('upload_id', uploadId);
-    if (filenameOverride) {
-      formData.append('display_name', filenameOverride);
-    }
+    if (filenameOverride) formData.append('display_name', filenameOverride);
   } else if (fileUrl) {
     formData.append('file_url', fileUrl);
-    if (filenameOverride) {
-      formData.append('filename_override', filenameOverride);
-    }
+    if (filenameOverride) formData.append('filename_override', filenameOverride);
   } else {
     throw new Error('Debe proveer un archivo o un identificador de carga.');
   }
 
-  if (targetCol) {
-    formData.append('target_col', targetCol);
+  if (targetCol) formData.append('target_col', targetCol);
+  if (columnRoles && Object.keys(columnRoles).length > 0) {
+    formData.append('column_roles', JSON.stringify(columnRoles));
   }
 
   const res = await apiClient.post<any>('/analyze', formData);
   return normalizeAnalysisResponse(res);
 }
 
+// ---------------------------------------------------------------------------
+// Fast profile (no ML) — used by ColumnRoleSelector
+// ---------------------------------------------------------------------------
+
+export async function profileFile(file: File): Promise<any> {
+  const formData = new FormData();
+  formData.append('file', file);
+  return apiClient.post<any>('/profile', formData);
+}
+
+// ---------------------------------------------------------------------------
+// Multi-file analysis with auto-join
+// ---------------------------------------------------------------------------
+
+export async function analyzeMultiFile(
+  files: File[],
+  targetCol?: string,
+  columnRoles?: Record<string, string>
+): Promise<AnalysisResponseSchema> {
+  const formData = new FormData();
+  files.forEach((f) => formData.append('files', f));
+  if (targetCol) formData.append('target_col', targetCol);
+  if (columnRoles && Object.keys(columnRoles).length > 0) {
+    formData.append('column_roles', JSON.stringify(columnRoles));
+  }
+  const res = await apiClient.post<any>('/analyze/multi', formData);
+  return normalizeAnalysisResponse(res);
+}
+
+// ---------------------------------------------------------------------------
+// AI narrative
+// ---------------------------------------------------------------------------
+
 export async function generateNarrative(data: any): Promise<NarrativeSchema> {
   return apiClient.post<NarrativeSchema>('/narrative', data);
 }
 
-export async function askGemini(message: string, context: any, charts?: any[]): Promise<{response: string, chart_override?: {index: number, chart_data: any} | null}> {
+// ---------------------------------------------------------------------------
+// AI chatbot
+// ---------------------------------------------------------------------------
+
+export async function askGemini(
+  message: string,
+  context: any,
+  charts?: any[]
+): Promise<{ response: string; chart_override?: { index: number; chart_data: any } | null }> {
   return apiClient.post('/chat', { message, context, charts: charts || [] });
 }
+
+// ---------------------------------------------------------------------------
+// Export endpoints
+// ---------------------------------------------------------------------------
 
 export async function exportPDF(data: any): Promise<Blob> {
   return apiClient.postBlob('/export/pdf', data);

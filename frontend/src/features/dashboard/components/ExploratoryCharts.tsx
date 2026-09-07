@@ -8,11 +8,20 @@ const DynamicChartRenderer = dynamic(() => import('@/components/DynamicChartRend
 interface ExploratoryChartsProps {
   charts?: ChartSchema[];
   filename: string;
+  onChartReady?: (instance: any, chartId: string, title: string) => void;
 }
 
 function getExploratoryChartGuide(c: ChartSchema) {
   const chartType = c.layoutDirectives?.chartType || (c as any).layout_directives?.chart_type || '';
   const title = (c.metadata?.title || (c as any).title || '').toLowerCase();
+
+  if (chartType === 'CorrelationHeatmap' || title.includes('correlación') || title.includes('matriz')) {
+    return {
+      whatItDoes: 'Mide la intensidad y direccion de la relacion lineal entre todas las variables numericas.',
+      whatItShows: 'Los tonos verdes indican correlacion positiva (crecen juntas) y los rojos negativa (cuando una sube, la otra baja). El valor oscila de -1.0 a +1.0.',
+      actionHint: 'Busca pares con valores superiores a 0.5 o inferiores a -0.5 para detectar dependencias clave en tu negocio.',
+    };
+  }
 
   if (chartType === 'BoxPlot' || title.includes('dispersión') || title.includes('cuartiles') || title.includes('boxplot')) {
     return {
@@ -65,6 +74,7 @@ function getExploratoryChartGuide(c: ChartSchema) {
 export const ExploratoryCharts: React.FC<ExploratoryChartsProps> = ({
   charts,
   filename,
+  onChartReady,
 }) => {
   if (!charts || charts.length === 0) return null;
 
@@ -72,7 +82,11 @@ export const ExploratoryCharts: React.FC<ExploratoryChartsProps> = ({
     <>
       {charts.map((c, i) => {
         let spanClass = 'md:col-span-6 lg:col-span-4';
-        if (charts.length === 1) {
+        const chartType = c.layoutDirectives?.chartType || (c as any).layout_directives?.chart_type || '';
+        
+        if (chartType === 'CorrelationHeatmap') {
+          spanClass = 'md:col-span-12 lg:col-span-8';
+        } else if (charts.length === 1) {
           spanClass = 'md:col-span-12 lg:col-span-12';
         } else if (charts.length === 2) {
           spanClass = 'md:col-span-6 lg:col-span-6';
@@ -81,8 +95,6 @@ export const ExploratoryCharts: React.FC<ExploratoryChartsProps> = ({
         } else if (charts.length === 4) {
           spanClass = 'md:col-span-6 lg:col-span-6';
         } else if (charts.length === 5) {
-          // Fila 1: 8 + 4 = 12 cols (2 gráficos destacados)
-          // Fila 2: 4 + 4 + 4 = 12 cols (3 gráficos distribuidos)
           if (i === 0) spanClass = 'md:col-span-12 lg:col-span-8';
           else if (i === 1) spanClass = 'md:col-span-12 lg:col-span-4';
           else spanClass = 'md:col-span-6 lg:col-span-4';
@@ -98,6 +110,7 @@ export const ExploratoryCharts: React.FC<ExploratoryChartsProps> = ({
         }
 
         const guide = getExploratoryChartGuide(c);
+        const chartTitle = c.metadata?.title || (c as any).title || `Grafico ${i + 1}`;
 
         return (
           <div
@@ -106,14 +119,19 @@ export const ExploratoryCharts: React.FC<ExploratoryChartsProps> = ({
           >
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-lg font-black tracking-tight text-gray-900 leading-tight uppercase">
-                {c.metadata?.title || (c as any).title || `Grafico ${i + 1}`}
+                {chartTitle}
               </h4>
             </div>
             <p className="text-sm text-gray-500 mb-6 flex-1 font-medium">
               {c.metadata?.insightSubtitle || (c as any).metadata?.insight_subtitle || (c as any).description || ''}
             </p>
             <div className="mt-auto relative w-full flex-1 h-[420px]">
-              <DynamicChartRenderer key={`${filename}-${i}`} payload={c} height={420} />
+              <DynamicChartRenderer
+                key={`${filename}-${i}`}
+                payload={c}
+                height={420}
+                onChartReady={onChartReady ? (inst, cId) => onChartReady(inst, cId, chartTitle) : undefined}
+              />
             </div>
 
             {/* Leyenda y Guía de Interpretación debajo del gráfico */}
@@ -130,4 +148,3 @@ export const ExploratoryCharts: React.FC<ExploratoryChartsProps> = ({
     </>
   );
 };
-

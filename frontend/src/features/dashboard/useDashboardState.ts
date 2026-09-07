@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
@@ -8,10 +8,13 @@ import toast from 'react-hot-toast';
 
 import { auth, db } from '@/lib/firebase';
 import { logSystemEvent } from '@/lib/logger';
-import { analyzeFile, generateNarrative, exportPDF, exportPPTX } from '@/lib/api';
+import { analyzeFile, profileFile, analyzeMultiFile, generateNarrative, exportPDF, exportPPTX } from '@/lib/api';
 import { AnalysisResponseSchema, ChartSchema } from '@/types/analysis';
 import { Message as ChatMessage } from '@/components/DataChatbot';
 import { normalizeChartPayload } from '@/components/DynamicChartRenderer';
+import { useChartExport } from './useChartExport';
+import type { ColumnRole } from '@/components/ColumnRoleSelector';
+
 
 const ADMIN_EMAILS = ['tadeomunozgarces@gmail.com', 'milenapabraham@gmail.com'];
 
@@ -42,13 +45,23 @@ export function useDashboardState() {
       id: '1',
       role: 'assistant',
       content:
-        '¡Hola! Soy **Asistente MIO**. He analizado tu archivo. ¿Qué te gustaría saber sobre los resultados? También podés pedirme que *modifique un gráfico*.',
+        'Hola! Soy el Asistente MIO. He analizado tu archivo. Que te gustaria saber sobre los resultados? Tambien podes pedirme que modifique un grafico.',
     },
   ]);
 
   const [chartOverrides, setChartOverrides] = useState<Record<number, any>>({});
 
+  // --- New state for Etapa 2-3 features ---
+  const [profileData, setProfileData] = useState<any | null>(null);
+  const [showProfileSelector, setShowProfileSelector] = useState(false);
+  const [columnRoles, setColumnRoles] = useState<Record<string, ColumnRole>>({});
+  const [profilingFile, setProfilingFile] = useState<File | null>(null);
+
+  // Chart export registry
+  const { registerChart, exportChartsAsPNG } = useChartExport();
+
   const searchParams = useSearchParams();
+
 
   // 1. Firebase Auth listener
   useEffect(() => {
@@ -183,6 +196,43 @@ export function useDashboardState() {
 
   // 4. Process files queue
   const processQueue = async (queue: File[]) => {
+    if (queue.length === 0) return;
+
+    // Si hay multiples archivos, ejecutar el flujo relacional multi-dataset con auto-join
+    if (queue.length > 1) {
+      setLoading(true);
+      setChatLogged(false);
+      setChartOverrides({});
+      setUploadProgress(0);
+      setIsUploading(false);
+
+      try {
+        const data = await analyzeMultiFile(queue, targetCol || undefined);
+        setResult(data);
+        setActiveFileSize(queue.reduce((acc, f) => acc + f.size, 0));
+        toast.success(`Analisis relacional completado con exito (${queue.length} archivos unidos).`);
+
+        const metricsPayload = {
+          forecast: data.forecast?.metrics || {},
+          anomalies: data.anomalies?.metrics || {},
+          features: data.featureImportance?.metrics || {},
+          segmentation: data.segmentation?.metrics || {},
+        };
+        logSystemEvent('analysis_success', {
+          filename: data.filename,
+          uid: user?.uid,
+          metrics: metricsPayload,
+        });
+      } catch (err: any) {
+        console.error(err);
+        toast.error(err.message || 'Error en el analisis de multiples archivos.');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Flujo para archivo individual
     for (let i = 0; i < queue.length; i++) {
       setCurrentFileIndex(i);
       const file = queue[i];
@@ -206,7 +256,7 @@ export function useDashboardState() {
         } catch (storageErr) {
           console.warn('LocalStorage error:', storageErr);
         }
-        toast.success(`¡Análisis de ${file.name} completado con éxito!`);
+        toast.success(`Analisis de ${file.name} completado con exito.`);
 
         const metricsPayload = {
           forecast: data.forecast?.metrics || {},
@@ -240,7 +290,7 @@ export function useDashboardState() {
               }
             }
             logSystemEvent('project_saved', { uid: user.uid, filename: data.filename, auto: true });
-            toast.success('Guardado automáticamente en Mis Proyectos');
+            toast.success('Guardado automaticamente en Mis Proyectos');
           } catch (e) {
             console.error('Auto-save error:', e);
           }
@@ -286,6 +336,7 @@ export function useDashboardState() {
     if (!result) return;
     setDownloadingPdf(true);
     try {
+      const chartImages = await exportChartsAsPNG(12);
       const blob = await exportPDF({
         filename: result.filename,
         targetCol: result.targetCol,
@@ -295,6 +346,11 @@ export function useDashboardState() {
         anomaly_metrics: result.anomalies?.metrics || {},
         forecast_metrics: result.forecast?.metrics || {},
         segmentation_metrics: result.segmentation?.metrics || {},
+        chart_images: chartImages.map((c) => ({
+          chart_id: c.chartId,
+          title: c.title,
+          base64: c.base64,
+        })),
       });
 
       const url = window.URL.createObjectURL(blob);
@@ -305,7 +361,7 @@ export function useDashboardState() {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-      toast.success('PDF descargado exitosamente');
+      toast.success('PDF descargado exitosamente con gráficos incrustados');
     } catch (err) {
       console.error(err);
       toast.error('Error al generar el PDF.');
@@ -318,6 +374,7 @@ export function useDashboardState() {
     if (!result) return;
     setDownloadingPptx(true);
     try {
+      const chartImages = await exportChartsAsPNG(12);
       const blob = await exportPPTX({
         filename: result.filename,
         targetCol: result.targetCol,
@@ -327,6 +384,11 @@ export function useDashboardState() {
         anomaly_metrics: result.anomalies?.metrics || {},
         forecast_metrics: result.forecast?.metrics || {},
         segmentation_metrics: result.segmentation?.metrics || {},
+        chart_images: chartImages.map((c) => ({
+          chart_id: c.chartId,
+          title: c.title,
+          base64: c.base64,
+        })),
       });
 
       const url = window.URL.createObjectURL(blob);
@@ -337,7 +399,7 @@ export function useDashboardState() {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-      toast.success('PPTX descargado exitosamente');
+      toast.success('PPTX descargado exitosamente con diapositivas de gráficos');
     } catch (err) {
       console.error(err);
       toast.error('Error al generar el PPTX.');
@@ -460,6 +522,91 @@ export function useDashboardState() {
     setTargetCol(sampleTarget);
   };
 
+  // --- Profile + ColumnRoleSelector flow ---
+
+  /**
+   * Called when user drops files on the uploader.
+   * If single file: run fast /profile first and show ColumnRoleSelector.
+   * If multiple files: go directly to multi-file analyze flow.
+   */
+  const handleProfileAndSelect = async (files: File[]) => {
+    if (files.length === 0) return;
+
+    if (files.length > 1) {
+      // Multi-file path: skip profiling, go straight to analysis
+      setFilesQueue(files);
+      setShowProfileSelector(false);
+      return;
+    }
+
+    // Single file: fast profile
+    const file = files[0];
+    setProfilingFile(file);
+    setLoading(true);
+    try {
+      const profData = await profileFile(file);
+      setProfileData(profData);
+      setShowProfileSelector(true);
+    } catch (err: any) {
+      toast.error('Error al perfilar el archivo. Continuando con analisis directo.');
+      setFilesQueue([file]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Called when user confirms roles in ColumnRoleSelector.
+   * Starts the full single-file analysis with column roles.
+   */
+  const handleConfirmRoles = async (
+    confirmedTarget: string,
+    confirmedRoles: Record<string, ColumnRole>
+  ) => {
+    if (!profilingFile) return;
+    setShowProfileSelector(false);
+    setColumnRoles(confirmedRoles);
+    setTargetCol(confirmedTarget);
+    setLoading(true);
+    setChatLogged(false);
+    setChartOverrides({});
+
+    try {
+      const data = await analyzeFile(
+        profilingFile,
+        undefined,
+        undefined,
+        confirmedTarget,
+        undefined,
+        confirmedRoles as Record<string, string>
+      );
+      setResult(data);
+      setActiveFileSize(profilingFile.size);
+      try {
+        localStorage.setItem('mio_active_analysis', JSON.stringify({
+          filename: data.filename,
+          uploadId: data.uploadId,
+          targetCol: data.targetCol || confirmedTarget,
+          fileSize: profilingFile.size,
+        }));
+      } catch (storageErr) {
+        console.warn('LocalStorage error:', storageErr);
+      }
+      toast.success(`Analisis de ${profilingFile.name} completado!`);
+      setProfilingFile(null);
+    } catch (err: any) {
+      toast.error(err.message || 'Error al analizar el archivo.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelProfileSelector = () => {
+    setShowProfileSelector(false);
+    setProfileData(null);
+    setProfilingFile(null);
+  };
+
   const effectiveCharts: ChartSchema[] = (result?.charts || []).map((c, i) => chartOverrides[i] || c);
   const isAdmin = Boolean(user?.email && ADMIN_EMAILS.includes(user.email));
 
@@ -486,7 +633,19 @@ export function useDashboardState() {
     setChatMessages,
     chartOverrides,
     effectiveCharts,
+    // New profiling and multi-file state
+    profileData,
+    showProfileSelector,
+    columnRoles,
+    profilingFile,
+    // Chart export
+    registerChart,
+    exportChartsAsPNG,
+    // Handlers
     handleStartAnalysis,
+    handleProfileAndSelect,
+    handleConfirmRoles,
+    handleCancelProfileSelector,
     handleDownloadPdf,
     handleDownloadPptx,
     handleReset,

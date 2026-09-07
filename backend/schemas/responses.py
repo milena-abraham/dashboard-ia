@@ -1,3 +1,7 @@
+"""
+schemas/responses.py
+Modelos Pydantic para las respuestas de la API.
+"""
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 from typing import List, Dict, Any, Optional
@@ -37,6 +41,7 @@ class LayoutDirectivesSchema(BaseSchema):
     has_time_gaps: bool
     high_cardinality: bool
     show_confidence_bands: bool
+    trendline: Optional[Dict[str, Any]] = None
 
 class DatasetSchema(BaseSchema):
     dimensions: List[str]
@@ -106,6 +111,46 @@ class NarrativeSchema(BaseSchema):
     text: Optional[str] = None
     source: Optional[str] = None
 
+class JoinStepSchema(BaseSchema):
+    left: str
+    right: str
+    key: str
+    type: str
+    rows_before: int
+    rows_after: int
+
+class JoinSummarySchema(BaseSchema):
+    tables_detected: List[str]
+    join_keys: List[str]
+    total_rows: int
+    total_columns: Optional[int] = None
+    message: Optional[str] = None
+    join_log: List[JoinStepSchema] = []
+
+class ColumnDetailSchema(BaseSchema):
+    name: str
+    inferred_type: str
+    n_unique: int
+    null_pct: float
+    sample_values: List[str]
+    suggested_role: str
+
+class ProfileResponseSchema(BaseSchema):
+    filename: str
+    upload_id: Optional[str] = None
+    n_rows_estimated: int
+    n_cols: int
+    quality_score: int
+    quality_label: str
+    suggested_targets: List[str]
+    columns: List[ColumnDetailSchema]
+    preview_rows: List[Dict[str, Any]]
+
+class ChartImageSchema(BaseSchema):
+    chart_id: str
+    title: str
+    base64: str
+
 class AnalysisResponseSchema(BaseSchema):
     filename: str
     upload_id: Optional[str] = None
@@ -119,3 +164,4 @@ class AnalysisResponseSchema(BaseSchema):
     anomalies: AnomaliesSchema
     feature_importance: FeatureImportanceSchema
     narrative: NarrativeSchema
+    join_summary: Optional[JoinSummarySchema] = None

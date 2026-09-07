@@ -372,7 +372,7 @@ def _analyze_streaming_csv(file_path: str, filename: str, target_col: Optional[s
     logger.info(f"[Modo Streaming] Finalizado análisis de {total_rows:,} filas en {time.time()-t_start:.2f}s")
     return result_dict
 
-def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
+def _analyze_sync(file_path: str, filename: str, target_col: Optional[str], column_roles: Optional[Dict[str, str]] = None):
     try:
         fname_lower = filename.lower()
         t_read = time.time()
@@ -406,39 +406,21 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
         
         t_clean = time.time()
         df_clean, cleaning_report = clean_dataframe(df_raw)
-        
+
         t_prof = time.time()
-        # Pasamos duplicate_rows=0 porque clean_dataframe ya eliminó duplicados
         profile = profile_dataframe(df_clean, duplicate_rows=0)
 
-        # Para modelos de ML intensivos (Clustering, Anomalías, LightGBM), si el dataset supera 10,000 filas,
-        # usamos una muestra representativa de 10k filas para responder en ~1-2 segundos con mínimo consumo de RAM.
-        # df_clean se preserva 100% íntegro para KPIs, conteos, profiling, gráficos y series temporales completas.
+        # Apply column_roles overrides from Data Profiling selector
+        # Roles: "numeric" | "categorical" | "date" | "identifier"
+        if column_roles:
+            _apply_column_roles(df_clean, profile, column_roles)
+
         if len(df_clean) > 10000:
             df_ml = df_clean.sample(10000, random_state=42)
         else:
             df_ml = df_clean
 
-        active_target = None
-        if target_col:
-            target_clean = str(target_col).strip().lower()
-            for col in profile.numeric_columns:
-                if str(col).strip().lower() == target_clean:
-                    active_target = col
-                    break
-            if not active_target:
-                for col in df_clean.columns:
-                    if str(col).strip().lower() == target_clean:
-                        active_target = col
-                        break
-        
-        if not active_target:
-            if profile.suggested_targets:
-                active_target = profile.suggested_targets[0]
-            elif profile.numeric_columns:
-                active_target = profile.numeric_columns[0]
-            else:
-                active_target = df_clean.columns[0]
+        active_target = _resolve_target(target_col, profile, df_clean)
 
         kpis = {
             "Registros": f"{profile.n_rows:,}",
@@ -448,17 +430,16 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
             series = df_clean[active_target].dropna()
             kpis["Total"] = format_number(float(series.sum()))
             kpis["Promedio"] = format_number(float(series.mean()))
-            kpis["Máximo"] = format_number(float(series.max()))
-            kpis["Mínimo"] = format_number(float(series.min()))
+            kpis["Maximo"] = format_number(float(series.max()))
+            kpis["Minimo"] = format_number(float(series.min()))
 
         charts = auto_charts(df_clean, profile, active_target)
-        
+
         forecast_res: Dict[str, Any] = {"chart_data": None, "metrics": {}}
         feature_res: Dict[str, Any] = {"chart_importance": None, "chart_shap": None, "metrics": {}}
         anomaly_res: Dict[str, Any] = {"chart_data": None, "metrics": {}}
         seg_res: Dict[str, Any] = {"scatter_data": None, "radar_data": None, "metrics": {}}
-        
-        # Ejecución secuencial con liberación de memoria entre modelos
+
         if profile.date_columns and active_target in profile.numeric_columns:
             try:
                 _, f_fig, f_metrics = run_forecast(df_clean, date_col=profile.date_columns[0], value_col=active_target, periods=60)
@@ -466,7 +447,7 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
             except Exception as e:
                 forecast_res["metrics"] = {"error": str(e)}
         gc.collect()
-        
+
         if active_target in profile.numeric_columns:
             feats = [c for c in profile.numeric_columns if c != active_target]
             try:
@@ -475,18 +456,18 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
             except Exception as e:
                 feature_res["metrics"] = {"error": str(e)}
         gc.collect()
-            
+
         try:
             _, a_fig, a_metrics = run_anomaly_detection(
-                df_ml, numeric_cols=profile.numeric_columns, 
-                target_col=active_target if active_target in profile.numeric_columns else None, 
-                date_col=profile.date_columns[0] if profile.date_columns else None
+                df_ml, numeric_cols=profile.numeric_columns,
+                target_col=active_target if active_target in profile.numeric_columns else None,
+                date_col=profile.date_columns[0] if profile.date_columns else None,
             )
             anomaly_res = {"chart_data": a_fig, "metrics": a_metrics}
         except Exception as e:
             anomaly_res["metrics"] = {"error": str(e)}
         gc.collect()
-            
+
         if len(profile.numeric_columns) >= 2:
             label_c = profile.categorical_columns[0] if profile.categorical_columns else None
             try:
@@ -498,10 +479,7 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
                 seg_res["metrics"] = {"error": str(e)}
         gc.collect()
 
-        narrative_res = {
-            "text": "Generando informe avanzado con IA...",
-            "source": "pending"
-        }
+        narrative_res = {"text": "Generando informe avanzado con IA...", "source": "pending"}
 
         final_response = {
             "filename": filename,
@@ -529,8 +507,7 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
             "feature_importance": feature_res,
             "narrative": narrative_res,
         }
-        
-        # Use NumpyEncoder to sanitize all nested numpy types into native Python types
+
         json_str = json.dumps(final_response, cls=NumpyEncoder)
         return json.loads(json_str)
 
@@ -538,4 +515,225 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
         raise
     except Exception as ex:
         raise HTTPException(status_code=500, detail=f"Error durante el procesamiento: {str(ex)}")
+
+
+# ---------------------------------------------------------------------------
+# Shared helper functions (also used by multi-file and profile endpoints)
+# ---------------------------------------------------------------------------
+
+def _resolve_target(target_col: Optional[str], profile, df: pd.DataFrame) -> str:
+    """Resolve the active target column from user input or auto-suggestion."""
+    if target_col:
+        tc_lower = str(target_col).strip().lower()
+        for col in profile.numeric_columns:
+            if str(col).strip().lower() == tc_lower:
+                return col
+        for col in df.columns:
+            if str(col).strip().lower() == tc_lower:
+                return col
+    if profile.suggested_targets:
+        return profile.suggested_targets[0]
+    if profile.numeric_columns:
+        return profile.numeric_columns[0]
+    return df.columns[0]
+
+
+def _apply_column_roles(df: pd.DataFrame, profile, column_roles: Dict[str, str]) -> None:
+    """
+    Apply user-specified column roles to the profile, mutating it in place.
+    Roles: 'numeric' | 'categorical' | 'date' | 'identifier'
+    Columns marked 'identifier' are removed from all analysis lists.
+    """
+    from core.data_profiler import (
+        COLUMN_TYPE_NUMERIC, COLUMN_TYPE_CATEGORICAL, COLUMN_TYPE_DATE, COLUMN_TYPE_ID
+    )
+
+    for col, role in column_roles.items():
+        if col not in df.columns:
+            continue
+        role = role.lower()
+
+        # Remove from all lists first
+        for lst in [profile.numeric_columns, profile.date_columns, profile.categorical_columns, profile.suggested_targets]:
+            if col in lst:
+                lst.remove(col)
+
+        if role in ("identifier", "id", "ignore"):
+            pass  # Column excluded from all analysis
+        elif role == "numeric" and col not in profile.numeric_columns:
+            profile.numeric_columns.append(col)
+            try:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
+            except Exception:
+                pass
+        elif role == "categorical" and col not in profile.categorical_columns:
+            profile.categorical_columns.append(col)
+            df[col] = df[col].astype(str)
+        elif role == "date" and col not in profile.date_columns:
+            profile.date_columns.append(col)
+            try:
+                df[col] = pd.to_datetime(df[col], errors="coerce")
+            except Exception:
+                pass
+
+
+def _read_dataframe(file_path: str) -> pd.DataFrame:
+    """Read any supported file format into a DataFrame."""
+    fname_lower = file_path.lower()
+    if fname_lower.endswith(".json"):
+        return _parse_json_intelligent(file_path)
+    elif fname_lower.endswith((".xlsx", ".xls")):
+        return pd.read_excel(file_path)
+    else:
+        enc, sep, skiprows = detect_csv_format(file_path)
+        try:
+            return pd.read_csv(file_path, encoding=enc, sep=sep, skiprows=skiprows, engine="c", on_bad_lines="skip")
+        except Exception:
+            return pd.read_csv(file_path, encoding="latin1", sep=None, skiprows=skiprows, engine="python", on_bad_lines="skip")
+
+
+def _analyze_dataframe(
+    df_raw: pd.DataFrame,
+    filename: str,
+    target_col: Optional[str] = None,
+    column_roles: Optional[Dict[str, str]] = None,
+) -> dict:
+    """
+    Run the full analysis pipeline on a pre-loaded DataFrame.
+    Used by multi-file analysis endpoint.
+    """
+    if df_raw is None or df_raw.empty:
+        raise HTTPException(status_code=400, detail="El DataFrame esta vacio.")
+
+    df_clean, cleaning_report = clean_dataframe(df_raw)
+    profile = profile_dataframe(df_clean, duplicate_rows=0)
+
+    if column_roles:
+        _apply_column_roles(df_clean, profile, column_roles)
+
+    df_ml = df_clean.sample(10000, random_state=42) if len(df_clean) > 10000 else df_clean
+    active_target = _resolve_target(target_col, profile, df_clean)
+
+    kpis = {"Registros": f"{profile.n_rows:,}", "Columnas": profile.n_cols}
+    if active_target in profile.numeric_columns:
+        series = df_clean[active_target].dropna()
+        kpis["Total"] = format_number(float(series.sum()))
+        kpis["Promedio"] = format_number(float(series.mean()))
+
+    charts = auto_charts(df_clean, profile, active_target)
+
+    forecast_res: Dict[str, Any] = {"chart_data": None, "metrics": {}}
+    feature_res: Dict[str, Any] = {"chart_importance": None, "chart_shap": None, "metrics": {}}
+    anomaly_res: Dict[str, Any] = {"chart_data": None, "metrics": {}}
+    seg_res: Dict[str, Any] = {"scatter_data": None, "radar_data": None, "metrics": {}}
+
+    if profile.date_columns and active_target in profile.numeric_columns:
+        try:
+            _, f_fig, f_metrics = run_forecast(df_clean, date_col=profile.date_columns[0], value_col=active_target, periods=60)
+            forecast_res = {"chart_data": f_fig, "metrics": f_metrics}
+        except Exception as e:
+            forecast_res["metrics"] = {"error": str(e)}
+    gc.collect()
+
+    if active_target in profile.numeric_columns:
+        feats = [c for c in profile.numeric_columns if c != active_target]
+        try:
+            fi_fig, shap_fig, fi_metrics = run_feature_importance(df_ml, active_target, feats, categorical_cols=profile.categorical_columns)
+            feature_res = {"chart_importance": fi_fig, "chart_shap": shap_fig, "metrics": fi_metrics}
+        except Exception as e:
+            feature_res["metrics"] = {"error": str(e)}
+    gc.collect()
+
+    try:
+        _, a_fig, a_metrics = run_anomaly_detection(df_ml, numeric_cols=profile.numeric_columns, target_col=active_target if active_target in profile.numeric_columns else None, date_col=profile.date_columns[0] if profile.date_columns else None)
+        anomaly_res = {"chart_data": a_fig, "metrics": a_metrics}
+    except Exception as e:
+        anomaly_res["metrics"] = {"error": str(e)}
+    gc.collect()
+
+    if len(profile.numeric_columns) >= 2:
+        label_c = profile.categorical_columns[0] if profile.categorical_columns else None
+        try:
+            _, s_scatter, s_prof, s_metrics = run_clustering(df_ml, numeric_cols=profile.numeric_columns[:6], label_col=label_c, target_col=active_target)
+            seg_res = {"scatter_data": s_scatter, "radar_data": s_prof, "metrics": s_metrics}
+        except Exception as e:
+            seg_res["metrics"] = {"error": str(e)}
+    gc.collect()
+
+    final_response = {
+        "filename": filename,
+        "target_col": active_target,
+        "profile": {"n_rows": profile.n_rows, "n_cols": profile.n_cols, "quality_score": profile.quality_score, "quality_label": profile.quality_label, "numeric_columns": profile.numeric_columns, "date_columns": profile.date_columns, "categorical_columns": profile.categorical_columns, "suggested_targets": profile.suggested_targets},
+        "cleaning_report": {"actions": cleaning_report.actions, "duplicates_removed": cleaning_report.duplicates_removed, "nulls_imputed": cleaning_report.nulls_imputed},
+        "kpis": kpis, "charts": charts, "forecast": forecast_res, "segmentation": seg_res, "anomalies": anomaly_res, "feature_importance": feature_res,
+        "narrative": {"text": "Generando informe avanzado con IA...", "source": "pending"},
+    }
+
+    json_str = json.dumps(final_response, cls=NumpyEncoder)
+    return json.loads(json_str)
+
+
+def _profile_only(file_path: str, filename: str) -> dict:
+    """
+    Fast profile-only analysis: reads up to 500 rows and returns column metadata.
+    Does NOT run ML models. Used by the /profile endpoint.
+    """
+    try:
+        df_raw = _read_dataframe(file_path)
+        preview = df_raw.head(500)
+        df_clean, _ = clean_dataframe(preview)
+        profile = profile_dataframe(df_clean, duplicate_rows=0)
+
+        # Build column detail list for the ColumnRoleSelector
+        columns_detail = []
+        for col_prof in profile.columns:
+            sample_vals = [str(v) for v in (df_clean[col_prof.name].dropna().head(3).tolist() if col_prof.name in df_clean.columns else [])]
+            columns_detail.append({
+                "name": col_prof.name,
+                "inferred_type": col_prof.inferred_type,
+                "n_unique": col_prof.n_unique,
+                "null_pct": round(col_prof.null_pct, 1),
+                "sample_values": sample_vals,
+                "suggested_role": _inferred_type_to_role(col_prof.inferred_type),
+            })
+
+        preview_records = df_clean.head(5).to_dict(orient="records")
+        # Sanitize preview records
+        clean_preview = []
+        for rec in preview_records:
+            clean_rec = {}
+            for k, v in rec.items():
+                if isinstance(v, float) and (pd.isna(v) or v != v):
+                    clean_rec[k] = None
+                elif hasattr(v, "item"):
+                    clean_rec[k] = v.item()
+                else:
+                    clean_rec[k] = v
+            clean_preview.append(clean_rec)
+
+        result = {
+            "filename": filename,
+            "n_rows_estimated": len(df_raw),
+            "n_cols": profile.n_cols,
+            "quality_score": profile.quality_score,
+            "quality_label": profile.quality_label,
+            "suggested_targets": profile.suggested_targets,
+            "columns": columns_detail,
+            "preview_rows": clean_preview,
+        }
+        return json.loads(json.dumps(result, cls=NumpyEncoder))
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=f"Error durante el profiling: {str(ex)}")
+
+
+def _inferred_type_to_role(inferred_type: str) -> str:
+    """Map data_profiler inferred type to a frontend-friendly role string."""
+    mapping = {
+        "numerica": "numeric",
+        "categorica": "categorical",
+        "fecha": "date",
+        "identificador": "identifier",
+        "texto": "categorical",
+    }
+    return mapping.get(inferred_type.lower(), "categorical")
 

@@ -1,12 +1,12 @@
 """
 routers/export.py
-Endpoint para exportación de reportes PDF ejecutivos.
+Endpoint para exportación de reportes PDF y PPTX ejecutivos con gráficos.
 """
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
-from typing import Any, Dict, Optional
-from schemas.responses import BaseSchema
+from typing import Any, Dict, List, Optional
+from schemas.responses import BaseSchema, ChartImageSchema
 
 from reports.pdf_generator import generate_pdf_report
 from reports.pptx_generator import generate_pptx_report
@@ -23,10 +23,13 @@ class ExportPDFRequest(BaseSchema):
     anomaly_metrics: Optional[Dict[str, Any]] = {}
     forecast_metrics: Optional[Dict[str, Any]] = {}
     segmentation_metrics: Optional[Dict[str, Any]] = {}
+    chart_images: Optional[List[ChartImageSchema]] = []
 
 
 @router.post("/export/pdf")
 def export_pdf(req: ExportPDFRequest):
+    chart_images_dicts = [img.model_dump() for img in req.chart_images] if req.chart_images else []
+    
     pdf_bytes = generate_pdf_report(
         filename=req.filename,
         target_col=req.target_col,
@@ -36,6 +39,7 @@ def export_pdf(req: ExportPDFRequest):
         anomaly_metrics=req.anomaly_metrics or {},
         forecast_metrics=req.forecast_metrics or {},
         segmentation_metrics=req.segmentation_metrics or {},
+        chart_images=chart_images_dicts,
     )
 
     if not pdf_bytes:
@@ -47,8 +51,11 @@ def export_pdf(req: ExportPDFRequest):
         headers={"Content-Disposition": f"attachment; filename=informe_{req.filename}.pdf"}
     )
 
+
 @router.post("/export/pptx")
 def export_pptx(req: ExportPDFRequest):
+    chart_images_dicts = [img.model_dump() for img in req.chart_images] if req.chart_images else []
+
     pptx_bytes = generate_pptx_report(
         filename=req.filename,
         target_col=req.target_col,
@@ -58,6 +65,7 @@ def export_pptx(req: ExportPDFRequest):
         anomaly_metrics=req.anomaly_metrics or {},
         forecast_metrics=req.forecast_metrics or {},
         segmentation_metrics=req.segmentation_metrics or {},
+        chart_images=chart_images_dicts,
     )
 
     if not pptx_bytes:

@@ -4,6 +4,8 @@ import React, { Suspense } from 'react';
 import Navbar from '@/components/Navbar';
 import KPICards from '@/components/KPICards';
 import LoadingAnalysis from '@/components/LoadingAnalysis';
+import ColumnRoleSelector from '@/components/ColumnRoleSelector';
+import DatasetJoinPanel from '@/components/DatasetJoinPanel';
 import { useDashboardState } from '@/features/dashboard/useDashboardState';
 import {
   DashboardHeader,
@@ -44,6 +46,13 @@ function DashboardInner() {
     chatMessages,
     setChatMessages,
     handleChartOverride,
+    // New profiling and multi-dataset state
+    profileData,
+    showProfileSelector,
+    handleProfileAndSelect,
+    handleConfirmRoles,
+    handleCancelProfileSelector,
+    registerChart,
   } = useDashboardState();
 
   const effectiveFileSize =
@@ -64,11 +73,22 @@ function DashboardInner() {
             currentFile={currentFileIndex + 1}
             totalFiles={filesQueue.length}
           />
+        ) : showProfileSelector && profileData ? (
+          <ColumnRoleSelector
+            profileData={profileData}
+            onConfirm={handleConfirmRoles}
+            onCancel={handleCancelProfileSelector}
+          />
         ) : !result ? (
           <DashboardUploader
             filesQueue={filesQueue}
             targetCol={targetCol}
-            onFilesSelected={setFilesQueue}
+            onFilesSelected={(files) => {
+              setFilesQueue(files);
+              if (files.length === 1) {
+                handleProfileAndSelect(files);
+              }
+            }}
             onTargetColChange={setTargetCol}
             onStartAnalysis={handleStartAnalysis}
             onLoadSampleData={handleLoadSample}
@@ -85,6 +105,11 @@ function DashboardInner() {
               onRefresh={handleRefresh}
             />
 
+            {/* Panel de unión relacional si proviene de auto-join */}
+            {result.joinSummary && (
+              <DatasetJoinPanel joinSummary={result.joinSummary} />
+            )}
+
             <KPICards kpis={result.kpis} />
 
             <div className="pt-6">
@@ -98,6 +123,7 @@ function DashboardInner() {
                 <ExploratoryCharts
                   charts={effectiveCharts}
                   filename={result.filename}
+                  onChartReady={registerChart}
                 />
 
                 <ForecastSection

@@ -110,6 +110,45 @@ export interface NarrativeSchema {
   source?: string;
 }
 
+export interface JoinStepSchema {
+  left: string;
+  right: string;
+  key: string;
+  type: string;
+  rows_before: number;
+  rows_after: number;
+}
+
+export interface JoinSummarySchema {
+  tables_detected: string[];
+  join_keys: string[];
+  total_rows: number;
+  total_columns?: number;
+  message?: string;
+  join_log: JoinStepSchema[];
+}
+
+export interface ColumnDetailSchema {
+  name: string;
+  inferred_type: string;
+  n_unique: number;
+  null_pct: number;
+  sample_values: string[];
+  suggested_role: string;
+}
+
+export interface ProfileDataSchema {
+  filename: string;
+  n_rows_estimated: number;
+  n_cols: number;
+  quality_score: number;
+  quality_label: string;
+  suggested_targets: string[];
+  columns: ColumnDetailSchema[];
+  preview_rows: Record<string, any>[];
+  upload_id: string;
+}
+
 export interface AnalysisResponseSchema {
   filename: string;
   uploadId?: string;
@@ -123,4 +162,5 @@ export interface AnalysisResponseSchema {
   anomalies: AnomaliesSchema;
   featureImportance: FeatureImportanceSchema;
   narrative: NarrativeSchema;
+  joinSummary?: JoinSummarySchema;
 }
