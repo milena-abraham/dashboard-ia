@@ -18,11 +18,14 @@ export const SegmentationSection: React.FC<SegmentationSectionProps> = ({
   radarData,
   filename,
 }) => {
-  if (!scatterData || !radarData) return null;
+  if (!scatterData && !radarData) return null;
+
+  const hasBoth = Boolean(scatterData && radarData);
 
   return (
-    <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] flex flex-col justify-between">
+    <div className={`md:col-span-12 ${hasBoth ? 'grid grid-cols-1 md:grid-cols-2 gap-6' : ''}`}>
+      {scatterData && (
+        <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] flex flex-col justify-between">
         <div>
           <div className="flex items-center gap-3 mb-6">
             <PieChart className="w-5 h-5 text-mio-violet" />
@@ -49,9 +52,11 @@ export const SegmentationSection: React.FC<SegmentationSectionProps> = ({
           defaultOpen={false}
         />
       </div>
+      )}
 
-      <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] flex flex-col justify-between">
-        <div>
+      {radarData && (
+        <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] flex flex-col justify-between">
+          <div>
           <div className="flex items-center gap-3 mb-6">
             <BarChart3 className="w-5 h-5 text-mio-violet" />
             <h3 className="text-xl font-black uppercase tracking-tight">
@@ -77,6 +82,7 @@ export const SegmentationSection: React.FC<SegmentationSectionProps> = ({
           defaultOpen={false}
         />
       </div>
+      )}
     </div>
   );
 };

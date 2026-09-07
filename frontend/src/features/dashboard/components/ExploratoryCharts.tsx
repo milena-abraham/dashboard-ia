@@ -67,13 +67,26 @@ export const ExploratoryCharts: React.FC<ExploratoryChartsProps> = ({
         if (charts.length === 1) {
           spanClass = 'md:col-span-12 lg:col-span-12';
         } else if (charts.length === 2) {
-          spanClass = 'md:col-span-12 lg:col-span-6';
+          spanClass = 'md:col-span-6 lg:col-span-6';
         } else if (charts.length === 3) {
           spanClass = i === 0 ? 'md:col-span-12 lg:col-span-12' : 'md:col-span-6 lg:col-span-6';
-        } else {
+        } else if (charts.length === 4) {
+          spanClass = 'md:col-span-6 lg:col-span-6';
+        } else if (charts.length === 5) {
+          // Fila 1: 8 + 4 = 12 cols (2 gráficos destacados)
+          // Fila 2: 4 + 4 + 4 = 12 cols (3 gráficos distribuidos)
           if (i === 0) spanClass = 'md:col-span-12 lg:col-span-8';
           else if (i === 1) spanClass = 'md:col-span-12 lg:col-span-4';
-          else spanClass = 'md:col-span-6 lg:col-span-6';
+          else spanClass = 'md:col-span-6 lg:col-span-4';
+        } else {
+          const remainder = charts.length % 3;
+          if (remainder === 1 && i === charts.length - 1) {
+            spanClass = 'md:col-span-12 lg:col-span-12';
+          } else if (remainder === 2 && i >= charts.length - 2) {
+            spanClass = 'md:col-span-6 lg:col-span-6';
+          } else {
+            spanClass = 'md:col-span-6 lg:col-span-4';
+          }
         }
 
         const guide = getExploratoryChartGuide(c);

@@ -20,8 +20,10 @@ export const FeatureImportanceSection: React.FC<FeatureImportanceSectionProps> =
 }) => {
   if (!chartImportance) return null;
 
+  const hasBoth = Boolean(chartImportance && chartShap);
+
   return (
-    <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className={`md:col-span-12 ${hasBoth ? 'grid grid-cols-1 md:grid-cols-2 gap-6' : ''}`}>
       <div className="bg-white p-6 rounded-none border border-[#111] border-2 shadow-[4px_4px_0px_#111] flex flex-col justify-between">
         <div>
           <div className="flex items-center gap-3 mb-6">
