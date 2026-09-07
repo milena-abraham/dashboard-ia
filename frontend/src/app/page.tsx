@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import {
   Sparkles,
@@ -14,92 +15,89 @@ import {
   Zap,
   Github,
   Linkedin,
-  MousePointerClick,
-  Download
+  Layers,
+  Lock,
+  CheckCircle2,
+  MessageSquare,
+  Cpu,
+  Files
 } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
-
-function FloatingIcons() {
-  return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden hidden md:flex items-center justify-center z-[-1]">
-      <motion.div 
-        animate={{ y: [-15, 15, -15], rotate: [-5, 5, -5] }}
-        transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
-        className="absolute top-[20%] left-[10%] bg-white p-4 border-4 border-[#111] shadow-[6px_6px_0px_#111] rounded-none"
-      >
-        <BarChart3 className="w-10 h-10 text-mio-violet" />
-      </motion.div>
-      <motion.div 
-        animate={{ y: [15, -15, 15], rotate: [5, -5, 5] }}
-        transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
-        className="absolute top-[30%] right-[10%] bg-mio-lime p-4 border-4 border-[#111] shadow-[6px_6px_0px_#111] rounded-none"
-      >
-        <TrendingUp className="w-10 h-10 text-gray-900" />
-      </motion.div>
-      <motion.div 
-        animate={{ y: [-10, 10, -10], rotate: [-10, 10, -10] }}
-        transition={{ repeat: Infinity, duration: 7, ease: "easeInOut" }}
-        className="absolute bottom-[40%] left-[20%] bg-white p-4 border-4 border-[#111] shadow-[6px_6px_0px_#111] rounded-none"
-      >
-        <FileSpreadsheet className="w-10 h-10 text-blue-500" />
-      </motion.div>
+// Carga dinámica de la consola 3D MIO-Dev
+const MioDevCanvas = dynamic(() => import('@/components/canvas/MioDevCanvas'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-[360px] lg:w-[480px] h-[620px] lg:h-[780px] flex flex-col items-center justify-center font-mono text-xs font-bold text-gray-400 bg-white border-4 border-[#111] shadow-[8px_8px_0px_#111]">
+      <span className="text-mio-violet font-mono text-xs tracking-widest uppercase mb-1">MIO-OS v2.6 BOOTING</span>
+      <span className="text-[10px] text-gray-400">CARGANDO MIO-DEV 3D...</span>
     </div>
-  );
-}
+  )
+});
 
+// Mockup del dashboard de plataforma (cuando se activa el tab 'Vista Plataforma')
 function HeroMockup() {
-
   const targetRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: targetRef,
-    offset: ["start end", "end center"],
+    offset: ["start end", "end start"],
   });
 
-  const scale = useTransform(scrollYProgress, [0, 1], [0.8, 1]);
-  const opacity = useTransform(scrollYProgress, [0, 0.8], [0, 1]);
-  const y = useTransform(scrollYProgress, [0, 1], [100, 0]);
-  const rotateX = useTransform(scrollYProgress, [0, 1], [15, 0]);
+  const rotateX = useTransform(scrollYProgress, [0, 0.5], [15, 0]);
+  const scale = useTransform(scrollYProgress, [0, 0.5], [0.9, 1]);
+  const opacity = useTransform(scrollYProgress, [0, 0.3], [0.6, 1]);
 
   return (
     <motion.div 
-      ref={targetRef} 
-      style={{ scale, opacity, y, rotateX, willChange: "transform, opacity" }}
-      className="mt-16 sm:mt-24 relative z-0 max-w-5xl mx-auto w-full border-4 border-[#111] shadow-[8px_8px_0px_#111] sm:shadow-[16px_16px_0px_#111] bg-white aspect-[4/3] sm:aspect-video flex items-center justify-center overflow-hidden"
+      ref={targetRef}
+      style={{ rotateX, scale, opacity, transformPerspective: 1000 }}
+      className="mt-12 max-w-5xl mx-auto w-full px-4 relative z-10"
     >
-      <div className="absolute inset-0 bg-gray-50 flex flex-col pointer-events-none">
-        {/* Fake Browser Header */}
-        <div className="h-10 sm:h-12 border-b-4 border-[#111] bg-white flex items-center px-4 gap-2 sm:gap-3">
-           <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-red-400 border-2 border-[#111]" />
-           <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-yellow-400 border-2 border-[#111]" />
-           <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-mio-lime border-2 border-[#111]" />
-           <div className="ml-2 sm:ml-4 h-4 sm:h-6 w-1/3 bg-gray-100 border-2 border-[#111]" />
+      <div className="bg-white border-4 border-[#111] shadow-[8px_8px_0px_#111] sm:shadow-[16px_16px_0px_#111] overflow-hidden">
+        {/* Browser Top Bar */}
+        <div className="h-10 sm:h-12 bg-gray-100 border-b-4 border-[#111] flex items-center px-4 gap-2">
+          <div className="w-3 h-3 rounded-full bg-[#ff5f56] border-2 border-[#111]"></div>
+          <div className="w-3 h-3 rounded-full bg-[#ffbd2e] border-2 border-[#111]"></div>
+          <div className="w-3 h-3 rounded-full bg-[#27c93f] border-2 border-[#111]"></div>
+          <div className="ml-4 flex-1 max-w-sm sm:max-w-md bg-white border-2 border-[#111] h-6 sm:h-7 px-3 flex items-center text-[10px] sm:text-xs font-mono font-bold text-gray-500 truncate">
+            https://mio.app/dashboard/analytics-workspace
+          </div>
         </div>
-        {/* Fake Dashboard Body */}
-        <div className="flex-1 p-4 sm:p-8 flex gap-4 sm:gap-6">
-           {/* Sidebar */}
-           <div className="hidden sm:flex w-1/4 bg-white border-4 border-[#111] shadow-[4px_4px_0px_#111] flex-col p-4 gap-4">
-              <div className="w-full h-8 bg-gray-200 border-2 border-[#111]"></div>
-              <div className="w-full h-8 bg-gray-100 border-2 border-[#111]"></div>
-              <div className="w-full h-8 bg-gray-100 border-2 border-[#111]"></div>
+
+        {/* Workspace Content */}
+        <div className="p-4 sm:p-6 bg-[#fafafc] flex flex-col gap-6">
+           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b-4 border-[#111] pb-4">
+              <div>
+                 <span className="text-xs font-bold font-mono text-mio-violet bg-mio-violet/10 px-2 py-1 border border-mio-violet">MODELO ACTIVO: ARIMA + PROPHET</span>
+                 <h3 className="text-xl sm:text-2xl font-black text-gray-900 mt-1">Reporte Predictivo de Operaciones</h3>
+              </div>
+              <div className="flex gap-2">
+                 <div className="bg-mio-lime px-3 py-1 font-bold text-xs border-2 border-[#111] shadow-[2px_2px_0px_#111]">AutoML: OK</div>
+                 <div className="bg-white px-3 py-1 font-bold text-xs border-2 border-[#111] shadow-[2px_2px_0px_#111]">R²: 0.984</div>
+              </div>
            </div>
-           
-           {/* Main Content */}
-           <div className="flex-1 flex flex-col gap-4 sm:gap-6">
-              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 h-1/2 sm:h-1/3">
-                 <div className="flex-1 bg-mio-lime border-4 border-[#111] shadow-[4px_4px_0px_#111] p-4 flex flex-col justify-end">
-                    <span className="font-bold text-xl sm:text-3xl text-gray-900 block border-b-4 border-[#111] w-1/2 mb-2"></span>
-                 </div>
-                 <div className="flex-1 bg-mio-violet text-white border-4 border-[#111] shadow-[4px_4px_0px_#111] p-4 flex flex-col justify-end">
-                 </div>
+
+           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-white border-4 border-[#111] shadow-[4px_4px_0px_#111] p-4">
+                 <span className="text-xs font-bold text-gray-500 font-mono">PROYECCIÓN Q4</span>
+                 <div className="text-2xl sm:text-3xl font-black text-gray-900 mt-1">+34.8%</div>
               </div>
-              <div className="flex-1 bg-white border-4 border-[#111] shadow-[4px_4px_0px_#111] flex items-end p-4 gap-2 sm:gap-4 overflow-hidden">
-                 <div className="flex-1 h-1/4 bg-gray-200 border-2 border-[#111]"></div>
-                 <div className="flex-1 h-3/4 bg-gray-300 border-2 border-[#111]"></div>
-                 <div className="flex-1 h-1/2 bg-gray-400 border-2 border-[#111]"></div>
-                 <div className="flex-1 h-5/6 bg-mio-violet border-2 border-[#111]"></div>
-                 <div className="flex-1 h-full bg-mio-lime border-2 border-[#111]"></div>
+              <div className="bg-mio-lime border-4 border-[#111] shadow-[4px_4px_0px_#111] p-4">
+                 <span className="text-xs font-bold text-gray-900 font-mono">CONFIANZA</span>
+                 <div className="text-2xl sm:text-3xl font-black text-gray-900 mt-1">99.2%</div>
               </div>
+              <div className="bg-mio-violet text-white border-4 border-[#111] shadow-[4px_4px_0px_#111] p-4">
+                 <span className="text-xs font-bold text-mio-lime font-mono">ANOMALÍAS</span>
+                 <div className="text-2xl sm:text-3xl font-black mt-1">0 Críticas</div>
+              </div>
+           </div>
+
+           <div className="h-44 sm:h-56 bg-white border-4 border-[#111] shadow-[4px_4px_0px_#111] flex items-end p-4 gap-2 sm:gap-4 overflow-hidden">
+              <div className="flex-1 h-1/4 bg-gray-200 border-2 border-[#111]"></div>
+              <div className="flex-1 h-3/4 bg-gray-300 border-2 border-[#111]"></div>
+              <div className="flex-1 h-1/2 bg-gray-400 border-2 border-[#111]"></div>
+              <div className="flex-1 h-5/6 bg-mio-violet border-2 border-[#111]"></div>
+              <div className="flex-1 h-full bg-mio-lime border-2 border-[#111]"></div>
            </div>
         </div>
       </div>
@@ -107,115 +105,281 @@ function HeroMockup() {
   );
 }
 
+// BentoGrid con arquitectura técnica completa y contenido enriquecido
 function BentoGrid() {
-  const targetRef = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: targetRef,
-    offset: ["start 90%", "end center"],
-  });
-
-  const y1 = useTransform(scrollYProgress, [0, 1], [80, 0]);
-  const y2 = useTransform(scrollYProgress, [0.1, 1], [100, 0]);
-  const y3 = useTransform(scrollYProgress, [0.2, 1], [120, 0]);
-  const y4 = useTransform(scrollYProgress, [0.3, 1], [140, 0]);
-  const opacity = useTransform(scrollYProgress, [0, 0.5], [0, 1]);
+  const [bentoTab, setBentoTab] = useState<'forecast' | 'cluster' | 'anomalies'>('forecast');
 
   return (
-    <div ref={targetRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
-      <div className="text-center mb-12 sm:mb-16">
-        <h2 className="text-4xl md:text-5xl font-black text-gray-950 tracking-tighter mb-4">
-          Una suite analítica en un solo click.
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
+      {/* Header de Sección */}
+      <div className="text-center max-w-3xl mx-auto mb-16 sm:mb-20">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border-2 border-[#111] shadow-[3px_3px_0px_#111] mb-5 font-mono text-[11px] font-black uppercase tracking-widest text-mio-violet">
+          <Cpu className="w-3.5 h-3.5 text-mio-violet" />
+          <span>02 / ARQUITECTURA DE CÓMPUTO</span>
+        </div>
+
+        <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-gray-950 tracking-tight leading-[1.05] mb-4">
+          Poder corporativo.<br />
+          <span className="text-mio-violet">Diseño tangible.</span>
         </h2>
-        <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto font-medium">
-          Robusto como una herramienta corporativa, simple como un chat.
+
+        <p className="text-base sm:text-lg text-gray-600 font-medium leading-relaxed">
+          Eliminamos la fricción entre la recolección de datos y la toma de decisiones. Cuatro motores autónomos ensamblados en una sola plataforma.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-auto md:auto-rows-[280px]">
+      {/* Grid de 4 Celdas */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
         
-        {/* Card 1: Large Feature */}
-        <motion.div 
-          style={{ y: y1, opacity, willChange: "transform, opacity" }}
-          className="md:col-span-2 bg-white border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between group hover:shadow-none hover:translate-y-2 hover:translate-x-2 transition-all duration-300"
-        >
-          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-mio-violet text-white flex items-center justify-center border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6">
-            <BrainCircuit className="w-6 h-6 sm:w-8 sm:h-8" />
-          </div>
+        {/* CELDA 1 (2 Columnas): Visualizador Interactivo AutoML */}
+        <div className="lg:col-span-2 bg-white border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[6px_6px_0px_#111] transition-all">
           <div>
-            <h3 className="text-xl sm:text-2xl font-black text-gray-900 mb-2 tracking-tight">Motores Predictivos (AutoML)</h3>
-            <p className="text-sm sm:text-base text-gray-600 font-medium leading-relaxed max-w-md">
-              MIO entrena modelos de Forecasting, Detección de Anomalías y Segmentación K-Means sin que escribas una sola línea de código Python.
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-[#111] pb-4 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-mio-violet text-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center">
+                  <BrainCircuit className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-black text-gray-950 tracking-tight">Motor AutoML Continuo</h3>
+                  <span className="font-mono text-[11px] font-bold text-gray-500">SELECCIÓN Y ENTRENAMIENTO DINÁMICO</span>
+                </div>
+              </div>
+
+              {/* Selector de modo interactivo */}
+              <div className="flex bg-[#faf8f5] border-2 border-[#111] p-1 gap-1">
+                {(['forecast', 'cluster', 'anomalies'] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setBentoTab(m)}
+                    className={`px-3 py-1 font-mono text-[10px] font-bold uppercase transition-all ${
+                      bentoTab === m
+                        ? 'bg-mio-lime text-black border border-[#111] shadow-[1px_1px_0px_#111]'
+                        : 'text-gray-500 hover:text-gray-900'
+                    }`}
+                  >
+                    {m === 'forecast' ? 'Forecasting' : m === 'cluster' ? 'K-Means' : 'Anomalías'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Pantalla interactiva interna */}
+            <div className="bg-[#0b0914] border-2 border-[#111] p-4 text-white font-mono rounded-none">
+              <div className="flex items-center justify-between text-[11px] text-gray-400 border-b border-gray-800 pb-2 mb-3">
+                <span className="text-mio-lime font-bold">ALGORITMO EN EJECUCIÓN:</span>
+                <span className="text-white font-bold">
+                  {bentoTab === 'forecast' ? 'PROPHET + AUTO-ARIMA (Q4)' : bentoTab === 'cluster' ? 'K-MEANS (k=3 OPTIMIZADO)' : 'ISOLATION FOREST'}
+                </span>
+              </div>
+
+              {/* Visualización según pestaña */}
+              {bentoTab === 'forecast' && (
+                <div className="h-36 flex items-end justify-between gap-2 pt-2 px-1">
+                  {[28, 42, 36, 58, 52, 70, 65, 88, 80, 94, 98, 100].map((val, idx) => (
+                    <div key={idx} className="flex-1 flex flex-col items-center">
+                      <div
+                        className="w-full bg-gradient-to-t from-mio-violet to-mio-lime"
+                        style={{ height: `${val * 1.2}px` }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {bentoTab === 'cluster' && (
+                <div className="h-36 flex items-center justify-around gap-4 px-4">
+                  <div className="flex flex-col items-center gap-1.5 flex-1">
+                    <span className="text-xs text-mio-lime font-bold">62%</span>
+                    <div className="w-full h-24 bg-mio-lime border border-[#111]" />
+                    <span className="text-[10px] text-gray-400 font-bold">VIP</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1.5 flex-1">
+                    <span className="text-xs text-white font-bold">26%</span>
+                    <div className="w-full h-16 bg-mio-violet border border-[#111]" />
+                    <span className="text-[10px] text-gray-400 font-bold">Medio</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1.5 flex-1">
+                    <span className="text-xs text-gray-400 font-bold">12%</span>
+                    <div className="w-full h-8 bg-gray-700 border border-[#111]" />
+                    <span className="text-[10px] text-gray-400 font-bold">Casual</span>
+                  </div>
+                </div>
+              )}
+
+              {bentoTab === 'anomalies' && (
+                <div className="h-36 relative border border-dashed border-gray-800 p-2 overflow-hidden flex items-center justify-center">
+                  <div className="absolute top-4 left-6 text-red-400 text-xs font-bold animate-pulse">
+                    ● OUTLIER DETECTADO (Fila 842: Importe atípico)
+                  </div>
+                  <div className="w-full h-full flex items-center justify-around opacity-75">
+                    {[40, 42, 39, 41, 120, 40, 43, 38, 41].map((val, idx) => (
+                      <div
+                        key={idx}
+                        className={`w-3 ${val > 100 ? 'bg-red-500 animate-bounce' : 'bg-mio-lime'}`}
+                        style={{ height: `${Math.min(val, 110)}px` }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <p className="text-sm text-gray-600 font-medium mt-5 leading-relaxed">
+            MIO compara iterativamente múltiples familias de modelos estadísticos y escoge el que maximiza la métrica R² para tus datos particulares.
+          </p>
+        </div>
+
+        {/* CELDA 2 (1 Columna): Ingesta Universal de Ultra-Velocidad */}
+        <div className="bg-mio-lime border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[6px_6px_0px_#111] transition-all">
+          <div>
+            <div className="w-12 h-12 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center mb-6">
+              <Zap className="w-6 h-6 text-gray-950" />
+            </div>
+            <span className="font-mono text-[10px] font-black text-gray-950 uppercase tracking-widest block mb-1">
+              LATENCIA MÍNIMA
+            </span>
+            <h3 className="text-2xl sm:text-3xl font-black text-gray-950 mb-3 leading-tight tracking-tight">
+              De archivo bruto a dashboard en 60s
+            </h3>
+            <p className="text-sm text-gray-900 font-medium leading-relaxed mb-6">
+              Carga tus planillas .CSV o .XLSX sin limpiar. El pipeline parsea formatos de fecha rotos, imputa vacíos y genera visualizaciones autónomas.
             </p>
           </div>
-        </motion.div>
 
-        {/* Card 2: Small Feature */}
-        <motion.div 
-          style={{ y: y2, opacity, willChange: "transform, opacity" }}
-          className="bg-mio-lime border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between group hover:shadow-none hover:translate-y-2 hover:translate-x-2 transition-all duration-300"
-        >
-          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white text-gray-900 flex items-center justify-center border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6">
-            <Zap className="w-6 h-6 sm:w-8 sm:h-8" />
+          <div className="bg-white border-2 border-[#111] p-3 font-mono text-xs space-y-1.5 shadow-[2px_2px_0px_#111]">
+            <div className="flex justify-between text-gray-600 text-[11px]">
+              <span>Ingesta & Limpieza:</span>
+              <span className="font-bold text-gray-950">0.42s</span>
+            </div>
+            <div className="flex justify-between text-gray-600 text-[11px]">
+              <span>Entrenamiento ML:</span>
+              <span className="font-bold text-gray-950">1.84s</span>
+            </div>
+            <div className="flex justify-between border-t-2 border-gray-200 pt-1 text-gray-950 font-bold text-xs">
+              <span>Total Pipeline:</span>
+              <span className="text-mio-violet font-black">Listo</span>
+            </div>
           </div>
-          <div>
-            <h3 className="text-xl sm:text-2xl font-black text-gray-900 mb-2 tracking-tight">Velocidad</h3>
-            <p className="text-sm sm:text-base text-gray-800 font-bold">Limpieza y dashboard en menos de 60s.</p>
-          </div>
-        </motion.div>
+        </div>
 
-        {/* Card 3: Small Feature */}
-        <motion.div 
-          style={{ y: y3, opacity, willChange: "transform, opacity" }}
-          className="bg-white border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between group hover:shadow-none hover:translate-y-2 hover:translate-x-2 transition-all duration-300"
-        >
-          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-red-400 text-white flex items-center justify-center border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6">
-            <ShieldCheck className="w-6 h-6 sm:w-8 sm:h-8" />
-          </div>
+        {/* CELDA 3 (1 Columna): Arquitectura Privada Zero-Knowledge */}
+        <div className="bg-white border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[6px_6px_0px_#111] transition-all">
           <div>
-            <h3 className="text-xl sm:text-2xl font-black text-gray-900 mb-2 tracking-tight">Privacidad</h3>
-            <p className="text-sm sm:text-base text-gray-600 font-medium">Tus CSVs crudos nunca se guardan.</p>
-          </div>
-        </motion.div>
-
-        {/* Card 4: Large Feature */}
-        <motion.div 
-          style={{ y: y4, opacity, willChange: "transform, opacity" }}
-          className="md:col-span-2 bg-gray-900 text-white border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between group hover:shadow-none hover:translate-y-2 hover:translate-x-2 transition-all duration-300"
-        >
-          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-mio-violet flex items-center justify-center border-4 border-[#111] shadow-[4px_4px_0px_#111] mb-6">
-            <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-          </div>
-          <div>
-            <h3 className="text-xl sm:text-2xl font-black text-white mb-2 tracking-tight">IA Generativa Integrada</h3>
-            <p className="text-sm sm:text-base text-gray-300 font-medium leading-relaxed max-w-md">
-              Chateá con tus datos. Nuestra IA analiza las métricas, redacta un informe ejecutivo y redibuja los gráficos si se lo pedís.
+            <div className="w-12 h-12 bg-[#ff5f56] text-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center mb-6">
+              <Lock className="w-6 h-6" />
+            </div>
+            <span className="font-mono text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1">
+              SEGURIDAD CORPORATIVA
+            </span>
+            <h3 className="text-2xl sm:text-3xl font-black text-gray-950 mb-3 leading-tight tracking-tight">
+              Tus datos crudos nunca se guardan
+            </h3>
+            <p className="text-sm text-gray-600 font-medium leading-relaxed">
+              El análisis se procesa de forma transitoria en memoria volátil protegida. Las planillas de tus clientes no se usan para entrenar modelos públicos.
             </p>
           </div>
-        </motion.div>
+
+          <div className="border-2 border-[#111] bg-[#faf8f5] p-3 mt-6 flex items-center gap-3 shadow-[2px_2px_0px_#111]">
+            <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+            <span className="font-mono text-[11px] font-bold text-gray-800">
+              Cifrado en tránsito y en reposo
+            </span>
+          </div>
+        </div>
+
+        {/* CELDA 4 (2 Columnas): Copiloto IA Conversacional */}
+        <div className="lg:col-span-2 bg-[#0b0914] text-white border-4 border-[#111] shadow-[6px_6px_0px_#111] sm:shadow-[8px_8px_0px_#111] p-6 sm:p-8 flex flex-col justify-between hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[6px_6px_0px_#111] transition-all">
+          <div>
+            <div className="flex items-center justify-between border-b border-gray-800 pb-4 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-mio-violet text-white border border-mio-lime/40 flex items-center justify-center shadow-[2px_2px_0px_rgba(0,0,0,0.5)]">
+                  <MessageSquare className="w-5 h-5 text-mio-lime" />
+                </div>
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">Copiloto Ejecutivo MIO</h3>
+                  <span className="font-mono text-[11px] font-bold text-gray-400">CHATEÁ DIRECTAMENTE CON TUS TABLAS</span>
+                </div>
+              </div>
+              <span className="font-mono text-[10px] bg-mio-lime/20 text-mio-lime border border-mio-lime/40 px-2.5 py-1 font-bold uppercase tracking-wider">
+                LLM AGENT READY
+              </span>
+            </div>
+
+            {/* Simulación de chat interactivo */}
+            <div className="space-y-3 font-mono text-xs">
+              {/* Mensaje Usuario */}
+              <div className="bg-gray-900 border border-gray-800 p-3 text-gray-200 flex items-start gap-2.5">
+                <span className="text-mio-lime font-bold">TÚ:</span>
+                <span>¿Cuáles fueron los 2 productos con menor margen en el último trimestre?</span>
+              </div>
+              {/* Mensaje IA */}
+              <div className="bg-mio-violet/20 border border-mio-violet/50 p-3.5 text-white flex items-start gap-2.5">
+                <span className="text-mio-lime font-bold">MIO:</span>
+                <div className="space-y-1">
+                  <p>
+                    Los productos con menor margen fueron <strong className="text-white">SKU-402 (11.2%)</strong> y <strong className="text-white">SKU-119 (14.8%)</strong> debido a un alza imprevista del 18% en costos logísticos.
+                  </p>
+                  <p className="text-[11px] text-mio-lime">
+                    ✦ Generé una simulación de ajuste de precio sugerida (+6%) para recuperar margen sin perder demanda.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-sm text-gray-400 font-medium mt-6 leading-relaxed">
+            No pierdas horas creando fórmulas complejas: hacé preguntas en lenguaje natural y obtené respuestas de nivel consultor de datos en el acto.
+          </p>
+        </div>
 
       </div>
-    </div>
+    </section>
   );
 }
 
+// Banner de compatibilidad universal y multi-archivo
 function FormatBanner() {
   return (
-    <div className="w-full bg-[#111] text-white py-6 border-y-4 border-gray-900 overflow-hidden relative">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <FileSpreadsheet className="w-8 h-8 text-mio-lime" />
+    <div className="w-full bg-[#111] text-white py-7 border-y-4 border-gray-900 overflow-hidden relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center justify-between gap-6">
+        <div className="flex items-center gap-4 text-center sm:text-left">
+          <div className="w-12 h-12 bg-mio-lime/20 border-2 border-mio-lime flex items-center justify-center shrink-0">
+            <Files className="w-6 h-6 text-mio-lime" />
+          </div>
           <div>
-            <h4 className="text-lg font-black tracking-tight">Carga de Datos Universal</h4>
-            <p className="text-xs text-gray-400">Compatible con archivos .CSV y .XLSX (Excel)</p>
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
+              <h4 className="text-lg font-black tracking-tight text-white">
+                Carga de Datos Universal y Multi-Archivo
+              </h4>
+              <span className="px-2 py-0.5 bg-mio-lime text-black font-mono text-[10px] font-black uppercase tracking-wider">
+                Batch Processing
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-gray-400 font-medium max-w-xl">
+              Subí uno o múltiples archivos en simultáneo. Compatible con <span className="text-white font-bold">.CSV</span>, <span className="text-white font-bold">.XLSX (Excel)</span> y <span className="text-white font-bold">.JSON</span> sin necesidad de limpieza ni formateo previo.
+            </p>
           </div>
         </div>
         
-        <div className="flex gap-3">
-          <div className="bg-white/10 px-4 py-2 border-2 border-white/20 font-mono text-sm font-bold flex items-center gap-2">
-            <span className="text-green-400">.xlsx</span>
+        {/* Formatos y multi-archivo badges */}
+        <div className="flex flex-wrap items-center justify-center gap-2.5">
+          <div className="bg-white/10 px-3.5 py-1.5 border-2 border-white/20 font-mono text-xs font-bold flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-mio-lime"></span>
+            <span className="text-mio-lime font-mono">.csv</span>
           </div>
-          <div className="bg-white/10 px-4 py-2 border-2 border-white/20 font-mono text-sm font-bold flex items-center gap-2">
-            <span className="text-mio-lime">.csv</span>
+          <div className="bg-white/10 px-3.5 py-1.5 border-2 border-white/20 font-mono text-xs font-bold flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green-400"></span>
+            <span className="text-green-400 font-mono">.xlsx</span>
+          </div>
+          <div className="bg-white/10 px-3.5 py-1.5 border-2 border-white/20 font-mono text-xs font-bold flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span className="text-amber-400 font-mono">.json</span>
+          </div>
+          <div className="bg-mio-violet/30 px-3.5 py-1.5 border-2 border-mio-violet/60 font-mono text-xs font-bold flex items-center gap-2 text-white">
+            <Layers className="w-3.5 h-3.5 text-mio-lime" />
+            <span>Varios archivos a la vez</span>
           </div>
         </div>
       </div>
@@ -223,6 +387,9 @@ function FormatBanner() {
   );
 }
 
+// =========================================================================
+// CÓMO FUNCIONA MIO (RESTAURADO CON EL STICKY SCROLL ORIGINAL)
+// =========================================================================
 function HowItWorks() {
   const targetRef = useRef(null);
   const { scrollYProgress } = useScroll({
@@ -275,8 +442,8 @@ function HowItWorks() {
                 <FileSpreadsheet className="w-6 h-6 md:w-8 md:h-8 text-blue-600" />
               </div>
               <div>
-                <h2 className="text-2xl md:text-4xl font-black text-gray-950 tracking-tight mb-1 md:mb-2">1. Subí tu CSV</h2>
-                <p className="text-base md:text-lg text-gray-600 font-medium">Soltá tu archivo crudo. MIO limpia nulos y duplicados automáticamente.</p>
+                <h2 className="text-2xl md:text-4xl font-black text-gray-950 tracking-tight mb-1 md:mb-2">1. Subí tus datos</h2>
+                <p className="text-base md:text-lg text-gray-600 font-medium">Soltá tus archivos .CSV, .XLSX o .JSON (uno o varios en lote). MIO limpia nulos y prepara la matriz automáticamente.</p>
               </div>
             </motion.div>
             
@@ -327,10 +494,53 @@ function HowItWorks() {
           </div>
 
         </div>
+
       </div>
     </section>
   );
 }
+
+// Llamado a la acción de alta conversión
+function FinalCallToAction() {
+  return (
+    <section className="py-20 sm:py-28 bg-[#0b0914] text-white border-y-4 border-[#111] relative overflow-hidden">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-mio-lime/20 border border-mio-lime/40 text-mio-lime font-mono text-[11px] font-black uppercase tracking-widest mb-6">
+          <Sparkles className="w-3.5 h-3.5 text-mio-lime" />
+          <span>EMPEZÁ HOY SIN FRICCIÓN</span>
+        </div>
+
+        <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-tight leading-[1.05] mb-6">
+          Dejá de adivinar.<br />
+          <span className="text-mio-lime">Empezá a predecir.</span>
+        </h2>
+
+        <p className="text-base sm:text-lg text-gray-400 max-w-xl mx-auto mb-10 font-medium leading-relaxed">
+          Probá MIO gratis con tus propios archivos y obtené modelos predictivos y respuestas ejecutivas en menos de un minuto.
+        </p>
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <Link
+            href="/login"
+            className="w-full sm:w-auto px-10 py-5 bg-mio-lime text-gray-950 font-black text-lg border-4 border-[#111] shadow-[6px_6px_0px_#fff] hover:shadow-none hover:translate-x-[6px] hover:translate-y-[6px] transition-all flex items-center justify-center gap-3 tracking-tight"
+          >
+            <span>Crear Cuenta Gratis</span>
+            <ArrowRight className="w-5 h-5" strokeWidth={3} />
+          </Link>
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="w-full sm:w-auto px-8 py-5 bg-white/10 text-white font-black text-base border-2 border-white/20 hover:bg-white/20 transition-all"
+          >
+            Explorar Consola 3D ↑
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Sección Quiénes Somos (Original MIO)
 function AboutUs() {
   return (
     <section className="py-20 lg:py-32 bg-white border-t-4 border-[#111]">
@@ -356,10 +566,10 @@ function AboutUs() {
               Estudiante de Ciencia de Datos. Apasionado por analizar, visualizar y dar vida a los datos mediante arquitecturas de software sólidas e inteligencia artificial.
             </p>
             <div className="flex gap-4 mt-auto">
-              <a href="#" className="w-10 h-10 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center hover:translate-y-1 hover:shadow-none transition-all">
+              <a href="https://github.com" target="_blank" rel="noreferrer" className="w-10 h-10 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center hover:translate-y-1 hover:shadow-none transition-all">
                 <Github className="w-5 h-5 text-gray-900" />
               </a>
-              <a href="#" className="w-10 h-10 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center hover:translate-y-1 hover:shadow-none transition-all">
+              <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="w-10 h-10 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center hover:translate-y-1 hover:shadow-none transition-all">
                 <Linkedin className="w-5 h-5 text-blue-600" />
               </a>
             </div>
@@ -376,10 +586,10 @@ function AboutUs() {
               Estudiante de Ciencia de Datos. Apasionada por analizar, visualizar y construir modelos predictivos para encontrar valor estratégico en el caos de la información.
             </p>
             <div className="flex gap-4 mt-auto">
-              <a href="#" className="w-10 h-10 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center hover:translate-y-1 hover:shadow-none transition-all">
+              <a href="https://github.com" target="_blank" rel="noreferrer" className="w-10 h-10 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center hover:translate-y-1 hover:shadow-none transition-all">
                 <Github className="w-5 h-5 text-gray-900" />
               </a>
-              <a href="#" className="w-10 h-10 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center hover:translate-y-1 hover:shadow-none transition-all">
+              <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="w-10 h-10 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center hover:translate-y-1 hover:shadow-none transition-all">
                 <Linkedin className="w-5 h-5 text-blue-600" />
               </a>
             </div>
@@ -390,13 +600,18 @@ function AboutUs() {
   );
 }
 
+// =========================================================================
+// PÁGINA PRINCIPAL
+// =========================================================================
 export default function LandingPage() {
+  const [heroTab, setHeroTab] = useState<'3d' | 'preview'>('3d');
+
   return (
     <div className="min-h-screen bg-[#fafafc] flex flex-col selection:bg-mio-lime selection:text-black">
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative pt-16 sm:pt-24 pb-10 lg:pt-32 lg:pb-16 overflow-hidden" style={{ perspective: '1200px' }}>
+      <section className="relative pt-16 sm:pt-24 pb-12 lg:pt-32 lg:pb-16 overflow-hidden" style={{ perspective: '1200px' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           
           <motion.div 
@@ -413,7 +628,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.8, type: 'spring', damping: 12, stiffness: 100 }}
-            className="text-4xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black text-gray-950 tracking-tighter max-w-6xl mx-auto leading-[1.1] sm:leading-[1.05]  mb-6 sm:mb-8"
+            className="text-4xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black text-gray-950 tracking-tighter max-w-6xl mx-auto leading-[1.1] sm:leading-[1.05] mb-6 sm:mb-8"
           >
             Convertí planillas de datos en <span style={{ backgroundImage: "linear-gradient(to right, #bdf559 45%, #815ae1 55%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>decisiones inteligentes.</span>
           </motion.h1>
@@ -444,24 +659,191 @@ export default function LandingPage() {
 
         </div>
 
-        {/* Scroll-scrubbing Mockup */}
-        <HeroMockup />
-        
+        {/* Switcher de Vista Hero (3D Hardware vs Plataforma) */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 sm:mt-16 flex flex-col items-center relative z-20">
+          <div className="inline-flex p-1.5 bg-white border-4 border-[#111] shadow-[6px_6px_0px_#111] gap-2">
+            <button
+              type="button"
+              onClick={() => setHeroTab('3d')}
+              className={`px-4 sm:px-6 py-2 sm:py-2.5 font-black text-xs sm:text-sm tracking-wider uppercase transition-all flex items-center gap-2 ${
+                heroTab === '3d'
+                  ? 'bg-mio-violet text-white border-2 border-[#111] shadow-[3px_3px_0px_#111] -translate-y-0.5'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <Sparkles className="w-4 h-4 text-mio-lime" />
+              <span>🕹️ MIO-Dev 3D</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setHeroTab('preview')}
+              className={`px-4 sm:px-6 py-2 sm:py-2.5 font-black text-xs sm:text-sm tracking-wider uppercase transition-all flex items-center gap-2 ${
+                heroTab === 'preview'
+                  ? 'bg-mio-lime text-gray-950 border-2 border-[#111] shadow-[3px_3px_0px_#111] -translate-y-0.5'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4 text-gray-900" />
+              <span>💻 Vista Plataforma</span>
+            </button>
+          </div>
+
+          <p className="text-xs font-mono font-bold text-gray-500 mt-3 text-center">
+            {heroTab === '3d' 
+              ? '✦ Hacé click en los botones físicos para cambiar de modo de análisis en la pantalla.' 
+              : '✦ Navegación y vista previa en vivo del dashboard corporativo.'}
+          </p>
+        </div>
+
+        {/* ============================================================ */}
+        {/* VISTA 3D: POCKETFOLIO 3-COLUMNS EDITORIAL */}
+        {/* ============================================================ */}
+        {heroTab === '3d' ? (
+          <div className="mt-6 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] items-center gap-8 lg:gap-12">
+
+              {/* COLUMNA IZQUIERDA: Editorial */}
+              <div className="hidden lg:flex flex-col justify-center text-left">
+                {/* Eyebrow */}
+                <div className="flex items-center gap-2 mb-5">
+                  <span className="w-2 h-2 rounded-full bg-mio-lime border border-[#111]" />
+                  <span className="text-[11px] font-mono font-black tracking-[0.2em] text-gray-400 uppercase">
+                    01 / the pocket edition
+                  </span>
+                </div>
+
+                {/* Headline */}
+                <h2 className="text-4xl xl:text-5xl font-black text-gray-950 tracking-tight leading-[1.05] mb-4">
+                  Small screen.<br />
+                  <span className="italic" style={{ backgroundImage: "linear-gradient(to right, #815ae1, #bdf559)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                    Big decisions.
+                  </span>
+                </h2>
+
+                {/* Descripción */}
+                <p className="text-sm text-gray-600 font-medium leading-relaxed mb-8 max-w-xs">
+                  Analítica predictiva en tu bolsillo. MIO entrena modelos AutoML, detecta anomalías y segmenta tus clientes — sin escribir una línea de código.
+                </p>
+
+                {/* Firma */}
+                <div className="border-t-2 border-[#111] pt-4">
+                  <div className="text-[10px] font-mono font-black text-gray-400 uppercase tracking-widest mb-0.5">
+                    + MIO DATA ANALYTICS SYSTEM™
+                  </div>
+                  <div className="text-[10px] font-mono text-gray-400 font-medium">
+                    Ciencia de Datos · Inteligencia Artificial
+                  </div>
+                </div>
+
+                {/* Nota */}
+                <div className="mt-6 relative">
+                  <span className="italic font-semibold text-gray-400 text-sm">
+                    Hecho para explorar. →
+                  </span>
+                </div>
+              </div>
+
+              {/* COLUMNA CENTRAL: Consola 3D Protagónica */}
+              <div className="flex justify-center">
+                <MioDevCanvas />
+              </div>
+
+              {/* COLUMNA DERECHA: Guía de Controles */}
+              <div className="hidden lg:flex flex-col justify-center text-left">
+                <div className="border-4 border-[#111] shadow-[6px_6px_0px_#111] p-5 bg-white">
+                  <div className="flex items-center justify-between border-b-2 border-[#111] pb-2 mb-4">
+                    <span className="text-[11px] font-mono font-black tracking-[0.15em] text-gray-900 uppercase">
+                      HOW TO OPERATE
+                    </span>
+                    <span className="text-[9px] font-mono font-bold text-mio-violet">● V2.6</span>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* D-PAD */}
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-[#1a1726] text-white flex items-center justify-center font-black text-base shrink-0 border-2 border-[#111] shadow-[2px_2px_0px_#111]">
+                        +
+                      </div>
+                      <div>
+                        <div className="text-xs font-black text-gray-900">D-PAD</div>
+                        <div className="text-[11px] text-gray-500 font-medium">Navegar visualizaciones</div>
+                      </div>
+                    </div>
+
+                    {/* Botón A */}
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-mio-lime border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center font-black text-[11px] shrink-0 text-gray-900">
+                        A
+                      </div>
+                      <div>
+                        <div className="text-xs font-black text-gray-900">BOTÓN A</div>
+                        <div className="text-[11px] text-gray-500 font-medium">Siguiente gráfico</div>
+                      </div>
+                    </div>
+
+                    {/* Botón B */}
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-mio-violet border-2 border-[#111] shadow-[2px_2px_0px_#111] flex items-center justify-center font-black text-[11px] shrink-0 text-white">
+                        B
+                      </div>
+                      <div>
+                        <div className="text-xs font-black text-gray-900">BOTÓN B</div>
+                        <div className="text-[11px] text-gray-500 font-medium">Gráfico anterior</div>
+                      </div>
+                    </div>
+
+                    {/* START */}
+                    <div className="flex items-start gap-3">
+                      <div className="px-2 h-6 bg-white border-2 border-[#111] shadow-[1px_1px_0px_#111] flex items-center font-black text-[9px] shrink-0 text-gray-700 tracking-widest mt-0.5">
+                        START
+                      </div>
+                      <div>
+                        <div className="text-xs font-black text-gray-900">START</div>
+                        <div className="text-[11px] text-gray-500 font-medium">Ejecutar AutoML Predict</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Acceso rápido a plataforma */}
+                <button
+                  type="button"
+                  onClick={() => setHeroTab('preview')}
+                  className="mt-5 flex items-center gap-2 text-gray-400 hover:text-mio-violet transition-colors cursor-pointer group text-left"
+                >
+                  <div className="w-8 h-8 border-2 border-gray-300 group-hover:border-mio-violet flex items-center justify-center transition-colors bg-white">
+                    <BarChart3 className="w-4 h-4 text-gray-700 group-hover:text-mio-violet" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-black text-gray-700">Ver dashboard en vivo →</div>
+                    <div className="text-[10px] text-gray-400 font-medium">Explorá la plataforma completa</div>
+                  </div>
+                </button>
+              </div>
+
+            </div>
+          </div>
+        ) : (
+          <HeroMockup />
+        )}
       </section>
 
-      {/* Format Banner */}
+      {/* 1. Banner de Carga de Datos Universal y Multi-Archivo */}
       <FormatBanner />
 
-      {/* How It Works */}
-      <HowItWorks />
-
-      {/* Bento Grid Features */}
+      {/* 2. Arquitectura de Cómputo (Bento Grid con AutoML, Latencia 60s, Privacidad Zero-Knowledge y Copiloto) */}
       <BentoGrid />
 
-      {/* About Us */}
+      {/* 3. Cómo Funciona MIO (Paso a Paso interactivo con Sticky Scroll) */}
+      <HowItWorks />
+
+      {/* 4. Llamado a la Acción de Alta Conversión */}
+      <FinalCallToAction />
+
+      {/* 5. Quiénes Somos (Dossier Fundadores) */}
       <AboutUs />
 
-      {/* Footer */}
+      {/* 6. Footer */}
       <footer className="py-12 bg-white border-t-4 border-[#111] text-center text-sm font-bold text-gray-500">
         <p>© 2026 MIO. Neo-Brutal Analytics. Creado con ❤️ en Argentina.</p>
       </footer>

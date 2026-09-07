@@ -6,8 +6,11 @@ module.exports = {
       colors: {
         mio: {
           lime: '#bdf559',
-          violet: '#815ae1',
-          surface: '#f9f9fa'
+          violet: '#7647eb',
+          'violet-light': '#815ae1',
+          surface: '#f9f9fa',
+          paper: '#faf8f5',
+          obsidian: '#0b0914',
         }
       },
       fontFamily: {

@@ -6,8 +6,8 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Dashboard IA | Analisis Inteligente de Datos',
-  description: 'Convierte tus datos en decisiones inteligentes con IA. Analisis automatico, graficos y predicciones.',
+  title: 'MIO // Intelligent Data Operations & AutoML',
+  description: 'Transformá planillas de datos en decisiones inteligentes con IA. Análisis automático, gráficos y predicciones en 60 segundos.',
 };
 
 export default function RootLayout({
