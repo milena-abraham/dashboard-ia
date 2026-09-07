@@ -134,24 +134,35 @@ export function normalizeChartPayload(raw: any): ChartSchema | null {
     };
   }
 
-  // 4. Legacy Radar format: { type: 'radar', metrics: ['m1', 'm2'], datasets: { 'Seg 1': [10, 20] } }
+  // 4. Legacy Radar format: { type: 'radar', metrics: ['m1', 'm2'], datasets: { 'Seg 1': [10, 20] } or [{ label: 'Seg 1', data: [10, 20] }] }
   const radarMetrics = actual.metrics || actual.chart_data?.metrics;
   const radarDatasets = actual.datasets || actual.chart_data?.datasets;
-  if (radarMetrics && radarDatasets && !Array.isArray(radarDatasets)) {
+  if (radarMetrics && radarDatasets) {
     const source: any[] = [];
-    Object.entries(radarDatasets).forEach(([segName, vals]: [string, any]) => {
-      const row: any = { _segment: segName };
-      radarMetrics.forEach((m: string, idx: number) => {
-        row[m] = Array.isArray(vals) ? vals[idx] : 0;
+    if (!Array.isArray(radarDatasets)) {
+      Object.entries(radarDatasets).forEach(([segName, vals]: [string, any]) => {
+        const row: any = { _segment: segName };
+        radarMetrics.forEach((m: string, idx: number) => {
+          row[m] = Array.isArray(vals) ? vals[idx] : 0;
+        });
+        source.push(row);
       });
-      source.push(row);
-    });
+    } else {
+      radarDatasets.forEach((ds: any) => {
+        const row: any = { _segment: ds.label || ds.name || 'Segmento' };
+        const dataArr = ds.data || [];
+        radarMetrics.forEach((m: string, idx: number) => {
+          row[m] = dataArr[idx] ?? 0;
+        });
+        source.push(row);
+      });
+    }
 
     return {
       chartId: actual.chart_id || 'segmentation_radar',
       metadata: {
-        title: actual.title || 'Perfil de Segmentos',
-        insightSubtitle: actual.description || 'Comparativa promedio de variables clave por grupo',
+        title: actual.title || actual.chart_data?.title || 'Perfil Multidimensional',
+        insightSubtitle: actual.description || actual.chart_data?.description || 'Comparativa promedio de variables clave',
         sourceMetric: radarMetrics[0] || 'valor',
       },
       layoutDirectives: {
@@ -230,13 +241,15 @@ export default function DynamicChartRenderer({ payload: rawPayload, height = '10
                 });
                 if (!ds.dimensions.includes('band_width')) ds.dimensions.push('band_width');
             }
-            ds.source.forEach((row: any) => {
-                ds.dimensions.forEach((dim: string) => {
-                    if (typeof row[dim] === 'number' && (dim === ds.dimensions[0] || dim === 'feature' || dim === '_segment')) {
-                        row[dim] = String(row[dim]);
-                    }
+            if (payload.layoutDirectives.chartType !== 'Scatter') {
+                ds.source.forEach((row: any) => {
+                    ds.dimensions.forEach((dim: string) => {
+                        if (typeof row[dim] === 'number' && (dim === ds.dimensions[0] || dim === 'feature' || dim === '_segment')) {
+                            row[dim] = String(row[dim]);
+                        }
+                    });
                 });
-            });
+            }
         }
         return ds;
     }, [payload]);
