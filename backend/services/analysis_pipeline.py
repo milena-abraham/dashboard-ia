@@ -167,11 +167,11 @@ def _analyze_streaming_csv(file_path: str, filename: str, target_col: Optional[s
         else:
             active_target = df_clean_preview.columns[0]
             
-    # 3. Estimar tamaño y fracción de muestreo uniforme para ML (objetivo: ~50.000 filas)
+    # 3. Estimar tamaño y fracción de muestreo uniforme para ML (objetivo: ~10.000 filas para alta fidelidad y mínimo consumo de RAM)
     file_size = os.path.getsize(file_path)
     avg_row_bytes = max(20.0, len(df_preview.to_csv(index=False).encode('utf-8')) / max(1, len(df_preview)))
     est_total_rows = max(len(df_preview), int(file_size / avg_row_bytes))
-    sample_frac = min(1.0, 60000.0 / max(50000.0, float(est_total_rows)))
+    sample_frac = min(1.0, 15000.0 / max(10000.0, float(est_total_rows)))
     
     # 4. Acumuladores de agregación global (100% de los datos)
     total_rows = 0
@@ -219,11 +219,11 @@ def _analyze_streaming_csv(file_path: str, filename: str, target_col: Optional[s
         else:
             samples.append(chunk)
             
-    # Consolidar muestra de ML
+    # Consolidar muestra de ML calibrada a 10.000 filas
     if samples:
         df_clean = pd.concat(samples, ignore_index=True)
-        if len(df_clean) > 50000:
-            df_ml = df_clean.sample(50000, random_state=42)
+        if len(df_clean) > 10000:
+            df_ml = df_clean.sample(10000, random_state=42)
         else:
             df_ml = df_clean
     else:
@@ -269,59 +269,54 @@ def _analyze_streaming_csv(file_path: str, filename: str, target_col: Optional[s
                     if cd.get("datasets") and len(cd["datasets"]) > 0:
                         cd["datasets"][0]["data"] = [v for _, v in top_items]
                         
-    # 6. Modelos de ML concurrentes sobre la muestra
+    # 6. Modelos de ML ejecutados de manera secuencial para proteger los 512 MB de RAM en Render
     forecast_res = {"chart_data": None, "metrics": {}}
     feature_res = {"chart_importance": None, "chart_shap": None, "metrics": {}}
     anomaly_res = {"chart_data": None, "metrics": {}}
     seg_res = {"scatter_data": None, "radar_data": None, "metrics": {}}
-    
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        fut_forecast, fut_feature, fut_anomaly, fut_segmentation = None, None, None, None
-        
-        if profile.date_columns and active_target in profile.numeric_columns:
-            fut_forecast = executor.submit(run_forecast, df_clean, date_col=profile.date_columns[0], value_col=active_target, periods=60)
-        
-        if active_target in profile.numeric_columns:
-            feats = [c for c in profile.numeric_columns if c != active_target]
-            fut_feature = executor.submit(run_feature_importance, df_ml, active_target, feats, categorical_cols=profile.categorical_columns)
-            
-        fut_anomaly = executor.submit(
-            run_anomaly_detection, df_ml, numeric_cols=profile.numeric_columns, 
+
+    # 6.1 Forecast
+    if profile.date_columns and active_target in profile.numeric_columns:
+        try:
+            _, f_fig, f_metrics = run_forecast(df_clean, date_col=profile.date_columns[0], value_col=active_target, periods=60)
+            forecast_res = {"chart_data": f_fig, "metrics": f_metrics}
+        except Exception as e:
+            forecast_res["metrics"] = {"error": str(e)}
+    gc.collect()
+
+    # 6.2 Feature Importance
+    if active_target in profile.numeric_columns:
+        feats = [c for c in profile.numeric_columns if c != active_target]
+        try:
+            fi_fig, shap_fig, fi_metrics = run_feature_importance(df_ml, active_target, feats, categorical_cols=profile.categorical_columns)
+            feature_res = {"chart_importance": fi_fig, "chart_shap": shap_fig, "metrics": fi_metrics}
+        except Exception as e:
+            feature_res["metrics"] = {"error": str(e)}
+    gc.collect()
+
+    # 6.3 Anomalías
+    try:
+        _, a_fig, a_metrics = run_anomaly_detection(
+            df_ml, numeric_cols=profile.numeric_columns, 
             target_col=active_target if active_target in profile.numeric_columns else None, 
             date_col=profile.date_columns[0] if profile.date_columns else None
         )
-        
-        if len(profile.numeric_columns) >= 2:
-            label_c = profile.categorical_columns[0] if profile.categorical_columns else None
-            fut_segmentation = executor.submit(run_clustering, df_ml, numeric_cols=profile.numeric_columns[:6], label_col=label_c, target_col=active_target)
-            
-        if fut_forecast:
-            try:
-                _, f_fig, f_metrics = fut_forecast.result()
-                forecast_res = {"chart_data": f_fig, "metrics": f_metrics}
-            except Exception as e:
-                forecast_res["metrics"] = {"error": str(e)}
-                
-        if fut_feature:
-            try:
-                fi_fig, shap_fig, fi_metrics = fut_feature.result()
-                feature_res = {"chart_importance": fi_fig, "chart_shap": shap_fig, "metrics": fi_metrics}
-            except Exception as e:
-                feature_res["metrics"] = {"error": str(e)}
-                
-        if fut_anomaly:
-            try:
-                _, a_fig, a_metrics = fut_anomaly.result()
-                anomaly_res = {"chart_data": a_fig, "metrics": a_metrics}
-            except Exception as e:
-                anomaly_res["metrics"] = {"error": str(e)}
-                
-        if fut_segmentation:
-            try:
-                s_fig, r_fig, s_metrics = fut_segmentation.result()
-                seg_res = {"scatter_data": s_fig, "radar_data": r_fig, "metrics": s_metrics}
-            except Exception as e:
-                seg_res["metrics"] = {"error": str(e)}
+        anomaly_res = {"chart_data": a_fig, "metrics": a_metrics}
+    except Exception as e:
+        anomaly_res["metrics"] = {"error": str(e)}
+    gc.collect()
+
+    # 6.4 Segmentación
+    if len(profile.numeric_columns) >= 2:
+        label_c = profile.categorical_columns[0] if profile.categorical_columns else None
+        try:
+            _, s_dist, s_prof, s_metrics = run_clustering(
+                df_ml, numeric_cols=profile.numeric_columns[:6], label_col=label_c, target_col=active_target
+            )
+            seg_res = {"scatter_data": s_dist, "radar_data": s_prof, "metrics": s_metrics}
+        except Exception as e:
+            seg_res["metrics"] = {"error": str(e)}
+    gc.collect()
 
     narrative_res = {
         "text": "Generando informe avanzado con IA...",
@@ -403,11 +398,11 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
         # Pasamos duplicate_rows=0 porque clean_dataframe ya eliminó duplicados
         profile = profile_dataframe(df_clean, duplicate_rows=0)
 
-        # Para modelos de ML intensivos (Clustering, Anomalías, LightGBM), si el dataset supera 50,000 filas,
-        # usamos una muestra representativa estratificada/aleatoria de 50k filas para responder en ~2-4 segundos.
+        # Para modelos de ML intensivos (Clustering, Anomalías, LightGBM), si el dataset supera 10,000 filas,
+        # usamos una muestra representativa de 10k filas para responder en ~1-2 segundos con mínimo consumo de RAM.
         # df_clean se preserva 100% íntegro para KPIs, conteos, profiling, gráficos y series temporales completas.
-        if len(df_clean) > 50000:
-            df_ml = df_clean.sample(50000, random_state=42)
+        if len(df_clean) > 10000:
+            df_ml = df_clean.sample(10000, random_state=42)
         else:
             df_ml = df_clean
 
@@ -450,53 +445,45 @@ def _analyze_sync(file_path: str, filename: str, target_col: Optional[str]):
         anomaly_res: Dict[str, Any] = {"chart_data": None, "metrics": {}}
         seg_res: Dict[str, Any] = {"scatter_data": None, "radar_data": None, "metrics": {}}
         
-        with ThreadPoolExecutor(max_workers=4) as executor:
-            fut_forecast, fut_feature, fut_anomaly, fut_segmentation = None, None, None, None
+        # Ejecución secuencial con liberación de memoria entre modelos
+        if profile.date_columns and active_target in profile.numeric_columns:
+            try:
+                _, f_fig, f_metrics = run_forecast(df_clean, date_col=profile.date_columns[0], value_col=active_target, periods=60)
+                forecast_res = {"chart_data": f_fig, "metrics": f_metrics}
+            except Exception as e:
+                forecast_res["metrics"] = {"error": str(e)}
+        gc.collect()
+        
+        if active_target in profile.numeric_columns:
+            feats = [c for c in profile.numeric_columns if c != active_target]
+            try:
+                fi_fig, shap_fig, fi_metrics = run_feature_importance(df_ml, active_target, feats, categorical_cols=profile.categorical_columns)
+                feature_res = {"chart_importance": fi_fig, "chart_shap": shap_fig, "metrics": fi_metrics}
+            except Exception as e:
+                feature_res["metrics"] = {"error": str(e)}
+        gc.collect()
             
-            if profile.date_columns and active_target in profile.numeric_columns:
-                fut_forecast = executor.submit(run_forecast, df_clean, date_col=profile.date_columns[0], value_col=active_target, periods=60)
-            
-            if active_target in profile.numeric_columns:
-                feats = [c for c in profile.numeric_columns if c != active_target]
-                fut_feature = executor.submit(run_feature_importance, df_ml, active_target, feats, categorical_cols=profile.categorical_columns)
-                
-            fut_anomaly = executor.submit(
-                run_anomaly_detection, df_ml, numeric_cols=profile.numeric_columns, 
+        try:
+            _, a_fig, a_metrics = run_anomaly_detection(
+                df_ml, numeric_cols=profile.numeric_columns, 
                 target_col=active_target if active_target in profile.numeric_columns else None, 
                 date_col=profile.date_columns[0] if profile.date_columns else None
             )
+            anomaly_res = {"chart_data": a_fig, "metrics": a_metrics}
+        except Exception as e:
+            anomaly_res["metrics"] = {"error": str(e)}
+        gc.collect()
             
-            if len(profile.numeric_columns) >= 2:
-                label_c = profile.categorical_columns[0] if profile.categorical_columns else None
-                fut_segmentation = executor.submit(run_clustering, df_ml, numeric_cols=profile.numeric_columns[:6], label_col=label_c, target_col=active_target)
-                
-            if fut_forecast:
-                try:
-                    _, f_fig, f_metrics = fut_forecast.result()
-                    forecast_res = {"chart_data": f_fig, "metrics": f_metrics}
-                except Exception as e:
-                    forecast_res["metrics"] = {"error": str(e)}
-                    
-            if fut_feature:
-                try:
-                    fi_fig, shap_fig, fi_metrics = fut_feature.result()
-                    feature_res = {"chart_importance": fi_fig, "chart_shap": shap_fig, "metrics": fi_metrics}
-                except Exception as e:
-                    feature_res["metrics"] = {"error": str(e)}
-                    
-            if fut_anomaly:
-                try:
-                    _, a_fig, a_metrics = fut_anomaly.result()
-                    anomaly_res = {"chart_data": a_fig, "metrics": a_metrics}
-                except Exception as e:
-                    anomaly_res["metrics"] = {"error": str(e)}
-                    
-            if fut_segmentation:
-                try:
-                    _, s_scatter, s_prof, s_metrics = fut_segmentation.result()
-                    seg_res = {"scatter_data": s_scatter, "radar_data": s_prof, "metrics": s_metrics}
-                except Exception as e:
-                    seg_res["metrics"] = {"error": str(e)}
+        if len(profile.numeric_columns) >= 2:
+            label_c = profile.categorical_columns[0] if profile.categorical_columns else None
+            try:
+                _, s_scatter, s_prof, s_metrics = run_clustering(
+                    df_ml, numeric_cols=profile.numeric_columns[:6], label_col=label_c, target_col=active_target
+                )
+                seg_res = {"scatter_data": s_scatter, "radar_data": s_prof, "metrics": s_metrics}
+            except Exception as e:
+                seg_res["metrics"] = {"error": str(e)}
+        gc.collect()
 
         narrative_res = {
             "text": "Generando informe avanzado con IA...",

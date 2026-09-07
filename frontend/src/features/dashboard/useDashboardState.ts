@@ -113,12 +113,12 @@ export function useDashboardState() {
     const saved = localStorage.getItem('mio_active_analysis');
     if (saved) {
       try {
-        const { filename, targetCol: savedTarget, fileSize: savedSize } = JSON.parse(saved);
+        const { filename, uploadId, targetCol: savedTarget, fileSize: savedSize } = JSON.parse(saved);
         if (savedSize) setActiveFileSize(savedSize);
-        if (filename) {
+        if (filename && uploadId) {
           setLoading(true);
           if (savedTarget) setTargetCol(savedTarget);
-          analyzeFile(null, undefined, undefined, savedTarget || undefined, filename)
+          analyzeFile(null, undefined, filename, savedTarget || undefined, uploadId)
             .then((freshData) => {
               setResult(freshData);
               toast.success(`Datos actualizados desde el backend (${filename})`, { id: 'restore-analysis' });
@@ -198,6 +198,7 @@ export function useDashboardState() {
         try {
           localStorage.setItem('mio_active_analysis', JSON.stringify({
             filename: data.filename,
+            uploadId: data.uploadId,
             targetCol: data.targetCol || targetCol || '',
             fileSize: file.size,
           }));
@@ -351,7 +352,7 @@ export function useDashboardState() {
   };
 
   const handleRefresh = async () => {
-    if (!result?.filename) return;
+    if (!result?.filename || !result.uploadId) return;
     if (!activeFileSize && result?.profile?.nRows) {
       setActiveFileSize(result.profile.nRows * 95);
     }
@@ -360,9 +361,9 @@ export function useDashboardState() {
       const freshData = await analyzeFile(
         null,
         undefined,
-        undefined,
+        result.filename,
         targetCol || result.targetCol || undefined,
-        result.filename
+        result.uploadId
       );
       setResult(freshData);
       toast.success('Gráficos y análisis recalculados con el backend');

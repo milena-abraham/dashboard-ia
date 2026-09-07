@@ -1,6 +1,5 @@
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from api.routes import analysis, export, chat, narrative
 from core.config import get_settings
 from core.exceptions import setup_exception_handlers
@@ -12,18 +11,6 @@ app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION)
 
 # Set up global exception handlers
 setup_exception_handlers(app)
-
-@app.middleware("http")
-async def add_cors_headers_middleware(request: Request, call_next):
-    if request.method == "OPTIONS":
-        response = Response(status_code=200)
-    else:
-        response = await call_next(request)
-        
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    return response
 
 app.add_middleware(
     CORSMiddleware,

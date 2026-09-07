@@ -112,6 +112,7 @@ export interface NarrativeSchema {
 
 export interface AnalysisResponseSchema {
   filename: string;
+  uploadId?: string;
   targetCol?: string;
   profile: ProfileSchema;
   cleaningReport: CleaningReportSchema;

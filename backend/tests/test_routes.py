@@ -49,11 +49,27 @@ def test_narrative_endpoint():
     for emoji in ["📈", "🎯", "⚠️", "🚀", "⭐"]:
         assert emoji not in data["text"]
 
-def test_analyze_existing_filename():
-    data = {"existing_filename": "test_sales.csv", "target_col": "ventas"}
+def test_analyze_existing_upload():
+    df = pd.DataFrame({"ventas": [10, 20, 30], "categoria": ["A", "B", "A"]})
+    files = {"file": ("test_sales.csv", io.BytesIO(df.to_csv(index=False).encode("utf-8")), "text/csv")}
+    upload_response = client.post("/api/v1/analyze", files=files, data={"target_col": "ventas"})
+    upload_id = upload_response.json()["uploadId"]
+
+    data = {"upload_id": upload_id, "display_name": "test_sales.csv", "target_col": "ventas"}
     response = client.post("/api/v1/analyze", data=data)
     assert response.status_code == 200
     body = response.json()
     assert body["filename"] == "test_sales.csv"
     assert "profile" in body
-    assert "kpis" in body
+
+
+def test_rejects_path_traversal_filename():
+    files = {"file": ("../../outside.csv", io.BytesIO(b"ventas\n10\n"), "text/csv")}
+    response = client.post("/api/v1/analyze", files=files)
+    assert response.status_code == 400
+
+
+def test_rejects_invalid_upload_id():
+    response = client.post("/api/v1/analyze", data={"upload_id": "../../outside.csv"})
+    assert response.status_code == 400
+

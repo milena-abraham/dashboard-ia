@@ -188,43 +188,12 @@ def run_forecast(
         )
         model.fit(df_agg)
 
-        # Validación Out-Of-Sample (OOS)
-        test_size = max(2, min(int(n_pts * 0.15), 20))
-        if n_pts >= 12:
-            df_train = df_agg.iloc[:-test_size].copy()
-            df_test = df_agg.iloc[-test_size:].copy()
-            try:
-                m_eval = Prophet(
-                    growth=growth_mode,
-                    yearly_seasonality=bool(span_days >= 365),
-                    weekly_seasonality=bool(chosen_freq != "W" and len(df_train) >= 14),
-                    daily_seasonality=False,
-                    seasonality_mode="additive",
-                    changepoint_prior_scale=0.03 if not is_stationary else 0.01,
-                    interval_width=0.80,
-                )
-                m_eval.fit(df_train)
-                fut_eval = m_eval.make_future_dataframe(periods=test_size, freq=chosen_freq)
-                fc_eval = m_eval.predict(fut_eval)
-                oos_preds = fc_eval["yhat"].iloc[-test_size:].values
-                oos_reals = df_test["y"].values
-                mae = float(np.mean(np.abs(oos_reals - oos_preds)))
-                rmse = float(np.sqrt(np.mean((oos_reals - oos_preds) ** 2)))
-                mape = float(np.mean(np.abs((oos_reals - oos_preds) / (np.abs(oos_reals) + 1e-4))) * 100)
-                eval_type = "Out-of-Sample (OOS)"
-            except Exception:
-                in_sample = model.predict(df_agg)["yhat"].values
-                mae = float(np.mean(np.abs(y_vals - in_sample)))
-                rmse = float(np.sqrt(np.mean((y_vals - in_sample) ** 2)))
-                mape = float(np.mean(np.abs((y_vals - in_sample) / (np.abs(y_vals) + 1e-4))) * 100)
-                eval_type = "In-Sample"
-        else:
-            in_sample = model.predict(df_agg)["yhat"].values
-            mae = float(np.mean(np.abs(y_vals - in_sample)))
-            rmse = float(np.sqrt(np.mean((y_vals - in_sample) ** 2)))
-            mape = float(np.mean(np.abs((y_vals - in_sample) / (np.abs(y_vals) + 1e-4))) * 100)
-            eval_type = "In-Sample"
-
+        # Métricas de precisión in-sample con el modelo ajustado (cero consumo de RAM adicional)
+        in_sample = model.predict(df_agg)["yhat"].values
+        mae = float(np.mean(np.abs(y_vals - in_sample)))
+        rmse = float(np.sqrt(np.mean((y_vals - in_sample) ** 2)))
+        mape = float(np.mean(np.abs((y_vals - in_sample) / (np.abs(y_vals) + 1e-4))) * 100)
+        eval_type = "In-Sample"
         precision_pct = float(max(0.0, min(100.0, round(100.0 - mape, 1))))
 
         # Generar proyección futura

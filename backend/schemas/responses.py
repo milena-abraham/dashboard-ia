@@ -108,6 +108,7 @@ class NarrativeSchema(BaseSchema):
 
 class AnalysisResponseSchema(BaseSchema):
     filename: str
+    upload_id: Optional[str] = None
     target_col: Optional[str] = None
     profile: ProfileSchema
     cleaning_report: CleaningReportSchema

@@ -17,7 +17,7 @@ export default function FileUploader({ onFileSelect, selectedFiles }: FileUpload
     if (fileRejections.length > 0) {
       const err = fileRejections[0].errors[0];
       if (err.code === 'file-too-large') {
-        setErrorMsg('El archivo es demasiado grande (Máx 500MB).');
+        setErrorMsg('El archivo es demasiado grande (máx. 100 MB).');
       } else if (err.code === 'file-invalid-type') {
         setErrorMsg('Formato no soportado. Usá .csv, .xlsx, .xls o .json');
       } else {
@@ -40,7 +40,7 @@ export default function FileUploader({ onFileSelect, selectedFiles }: FileUpload
       'application/json': ['.json'],
     },
     multiple: true,
-    maxSize: 500 * 1024 * 1024, // 500MB frontal
+    maxSize: 100 * 1024 * 1024,
   });
 
   // Calculate dynamic classes for drag states

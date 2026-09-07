@@ -7,6 +7,7 @@ function normalizeAnalysisResponse(raw: any): AnalysisResponseSchema {
 
   return {
     filename: data.filename || '',
+    uploadId: data.uploadId || data.upload_id || '',
     targetCol: data.targetCol || data.target_col || '',
     profile: {
       nRows: data.profile?.nRows ?? data.profile?.n_rows ?? 0,
@@ -48,20 +49,23 @@ export async function analyzeFile(
   fileUrl?: string,
   filenameOverride?: string,
   targetCol?: string,
-  existingFilename?: string
+  uploadId?: string
 ): Promise<AnalysisResponseSchema> {
   const formData = new FormData();
   if (file) {
     formData.append('file', file);
-  } else if (existingFilename) {
-    formData.append('existing_filename', existingFilename);
+  } else if (uploadId) {
+    formData.append('upload_id', uploadId);
+    if (filenameOverride) {
+      formData.append('display_name', filenameOverride);
+    }
   } else if (fileUrl) {
     formData.append('file_url', fileUrl);
     if (filenameOverride) {
       formData.append('filename_override', filenameOverride);
     }
   } else {
-    throw new Error('Debe proveer un archivo o el nombre de un archivo existente.');
+    throw new Error('Debe proveer un archivo o un identificador de carga.');
   }
 
   if (targetCol) {

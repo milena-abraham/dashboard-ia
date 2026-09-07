@@ -37,7 +37,9 @@ git push -u origin main
    - **Instance Type:** `Free`
 5. En la sección **Environment Variables**, agrega:
    - `GEMINI_API_KEY`: *(Tu clave de Gemini)*
-   - `CORS_ORIGINS`: `*`
+   - `BACKEND_CORS_ORIGINS`: `https://tu-frontend.vercel.app` (agregá el origen local sólo para desarrollo)
+   - `MAX_UPLOAD_BYTES`: `104857600`
+   - `MAX_CONCURRENT_ANALYSES`: `2`
 6. Clic en **"Create Web Service"**.
 7. Al terminar, Render te dará una URL (ej: `https://dashboard-ia-api.onrender.com`). **Copia esa URL**.
 
@@ -63,3 +65,7 @@ git push -u origin main
 
 ## 🎉 ¡Listo!
 Vercel te dará tu link público definitivo (ej: `https://dashboard-ia.vercel.app`), accesible para cualquier usuario en el mundo desde PC o celular.
+
+## Seguridad de Firebase
+
+Desplegá `firestore.rules` antes de habilitar producción. El panel de administración requiere el custom claim `admin: true`; asignalo desde un entorno de administración confiable con Firebase Admin SDK. Una lista de emails en el frontend no es una medida de autorización.
