@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { useFrame } from '@react-three/fiber';
 import { RoundedBox, Html } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -41,16 +40,14 @@ export function MioDevModel() {
   const [activeModeIdx, setActiveModeIdx] = useState(0);
   const [btnPressed, setBtnPressed] = useState<string | null>(null);
 
-  // Pose acostada sobre la mesa (exactamente como en la foto de Pocketfolio):
-  // Apoyada sobre el plano XZ, levantada apenas ~18° hacia la cámara para lectura perfecta,
-  // y con un suave giro casual de ~4° en Z.
+  // Pose apoyada sobre la mesa (el fondo de la web):
+  // Casi plana contra la superficie con una sutil inclinación de ~3° y giro casual
   const BASE_ROTATION = {
-    x: -0.22,  // Inclinación hacia la cámara (como apoyada en soporte suave de escritorio)
-    y: 0.04,   // Casi frontal
-    z: -0.05   // Giro casual idéntico a la referencia
+    x: -0.05,  // Apoyada sobre la superficie de la mesa/fondo
+    y: 0.03,   // Ligero ángulo 3D para apreciar volumen y biseles
+    z: -0.04   // Giro casual natural
   };
 
-  const mouseOffset = useRef({ x: 0, y: 0 });
   const currentMode = SCREEN_MODES[activeModeIdx];
 
   const handleNextMode = (e?: any) => {
@@ -67,25 +64,13 @@ export function MioDevModel() {
     setTimeout(() => setBtnPressed(null), 180);
   };
 
-  useFrame((state) => {
-    if (!groupRef.current) return;
-
-    // Micro-parallax imperceptible con amortiguación
-    const pointerX = state.pointer.x;
-    const pointerY = state.pointer.y;
-
-    mouseOffset.current.x = THREE.MathUtils.lerp(mouseOffset.current.x, pointerX * 0.02, 0.04);
-    mouseOffset.current.y = THREE.MathUtils.lerp(mouseOffset.current.y, -pointerY * 0.015, 0.04);
-
-    groupRef.current.rotation.y = BASE_ROTATION.y + mouseOffset.current.x;
-    groupRef.current.rotation.x = BASE_ROTATION.x + mouseOffset.current.y;
-    groupRef.current.rotation.z = BASE_ROTATION.z;
-    // Anclada perfectamente con margen seguro para no recortar la base
-    groupRef.current.position.set(0, 0.06, 0);
-  });
-
   return (
-    <group ref={groupRef} scale={[0.96, 0.96, 0.96]} position={[0, 0.06, 0]}>
+    <group
+      ref={groupRef}
+      scale={[0.96, 0.96, 0.96]}
+      position={[0, 0.06, 0]}
+      rotation={[BASE_ROTATION.x, BASE_ROTATION.y, BASE_ROTATION.z]}
+    >
       {/* ==================================================== */}
       {/* 1. INTERRUPTOR SUPERIOR DE HARDWARE (OFF <-> ON) */}
       {/* ==================================================== */}

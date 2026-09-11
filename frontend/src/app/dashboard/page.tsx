@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import KPICards from '@/components/KPICards';
 import LoadingAnalysis from '@/components/LoadingAnalysis';
@@ -18,6 +19,10 @@ import {
   FeatureImportanceSection,
   DashboardChat,
 } from '@/features/dashboard/components';
+
+const MioBackgroundShader = dynamic(() => import('@/components/MioBackgroundShader'), {
+  ssr: false,
+});
 
 function DashboardInner() {
   const {
@@ -61,10 +66,15 @@ function DashboardInner() {
     (result?.profile?.nRows ? result.profile.nRows * 95 : undefined);
 
   return (
-    <div className="min-h-screen bg-[#fafafc] flex flex-col">
+    <div className="min-h-screen bg-[#fafafc] flex flex-col relative overflow-hidden selection:bg-mio-lime selection:text-black">
+      {/* Fondo interactivo de Shaders MIO en todo el dashboard */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <MioBackgroundShader theme="light" opacity={0.42} />
+      </div>
+
       <Navbar />
 
-      <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
+      <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 relative z-10">
         {loading ? (
           <LoadingAnalysis
             fileSize={effectiveFileSize}

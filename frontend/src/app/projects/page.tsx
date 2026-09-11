@@ -1,20 +1,30 @@
 'use client';
 
 import React from 'react';
+import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import ProjectCard from '@/components/ProjectCard';
 import { Layers, Plus, Loader2 } from 'lucide-react';
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/ScrollReveal';
 import { useProjectsState } from '@/features/projects/useProjectsState';
 
+const MioBackgroundShader = dynamic(() => import('@/components/MioBackgroundShader'), {
+  ssr: false,
+});
+
 export default function ProjectsPage() {
   const { projects, loading, handleDelete, router } = useProjectsState();
 
   return (
-    <div className="min-h-screen bg-[#fafafc] flex flex-col">
+    <div className="min-h-screen bg-[#fafafc] flex flex-col relative overflow-hidden selection:bg-mio-lime selection:text-black">
+      {/* Fondo interactivo de Shaders MIO */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <MioBackgroundShader theme="light" opacity={0.42} />
+      </div>
+
       <Navbar />
 
-      <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1">
+      <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1 relative z-10">
         <ScrollReveal direction="up">
           <div className="flex items-center justify-between mb-8">
             <div>

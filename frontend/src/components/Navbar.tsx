@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
+import { usePathname } from 'next/navigation';
 import { Share2, LogOut, UserCircle, Layers, Activity } from 'lucide-react';
 
 export default function Navbar() {
@@ -28,18 +29,20 @@ export default function Navbar() {
   return (
     <nav className="w-full bg-white border-b-2 border-[#111] sticky top-0 z-50 backdrop-blur-md bg-white/95">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex items-center gap-2 group">
-            <Image 
-              src="/MIO.png" 
-              alt="MIO Logo" 
-              width={32} 
-              height={32} 
-              className="transform group-hover:scale-105 transition-transform rounded-md" 
-            />
-            <span className="text-2xl font-extrabold text-gray-900 tracking-wide">MIO</span>
-          </div>
-        </Link>
+        <div className="flex items-center gap-6">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="flex items-center gap-2 group">
+              <Image 
+                src="/MIO.png" 
+                alt="MIO Logo" 
+                width={32} 
+                height={32} 
+                className="transform group-hover:scale-105 transition-transform rounded-md" 
+              />
+              <span className="text-2xl font-extrabold text-gray-900 tracking-wide">MIO</span>
+            </div>
+          </Link>
+        </div>
 
         <div className="flex items-center gap-6">
           {user && (

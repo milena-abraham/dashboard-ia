@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import {
   Sparkles,
   BarChart3,
@@ -16,6 +18,7 @@ import {
   Github,
   Linkedin,
   Layers,
+  Plus,
   Lock,
   CheckCircle2,
   MessageSquare,
@@ -33,6 +36,21 @@ const MioDevCanvas = dynamic(() => import('@/components/canvas/MioDevCanvas'), {
       <span className="text-[10px] text-gray-400">CARGANDO MIO-DEV 3D...</span>
     </div>
   )
+});
+
+const MioBackgroundShader = dynamic(() => import('@/components/MioBackgroundShader'), {
+  ssr: false,
+});
+
+// Carga dinámica de la consola MIO-Drive de cartuchos
+const CartridgeDeckBlock = dynamic(() => import('@/features/cartridge-deck/CartridgeDeckBlock'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full max-w-2xl h-96 flex flex-col items-center justify-center font-mono text-xs font-bold text-gray-400 bg-white border-4 border-[#111] shadow-[8px_8px_0px_#111]">
+      <span className="text-mio-lime font-mono text-xs uppercase mb-1">MIO-DRIVE 01 INITIALIZING</span>
+      <span className="text-[10px] text-gray-400">CARGANDO BANDEJA DE CARTUCHOS...</span>
+    </div>
+  ),
 });
 
 // Mockup del dashboard de plataforma (cuando se activa el tab 'Vista Plataforma')
@@ -412,21 +430,20 @@ function HowItWorks() {
   const t2S = useTransform(scrollYProgress, [0.2, 0.35, 0.65, 0.75], [0.85, 1.05, 1.05, 0.85]);
   const t3S = useTransform(scrollYProgress, [0.55, 0.7, 1], [0.85, 1.05, 1.05]);
 
-  // Right Visualizer Opacity
-  const v1O = useTransform(scrollYProgress, [0, 0.3, 0.4], [1, 1, 0]);
-  const v2O = useTransform(scrollYProgress, [0.25, 0.4, 0.6, 0.7], [0, 1, 1, 0]);
-  const v3O = useTransform(scrollYProgress, [0.6, 0.75, 1], [0, 1, 1]);
-
-  // Right Visualizer Scale
-  const v1S = useTransform(scrollYProgress, [0, 0.3, 0.4], [1, 1, 0.8]);
-  const v2S = useTransform(scrollYProgress, [0.25, 0.4, 0.6, 0.7], [0.8, 1, 1, 0.8]);
-  const v3S = useTransform(scrollYProgress, [0.6, 0.75, 1], [0.8, 1, 1]);
+  // Right Visualizer Opacity (Clean solid crossfade)
+  const v1O = useTransform(scrollYProgress, [0, 0.28, 0.38], [1, 1, 0]);
+  const v2O = useTransform(scrollYProgress, [0.28, 0.38, 0.62, 0.72], [0, 1, 1, 0]);
+  const v3O = useTransform(scrollYProgress, [0.62, 0.72, 1], [0, 1, 1]);
 
   return (
     <section ref={targetRef} className="relative bg-[#fafafc] border-y-4 border-[#111]" style={{ height: '200vh' }}>
       <div className="sticky top-0 h-screen flex flex-col justify-center overflow-hidden">
         
         <div className="text-center absolute top-10 md:top-20 left-0 right-0 z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] font-mono text-[10px] font-black text-gray-900 uppercase tracking-widest mb-2">
+            <span className="w-2 h-2 rounded-full bg-mio-lime border border-[#111] animate-pulse" />
+            WORKFLOW // 3 PASOS SIMPLES
+          </div>
           <h2 className="text-4xl md:text-5xl font-black text-gray-950 tracking-tighter mb-4 px-4">
             Cómo Funciona MIO
           </h2>
@@ -437,31 +454,43 @@ function HowItWorks() {
           {/* Left Text (All 3 stacked, highlighting one by one) */}
           <div className="relative flex flex-col justify-center gap-6 md:gap-10">
             
+            {/* Paso 1 */}
             <motion.div style={{ opacity: t1O, scale: t1S, transformOrigin: 'left center' }} className="flex gap-4 md:gap-6 items-start">
-              <div className="shrink-0 w-12 h-12 md:w-16 md:h-16 bg-blue-100 border-4 border-[#111] shadow-[4px_4px_0px_#111] flex items-center justify-center">
-                <FileSpreadsheet className="w-6 h-6 md:w-8 md:h-8 text-blue-600" />
+              <div className="shrink-0 w-12 h-12 md:w-16 md:h-16 bg-white border-4 border-[#111] shadow-[4px_4px_0px_#111] flex items-center justify-center">
+                <FileSpreadsheet className="w-6 h-6 md:w-8 md:h-8 text-emerald-600" />
               </div>
               <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-mono font-black px-2 py-0.5 bg-emerald-100 text-emerald-900 border border-[#111]">PASO 01</span>
+                </div>
                 <h2 className="text-2xl md:text-4xl font-black text-gray-950 tracking-tight mb-1 md:mb-2">1. Subí tus datos</h2>
                 <p className="text-base md:text-lg text-gray-600 font-medium">Soltá tus archivos .CSV, .XLSX o .JSON (uno o varios en lote). MIO limpia nulos y prepara la matriz automáticamente.</p>
               </div>
             </motion.div>
             
+            {/* Paso 2 */}
             <motion.div style={{ opacity: t2O, scale: t2S, transformOrigin: 'left center' }} className="flex gap-4 md:gap-6 items-start">
               <div className="shrink-0 w-12 h-12 md:w-16 md:h-16 bg-mio-lime border-4 border-[#111] shadow-[4px_4px_0px_#111] flex items-center justify-center">
-                <BrainCircuit className="w-6 h-6 md:w-8 md:h-8 text-gray-900" />
+                <BrainCircuit className="w-6 h-6 md:w-8 md:h-8 text-gray-950" />
               </div>
               <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-mono font-black px-2 py-0.5 bg-mio-lime text-gray-950 border border-[#111]">PASO 02</span>
+                </div>
                 <h2 className="text-2xl md:text-4xl font-black text-gray-950 tracking-tight mb-1 md:mb-2">2. Magia Neuronal</h2>
                 <p className="text-base md:text-lg text-gray-600 font-medium">Nuestra IA escanea anomalías y proyecta el futuro sin que toques nada.</p>
               </div>
             </motion.div>
 
+            {/* Paso 3 */}
             <motion.div style={{ opacity: t3O, scale: t3S, transformOrigin: 'left center' }} className="flex gap-4 md:gap-6 items-start">
               <div className="shrink-0 w-12 h-12 md:w-16 md:h-16 bg-mio-violet border-4 border-[#111] shadow-[4px_4px_0px_#111] flex items-center justify-center">
                 <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-white" />
               </div>
               <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-mono font-black px-2 py-0.5 bg-mio-violet text-white border border-[#111]">PASO 03</span>
+                </div>
                 <h2 className="text-2xl md:text-4xl font-black text-gray-950 tracking-tight mb-1 md:mb-2">3. Decisión Rápida</h2>
                 <p className="text-base md:text-lg text-gray-600 font-medium">Obtené un reporte narrado y gráficas listas para exportar a PDF.</p>
               </div>
@@ -470,24 +499,212 @@ function HowItWorks() {
           </div>
 
           {/* Right Visualizer */}
-          <div className="relative h-64 md:h-[28rem] w-full flex items-center justify-center">
-             <div className="w-full h-full max-w-sm md:max-w-md bg-white border-4 border-[#111] shadow-[8px_8px_0px_#111] md:shadow-[16px_16px_0px_#111] overflow-hidden relative flex items-center justify-center pointer-events-none">
+          <div className="relative h-72 md:h-[30rem] w-full flex items-center justify-center">
+             <div className="w-full h-full max-w-sm md:max-w-md bg-[#fafafc] border-4 border-[#111] shadow-[8px_8px_0px_#111] md:shadow-[16px_16px_0px_#111] overflow-hidden relative pointer-events-none">
                 
-                <motion.div style={{ opacity: v1O, scale: v1S }} className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-blue-50/20">
-                   <div className="w-3/4 h-8 md:h-10 bg-white border-2 border-[#111] animate-pulse"></div>
-                   <div className="w-2/3 h-8 md:h-10 bg-white border-2 border-[#111] animate-pulse" style={{ animationDelay: '200ms' }}></div>
-                   <div className="w-3/4 h-8 md:h-10 bg-white border-2 border-[#111] animate-pulse" style={{ animationDelay: '400ms' }}></div>
+                {/* Barra superior de terminal de hardware fija */}
+                <div className="absolute top-0 left-0 right-0 h-8 bg-[#161224] border-b-2 border-[#111] flex items-center justify-between px-3 z-40">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-red-500/80 border border-black" />
+                    <span className="w-2 h-2 rounded-full bg-amber-400/80 border border-black" />
+                    <span className="w-2 h-2 rounded-full bg-mio-lime border border-black shadow-[0_0_6px_#bdf559]" />
+                  </div>
+                  <span className="text-[9px] font-mono font-black text-gray-300 tracking-wider uppercase">
+                    MIO PIPELINE // LIVE ENGINE
+                  </span>
+                  <span className="text-[9px] font-mono text-mio-lime font-bold">● VIVO</span>
+                </div>
+
+                {/* ============================================================ */}
+                {/* VISUALIZADOR 1: SUBÍ TUS DATOS (Tarjetas de archivos 2.5D)   */}
+                {/* ============================================================ */}
+                <motion.div
+                  style={{ opacity: v1O }}
+                  className="absolute inset-0 pt-11 pb-4 px-4 sm:px-6 flex flex-col justify-center gap-3 bg-[#f8f7fd] z-10 w-full h-full overflow-hidden"
+                >
+                  {/* Tarjeta 1: XLSX */}
+                  <div className="w-full bg-white border-2 border-[#111] shadow-[3px_3px_0px_#111] p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-950 border border-emerald-600 font-mono font-black text-[9px] uppercase">
+                        .XLSX
+                      </span>
+                      <div>
+                        <div className="text-xs font-black text-gray-900 font-mono">ventas_retail_q4.xlsx</div>
+                        <div className="text-[10px] text-gray-500 font-mono">14,280 filas · 12 columnas</div>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold text-emerald-700 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      LIMPIO
+                    </span>
+                  </div>
+
+                  {/* Tarjeta 2: CSV */}
+                  <div className="w-full bg-white border-2 border-[#111] shadow-[3px_3px_0px_#111] p-3 flex items-center justify-between -translate-x-1">
+                    <div className="flex items-center gap-2.5">
+                      <span className="px-1.5 py-0.5 bg-mio-lime text-gray-950 border border-[#111] font-mono font-black text-[9px] uppercase">
+                        .CSV
+                      </span>
+                      <div>
+                        <div className="text-xs font-black text-gray-900 font-mono">clientes_segmentados.csv</div>
+                        <div className="text-[10px] text-gray-500 font-mono">8,950 registros · 0 nulos</div>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold text-gray-900 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-mio-lime shadow-[0_0_4px_#bdf559]" />
+                      VALIDADO
+                    </span>
+                  </div>
+
+                  {/* Tarjeta 3: JSON */}
+                  <div className="w-full bg-white border-2 border-[#111] shadow-[3px_3px_0px_#111] p-3 flex items-center justify-between translate-x-1">
+                    <div className="flex items-center gap-2.5">
+                      <span className="px-1.5 py-0.5 bg-mio-violet text-white border border-[#111] font-mono font-black text-[9px] uppercase">
+                        .JSON
+                      </span>
+                      <div>
+                        <div className="text-xs font-black text-gray-900 font-mono">telemetria_eventos.json</div>
+                        <div className="text-[10px] text-gray-500 font-mono">Auto-join activo</div>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold text-mio-violet flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-mio-violet" />
+                      PARSED
+                    </span>
+                  </div>
+
+                  {/* Badge de velocidad de ingesta */}
+                  <div className="mt-1 self-center inline-flex items-center gap-2 px-3 py-1 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] text-[10px] font-mono font-black text-gray-800">
+                    <Sparkles className="w-3 h-3 text-mio-lime fill-mio-lime" />
+                    <span>INGESTA Y MATRIZ EN 0.42s</span>
+                  </div>
                 </motion.div>
 
-                <motion.div style={{ opacity: v2O, scale: v2S }} className="absolute inset-0 flex items-center justify-center bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-mio-lime/20">
-                   <div className="relative w-32 h-32 md:w-48 md:h-48 bg-white border-4 border-[#111] rounded-full flex items-center justify-center shadow-[4px_4px_0px_#111]">
-                     <BrainCircuit className="w-16 h-16 md:w-24 md:h-24 text-gray-900 animate-pulse" />
-                   </div>
+                {/* ============================================================ */}
+                {/* VISUALIZADOR 2: MAGIA NEURONAL (Cápsula 2.5D con energía)    */}
+                {/* ============================================================ */}
+                <motion.div
+                  style={{ opacity: v2O }}
+                  className="absolute inset-0 pt-11 pb-4 px-4 sm:px-6 flex flex-col items-center justify-between bg-[#f2fbe9] z-20 w-full h-full overflow-hidden"
+                >
+                  {/* Fila superior de telemetría */}
+                  <div className="w-full flex items-center justify-between pt-1 z-10">
+                    <span className="px-2 py-0.5 bg-white border-2 border-[#111] shadow-[2px_2px_0px_#111] text-[9px] font-mono font-black text-gray-900 uppercase">
+                      AUTOML K-TUNER
+                    </span>
+                    <span className="px-2 py-0.5 bg-mio-lime border-2 border-[#111] shadow-[2px_2px_0px_#111] text-[9px] font-mono font-black text-gray-950 uppercase flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-black animate-ping" />
+                      R²: 0.942 OPT
+                    </span>
+                  </div>
+
+                  {/* CÁPSULA NEURONAL CENTRAL 2.5D PROTAGÓNICA */}
+                  <div className="relative my-auto flex items-center justify-center">
+                    {/* Ondas concéntricas de pulso neuronal */}
+                    <div className="absolute w-56 h-56 rounded-full border-2 border-mio-lime/80 animate-ping opacity-30 pointer-events-none" />
+                    <div className="absolute w-44 h-44 rounded-full border-2 border-dashed border-[#111]/25 animate-[spin_24s_linear_infinite] pointer-events-none" />
+
+                    {/* Resplandor neón perimetral */}
+                    <div className="absolute -inset-2 rounded-full bg-mio-lime opacity-45 blur-md" />
+
+                    {/* Disco principal 2.5D */}
+                    <div
+                      className="relative w-36 h-36 md:w-42 md:h-42 rounded-full border-4 border-[#111] flex items-center justify-center shadow-[6px_6px_0px_#111]"
+                      style={{
+                        background: 'linear-gradient(145deg, #ffffff 0%, #f4fbf0 60%, #d8f5b8 100%)',
+                      }}
+                    >
+                      {/* Aro interior decorativo */}
+                      <div className="w-26 h-26 md:w-32 md:h-32 rounded-full border-2 border-[#111]/30 flex items-center justify-center bg-white shadow-inner">
+                        <BrainCircuit className="w-14 h-14 md:w-18 md:h-18 text-gray-950 animate-pulse" />
+                      </div>
+
+                      {/* Mini luces satélites en el perímetro */}
+                      <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-mio-lime border-2 border-[#111] shadow-sm" />
+                      <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-mio-violet border-2 border-[#111] shadow-sm" />
+                    </div>
+                  </div>
+
+                  {/* Subtexto técnico integrado sin solapamiento */}
+                  <div className="w-full text-center pb-2 z-10">
+                    <span className="text-xs font-mono font-black text-gray-950 uppercase tracking-widest block">
+                      PROCESAMIENTO NEURONAL
+                    </span>
+                    <span className="text-[10px] font-mono text-gray-600 font-bold block mt-0.5">
+                      Detección de anomalías · Regresión continua
+                    </span>
+                  </div>
                 </motion.div>
 
-                <motion.div style={{ opacity: v3O, scale: v3S }} className="absolute inset-0 flex flex-col justify-end gap-2 p-6 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-purple-50/50">
-                   <div className="w-full h-1/3 bg-mio-violet border-2 border-[#111] shadow-[4px_4px_0px_#111]"></div>
-                   <div className="w-full h-1/2 bg-mio-lime border-2 border-[#111] shadow-[4px_4px_0px_#111]"></div>
+                {/* ============================================================ */}
+                {/* VISUALIZADOR 3: DECISIÓN RÁPIDA (Gráfico y reporte PDF listo)*/}
+                {/* ============================================================ */}
+                <motion.div
+                  style={{ opacity: v3O }}
+                  className="absolute inset-0 pt-11 pb-4 px-4 sm:px-6 flex flex-col justify-between bg-[#faf6fe] z-30 w-full h-full overflow-hidden"
+                >
+                  {/* Tarjeta de Insight Narrado por IA */}
+                  <div className="bg-white border-2 border-[#111] shadow-[3px_3px_0px_#111] p-3">
+                    <div className="flex items-center justify-between text-[9px] font-mono font-bold text-gray-500 mb-1">
+                      <span className="flex items-center gap-1 text-mio-violet font-black">
+                        <Sparkles className="w-3 h-3" />
+                        INSIGHT EJECUTIVO IA
+                      </span>
+                      <span className="text-emerald-700 font-mono font-bold">CONF: 99.1%</span>
+                    </div>
+                    <div className="text-xs font-black text-gray-950 font-mono leading-snug">
+                      "Proyección de ventas Q1: +24.8% impulsada por recompras digitales."
+                    </div>
+                  </div>
+
+                  {/* Gráfico Neo-Brutalista de Barras Ascendentes */}
+                  <div className="bg-[#0e0a1a] border-2 border-[#111] shadow-[3px_3px_0px_#111] p-3.5 relative">
+                    {/* Header del gráfico */}
+                    <div className="flex items-center justify-between text-[9px] font-mono text-gray-400 border-b border-gray-800 pb-2 mb-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-mio-lime shadow-[0_0_6px_#bdf559]" />
+                        <span className="text-mio-lime font-black">CURVA PREDICTIVA 2026</span>
+                      </div>
+                      <span className="text-gray-300 font-bold">INTERVALO P95</span>
+                    </div>
+
+                    {/* Línea de meta punteada */}
+                    <div className="absolute top-16 left-4 right-4 border-b border-dashed border-mio-lime/30 z-0 pointer-events-none" />
+
+                    {/* Área de barras con altura explícita garantizada */}
+                    <div className="h-28 flex items-end justify-between gap-2 px-1 relative z-10">
+                      {[
+                        { height: 32, label: 'Ene', val: '12k', color: 'bg-gray-600' },
+                        { height: 46, label: 'Feb', val: '18k', color: 'bg-gray-500' },
+                        { height: 62, label: 'Mar', val: '24k', color: 'bg-mio-violet' },
+                        { height: 78, label: 'Abr', val: '31k', color: 'bg-mio-violet' },
+                        { height: 92, label: 'May', val: '38k', color: 'bg-mio-lime' },
+                        { height: 104, label: 'Jun', val: '45k', color: 'bg-mio-lime shadow-[0_0_10px_#bdf559]' },
+                      ].map((bar, i) => (
+                        <div key={i} className="flex-1 h-full flex flex-col justify-end items-center gap-1">
+                          <span className="text-[8px] font-mono text-gray-400 font-bold">{bar.val}</span>
+                          <div
+                            className={`w-full ${bar.color} border border-black/60 shadow-sm transition-all`}
+                            style={{ height: `${bar.height}px` }}
+                          />
+                          <span className="text-[8.5px] font-mono text-gray-400 font-bold">{bar.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Botón de exportación rápida a PDF */}
+                  <div className="flex items-center justify-between bg-mio-lime border-2 border-[#111] shadow-[3px_3px_0px_#111] px-3.5 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">📄</span>
+                      <span className="text-[11px] font-mono font-black text-gray-950 uppercase tracking-tight">
+                        REPORTE_EJECUTIVO.PDF
+                      </span>
+                    </div>
+                    <span className="px-2.5 py-1 bg-black text-mio-lime font-mono font-black text-[9px] uppercase border border-black shadow-[1px_1px_0px_#111]">
+                      DESCARGAR ↓
+                    </span>
+                  </div>
                 </motion.div>
 
              </div>
@@ -501,7 +718,7 @@ function HowItWorks() {
 }
 
 // Llamado a la acción de alta conversión
-function FinalCallToAction() {
+function FinalCallToAction({ user }: { user?: User | null }) {
   return (
     <section className="py-20 sm:py-28 bg-[#0b0914] text-white border-y-4 border-[#111] relative overflow-hidden">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
@@ -520,13 +737,32 @@ function FinalCallToAction() {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link
-            href="/login"
-            className="w-full sm:w-auto px-10 py-5 bg-mio-lime text-gray-950 font-black text-lg border-4 border-[#111] shadow-[6px_6px_0px_#fff] hover:shadow-none hover:translate-x-[6px] hover:translate-y-[6px] transition-all flex items-center justify-center gap-3 tracking-tight"
-          >
-            <span>Crear Cuenta Gratis</span>
-            <ArrowRight className="w-5 h-5" strokeWidth={3} />
-          </Link>
+          {user ? (
+            <>
+              <Link
+                href="/projects"
+                className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-mio-lime text-gray-950 font-black text-base sm:text-lg border-4 border-[#111] shadow-[6px_6px_0px_#fff] hover:shadow-none hover:translate-x-[6px] hover:translate-y-[6px] transition-all flex items-center justify-center gap-3 tracking-tight"
+              >
+                <Layers className="w-5 h-5" strokeWidth={2.5} />
+                <span>Mis proyectos</span>
+              </Link>
+              <Link
+                href="/dashboard"
+                className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-mio-violet text-white font-black text-base sm:text-lg border-4 border-[#111] shadow-[6px_6px_0px_#fff] hover:shadow-none hover:translate-x-[6px] hover:translate-y-[6px] transition-all flex items-center justify-center gap-3 tracking-tight"
+              >
+                <Plus className="w-5 h-5" strokeWidth={3} />
+                <span>Nuevo proyecto</span>
+              </Link>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              className="w-full sm:w-auto px-10 py-5 bg-mio-lime text-gray-950 font-black text-lg border-4 border-[#111] shadow-[6px_6px_0px_#fff] hover:shadow-none hover:translate-x-[6px] hover:translate-y-[6px] transition-all flex items-center justify-center gap-3 tracking-tight"
+            >
+              <span>Crear Cuenta Gratis</span>
+              <ArrowRight className="w-5 h-5" strokeWidth={3} />
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -604,7 +840,15 @@ function AboutUs() {
 // PÁGINA PRINCIPAL
 // =========================================================================
 export default function LandingPage() {
-  const [heroTab, setHeroTab] = useState<'3d' | 'preview'>('3d');
+  const [heroTab, setHeroTab] = useState<'cartridges' | '3d'>('3d');
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#fafafc] flex flex-col selection:bg-mio-lime selection:text-black">
@@ -612,6 +856,11 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <section className="relative pt-16 sm:pt-24 pb-12 lg:pt-32 lg:pb-16 overflow-hidden" style={{ perspective: '1200px' }}>
+        {/* Fondo interactivo de Shaders MIO */}
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          <MioBackgroundShader theme="light" opacity={0.45} />
+        </div>
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           
           <motion.div 
@@ -648,57 +897,79 @@ export default function LandingPage() {
             transition={{ delay: 0.8, duration: 0.5 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6"
           >
-            <Link
-              href="/login"
-              className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-mio-lime text-gray-950 font-black text-base sm:text-lg border-4 border-[#111] shadow-[4px_4px_0px_#111] sm:shadow-[6px_6px_0px_#111] hover:shadow-none hover:translate-y-[4px] hover:translate-x-[4px] sm:hover:translate-y-[6px] sm:hover:translate-x-[6px] transition-all flex items-center justify-center gap-3"
-            >
-              <span>Comenzar Gratis</span>
-              <ArrowRight className="w-5 h-5" strokeWidth={3} />
-            </Link>
+            {user ? (
+              <>
+                <Link
+                  href="/projects"
+                  className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-mio-lime text-gray-950 font-black text-base sm:text-lg border-4 border-[#111] shadow-[4px_4px_0px_#111] sm:shadow-[6px_6px_0px_#111] hover:shadow-none hover:translate-y-[4px] hover:translate-x-[4px] sm:hover:translate-y-[6px] sm:hover:translate-x-[6px] transition-all flex items-center justify-center gap-3"
+                >
+                  <Layers className="w-5 h-5" strokeWidth={2.5} />
+                  <span>Mis proyectos</span>
+                </Link>
+                <Link
+                  href="/dashboard"
+                  className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-mio-violet text-white font-black text-base sm:text-lg border-4 border-[#111] shadow-[4px_4px_0px_#111] sm:shadow-[6px_6px_0px_#111] hover:shadow-none hover:translate-y-[4px] hover:translate-x-[4px] sm:hover:translate-y-[6px] sm:hover:translate-x-[6px] transition-all flex items-center justify-center gap-3"
+                >
+                  <Plus className="w-5 h-5" strokeWidth={3} />
+                  <span>Nuevo proyecto</span>
+                </Link>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-mio-lime text-gray-950 font-black text-base sm:text-lg border-4 border-[#111] shadow-[4px_4px_0px_#111] sm:shadow-[6px_6px_0px_#111] hover:shadow-none hover:translate-y-[4px] hover:translate-x-[4px] sm:hover:translate-y-[6px] sm:hover:translate-x-[6px] transition-all flex items-center justify-center gap-3"
+              >
+                <span>Comenzar Gratis</span>
+                <ArrowRight className="w-5 h-5" strokeWidth={3} />
+              </Link>
+            )}
           </motion.div>
 
         </div>
 
-        {/* Switcher de Vista Hero (3D Hardware vs Plataforma) */}
+        {/* Switcher de Vista Hero (Consola MIO-Drive vs 3D Hardware) */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 sm:mt-16 flex flex-col items-center relative z-20">
-          <div className="inline-flex p-1.5 bg-white border-4 border-[#111] shadow-[6px_6px_0px_#111] gap-2">
+          <div className="inline-flex flex-wrap justify-center p-1.5 bg-white border-4 border-[#111] shadow-[6px_6px_0px_#111] gap-2">
             <button
               type="button"
               onClick={() => setHeroTab('3d')}
               className={`px-4 sm:px-6 py-2 sm:py-2.5 font-black text-xs sm:text-sm tracking-wider uppercase transition-all flex items-center gap-2 ${
                 heroTab === '3d'
-                  ? 'bg-mio-violet text-white border-2 border-[#111] shadow-[3px_3px_0px_#111] -translate-y-0.5'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <Sparkles className="w-4 h-4 text-mio-lime" />
-              <span>🕹️ MIO-Dev 3D</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setHeroTab('preview')}
-              className={`px-4 sm:px-6 py-2 sm:py-2.5 font-black text-xs sm:text-sm tracking-wider uppercase transition-all flex items-center gap-2 ${
-                heroTab === 'preview'
                   ? 'bg-mio-lime text-gray-950 border-2 border-[#111] shadow-[3px_3px_0px_#111] -translate-y-0.5'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
-              <BarChart3 className="w-4 h-4 text-gray-900" />
-              <span>💻 Vista Plataforma</span>
+              <Sparkles className="w-4 h-4 text-mio-violet" />
+              <span>🕹️ MIO-Dev 3D</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setHeroTab('cartridges')}
+              className={`px-4 sm:px-6 py-2 sm:py-2.5 font-black text-xs sm:text-sm tracking-wider uppercase transition-all flex items-center gap-2 ${
+                heroTab === 'cartridges'
+                  ? 'bg-mio-lime text-gray-950 border-2 border-[#111] shadow-[3px_3px_0px_#111] -translate-y-0.5'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <span>💾 Consola MIO-Drive</span>
             </button>
           </div>
 
           <p className="text-xs font-mono font-bold text-gray-500 mt-3 text-center">
-            {heroTab === '3d' 
-              ? '✦ Hacé click en los botones físicos para cambiar de modo de análisis en la pantalla.' 
-              : '✦ Navegación y vista previa en vivo del dashboard corporativo.'}
+            {heroTab === '3d'
+              ? '✦ Hacé click en los botones físicos para cambiar de modo de análisis en la pantalla.'
+              : '✦ Cliqueá en los cartuchos 3D de la bandeja para insertarlos por arriba y correr inferencia AutoML en vivo.'}
           </p>
         </div>
 
         {/* ============================================================ */}
-        {/* VISTA 3D: POCKETFOLIO 3-COLUMNS EDITORIAL */}
+        {/* VISTAS HERO: MIO-DRIVE (CARTRIDGES) / MIO-DEV 3D             */}
         {/* ============================================================ */}
-        {heroTab === '3d' ? (
+        {heroTab === 'cartridges' ? (
+          <div className="mt-8 max-w-5xl mx-auto w-full px-4 flex justify-center relative z-10">
+            <CartridgeDeckBlock />
+          </div>
+        ) : (
           <div className="mt-6 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] items-center gap-8 lg:gap-12">
 
@@ -758,15 +1029,15 @@ export default function LandingPage() {
                     <span className="text-[9px] font-mono font-bold text-mio-violet">● V2.6</span>
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-3.5">
                     {/* D-PAD */}
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 bg-[#1a1726] text-white flex items-center justify-center font-black text-base shrink-0 border-2 border-[#111] shadow-[2px_2px_0px_#111]">
-                        +
+                      <div className="w-8 h-8 bg-[#1a1726] text-white flex items-center justify-center font-black text-xs shrink-0 border-2 border-[#111] shadow-[2px_2px_0px_#111]">
+                        ◀▶
                       </div>
                       <div>
-                        <div className="text-xs font-black text-gray-900">D-PAD</div>
-                        <div className="text-[11px] text-gray-500 font-medium">Navegar visualizaciones</div>
+                        <div className="text-xs font-black text-gray-900">D-PAD (◀ ▶ ▲ ▼)</div>
+                        <div className="text-[11px] text-gray-500 font-medium">Explorar barras, clusters y puntos</div>
                       </div>
                     </div>
 
@@ -794,37 +1065,32 @@ export default function LandingPage() {
 
                     {/* START */}
                     <div className="flex items-start gap-3">
-                      <div className="px-2 h-6 bg-white border-2 border-[#111] shadow-[1px_1px_0px_#111] flex items-center font-black text-[9px] shrink-0 text-gray-700 tracking-widest mt-0.5">
+                      <div className="px-2 h-6 bg-mio-lime/20 border-2 border-[#111] shadow-[1px_1px_0px_#111] flex items-center font-black text-[9px] shrink-0 text-gray-900 tracking-widest mt-0.5">
                         START
                       </div>
                       <div>
                         <div className="text-xs font-black text-gray-900">START</div>
-                        <div className="text-[11px] text-gray-500 font-medium">Ejecutar AutoML Predict</div>
+                        <div className="text-[11px] text-gray-500 font-medium">Ejecutar optimización AutoML</div>
+                      </div>
+                    </div>
+
+                    {/* SELECT */}
+                    <div className="flex items-start gap-3">
+                      <div className="px-2 h-6 bg-white border-2 border-[#111] shadow-[1px_1px_0px_#111] flex items-center font-black text-[9px] shrink-0 text-gray-700 tracking-widest mt-0.5">
+                        SELECT
+                      </div>
+                      <div>
+                        <div className="text-xs font-black text-gray-900">SELECT</div>
+                        <div className="text-[11px] text-gray-500 font-medium">Proyección 2026 / Histórico 2025</div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Acceso rápido a plataforma */}
-                <button
-                  type="button"
-                  onClick={() => setHeroTab('preview')}
-                  className="mt-5 flex items-center gap-2 text-gray-400 hover:text-mio-violet transition-colors cursor-pointer group text-left"
-                >
-                  <div className="w-8 h-8 border-2 border-gray-300 group-hover:border-mio-violet flex items-center justify-center transition-colors bg-white">
-                    <BarChart3 className="w-4 h-4 text-gray-700 group-hover:text-mio-violet" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-black text-gray-700">Ver dashboard en vivo →</div>
-                    <div className="text-[10px] text-gray-400 font-medium">Explorá la plataforma completa</div>
-                  </div>
-                </button>
               </div>
 
             </div>
           </div>
-        ) : (
-          <HeroMockup />
         )}
       </section>
 
@@ -838,7 +1104,7 @@ export default function LandingPage() {
       <HowItWorks />
 
       {/* 4. Llamado a la Acción de Alta Conversión */}
-      <FinalCallToAction />
+      <FinalCallToAction user={user} />
 
       {/* 5. Quiénes Somos (Dossier Fundadores) */}
       <AboutUs />

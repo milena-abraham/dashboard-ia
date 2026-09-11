@@ -44,20 +44,20 @@ export default function FileUploader({ onFileSelect, selectedFiles }: FileUpload
   });
 
   // Calculate dynamic classes for drag states
-  let borderColor = 'border-[#111] hover:border-indigo-400';
-  let bgColor = 'bg-white hover:bg-white/50';
+  let borderColor = 'border-[#111] hover:border-mio-violet';
+  let bgColor = 'bg-white/80 hover:bg-white/95 backdrop-blur-sm';
   if (isDragReject) {
     borderColor = 'border-red-500 animate-pulse';
-    bgColor = 'bg-red-50/50';
+    bgColor = 'bg-red-50/80 backdrop-blur-sm';
   } else if (isDragAccept) {
     borderColor = 'border-emerald-500 scale-[1.02]';
-    bgColor = 'bg-emerald-50/50';
+    bgColor = 'bg-emerald-50/80 backdrop-blur-sm';
   } else if (isDragActive) {
     borderColor = 'border-mio-violet scale-[1.01]';
-    bgColor = 'bg-mio-violet/10/50';
+    bgColor = 'bg-mio-violet/10 backdrop-blur-sm';
   } else if (selectedFiles.length > 0) {
     borderColor = 'border-emerald-500';
-    bgColor = 'bg-emerald-50/30';
+    bgColor = 'bg-emerald-50/50 backdrop-blur-sm';
   }
 
   return (

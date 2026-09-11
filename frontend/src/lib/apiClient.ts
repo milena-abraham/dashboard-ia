@@ -48,6 +48,20 @@ async function fetchWithFallback(endpoint: string, init?: RequestInit): Promise<
     }
     return response;
   } catch (err: any) {
+    // Si la llamada a localhost falla por no estar levantado el servidor local,
+    // reintentar automáticamente con el servidor en la nube de Render
+    if (url.includes('localhost') || url.includes('127.0.0.1')) {
+      try {
+        const cloudBase = 'https://dashboard-ia-1.onrender.com/api';
+        const cleanEndpoint = endpoint.replace(/^\/api\/v1/, '').replace(/^\/api/, '');
+        const cloudUrl = `${cloudBase}${cleanEndpoint}`;
+        const cloudRes = await fetch(cloudUrl, init);
+        return cloudRes;
+      } catch {
+        // Si el fallback en la nube también falla, continuar con el diagnóstico
+      }
+    }
+
     if (err.name === 'TypeError' && (err.message?.includes('fetch') || err.message?.includes('Load failed') || err.message?.includes('NetworkError'))) {
       try {
         const healthRes = await fetch('https://dashboard-ia-1.onrender.com/api/health', { method: 'GET', signal: AbortSignal.timeout(3500) });
@@ -61,7 +75,7 @@ async function fetchWithFallback(endpoint: string, init?: RequestInit): Promise<
         if (healthErr instanceof ApiError) throw healthErr;
       }
       throw new ApiError(
-        'No se pudo conectar con el servidor en la nube. Verificá tu conexión o aguardá unos segundos si el servidor se está iniciando.',
+        'No se pudo conectar con el servidor backend. Verificá tu conexión o aguardá unos segundos si el servidor se está iniciando.',
         503
       );
     }

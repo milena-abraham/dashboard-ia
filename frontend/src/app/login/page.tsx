@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { auth } from '@/lib/firebase';
 import {
   signInWithEmailAndPassword,
@@ -11,8 +13,12 @@ import {
   GoogleAuthProvider,
 } from 'firebase/auth';
 import toast from 'react-hot-toast';
-import { BarChart3, Mail, Lock, Sparkles, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Sparkles, ArrowRight } from 'lucide-react';
 import { logSystemEvent } from '@/lib/logger';
+
+const MioBackgroundShader = dynamic(() => import('@/components/MioBackgroundShader'), {
+  ssr: false,
+});
 
 export default function LoginPage() {
   const [isRegister, setIsRegister] = useState(false);
@@ -73,30 +79,46 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafafc] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <Link href="/" className="inline-flex items-center gap-2 text-2xl font-bold text-gray-900 mb-6">
-          <div className="w-10 h-10 rounded-none bg-gradient-to-tr from-mio-lime to-[#c8ff6a] flex items-center justify-center text-gray-900 shadow-[6px_6px_0px_#111] shadow-mio-lime/40">
-            <BarChart3 className="w-5 h-5" />
+    <div className="min-h-screen bg-[#fafafc] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden selection:bg-mio-lime selection:text-black">
+      {/* Fondo interactivo de Shaders MIO */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <MioBackgroundShader theme="light" opacity={0.45} />
+      </div>
+
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10 px-4">
+        <Link href="/" className="inline-flex items-center gap-3 mb-6 group">
+          <Image
+            src="/MIO.png"
+            alt="MIO Logo"
+            width={48}
+            height={48}
+            className="transform group-hover:scale-105 transition-transform rounded-lg border-2 border-[#111] shadow-[3px_3px_0px_#111]"
+          />
+          <div className="text-left">
+            <span className="text-2xl sm:text-3xl font-black text-gray-950 tracking-tight block">
+              MIO
+            </span>
+            <span className="text-xs font-mono font-bold text-gray-500 uppercase tracking-wider block -mt-0.5">
+              Dashboard Inteligente
+            </span>
           </div>
-          <span>Dashboard<span className="text-mio-violet">.IA</span></span>
         </Link>
-        <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
-          {isRegister ? 'Creá tu cuenta gratis' : 'Ingresá a tu cuenta'}
+        <h2 className="text-2xl sm:text-3xl font-black text-gray-950 tracking-tight">
+          {isRegister ? 'Creá tu cuenta en MIO' : 'Ingresá a tu cuenta'}
         </h2>
-        <p className="mt-2 text-sm text-gray-500">
+        <p className="mt-2 text-sm text-gray-600 font-medium">
           {isRegister ? '¿Ya tenés cuenta?' : '¿No tenés una cuenta?'}{' '}
           <button
             onClick={() => setIsRegister(!isRegister)}
-            className="font-semibold text-mio-violet hover:text-indigo-500 transition-colors"
+            className="font-bold text-mio-violet hover:underline transition-colors"
           >
             {isRegister ? 'Iniciá sesión acá' : 'Registrate gratis'}
           </button>
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-6 sm:px-10 shadow-[4px_4px_0px_#111] border border-[#111] border-2 rounded-none">
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10 px-4 sm:px-0">
+        <div className="bg-white py-8 px-6 sm:px-10 shadow-[8px_8px_0px_#111] border-4 border-[#111] rounded-none">
           <form className="space-y-4" onSubmit={handleAuth}>
             <div>
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
@@ -139,14 +161,14 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 py-3.5 px-4 rounded-none bg-gradient-to-r from-mio-lime to-[#c8ff6a] text-gray-900 font-semibold text-sm shadow-[6px_6px_0px_#111] shadow-mio-violet/30 hover:shadow-mio-violet/40 hover:opacity-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full mt-2 py-3.5 px-4 rounded-none bg-mio-lime text-gray-950 font-black text-sm border-2 border-[#111] shadow-[4px_4px_0px_#111] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-wide"
             >
               {loading ? (
                 'Procesando...'
               ) : (
                 <>
                   <span>{isRegister ? 'Registrarse' : 'Ingresar'}</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4 stroke-[3]" />
                 </>
               )}
             </button>
@@ -155,10 +177,10 @@ export default function LoginPage() {
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[#111] border-2" />
+                <div className="w-full border-t-2 border-[#111]" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-3 text-gray-400 font-medium">O continuar con</span>
+                <span className="bg-white px-3 text-gray-500 font-mono font-bold">O continuar con</span>
               </div>
             </div>
 
@@ -166,7 +188,7 @@ export default function LoginPage() {
               type="button"
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="w-full mt-4 py-3 px-4 border border-[#111] border-2 rounded-none text-sm font-medium text-gray-700 bg-white hover:bg-white transition-colors flex items-center justify-center gap-2"
+              className="w-full mt-4 py-3 px-4 border-2 border-[#111] shadow-[3px_3px_0px_#111] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] rounded-none text-sm font-black text-gray-800 bg-white hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path
@@ -189,13 +211,13 @@ export default function LoginPage() {
               <span>Continuar con Google</span>
             </button>
 
-            <div className="mt-4 pt-4 border-t border-[#111] border-2 text-center">
+            <div className="mt-6 pt-4 border-t-2 border-[#111] text-center">
               <Link
                 href="/dashboard"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-mio-violet hover:text-mio-violet/90 bg-mio-violet/10/70 hover:bg-indigo-100/70 px-4 py-2 rounded-none transition-all"
+                className="inline-flex items-center gap-2 text-xs font-mono font-black text-gray-900 bg-mio-lime/30 hover:bg-mio-lime border-2 border-[#111] shadow-[2px_2px_0px_#111] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] px-4 py-2 transition-all uppercase"
               >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Explorar Dashboard en Modo Demo (sin cuenta)</span>
+                <Sparkles className="w-3.5 h-3.5 text-mio-violet" />
+                <span>Explorar Dashboard en Modo Demo</span>
               </Link>
             </div>
           </div>
