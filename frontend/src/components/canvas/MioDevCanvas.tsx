@@ -543,7 +543,10 @@ export default function MioDevCanvas() {
                       return (
                         <div
                           key={item.id}
-                          onClick={() => setForecastIdx(idx)}
+                          onClick={() => {
+                            playTactileSound('dpad');
+                            setForecastIdx(idx);
+                          }}
                           className="relative flex-1 flex flex-col items-center cursor-pointer group"
                         >
                           {/* Cursor flotante suave sobre la barra activa */}
@@ -621,7 +624,10 @@ export default function MioDevCanvas() {
                       return (
                         <div
                           key={cluster.id}
-                          onClick={() => setClusterIdx(idx)}
+                          onClick={() => {
+                            playTactileSound('dpad');
+                            setClusterIdx(idx);
+                          }}
                           className="relative flex-1 flex flex-col items-center cursor-pointer group p-1.5 rounded-xl"
                         >
                           {/* Marco de selección fluido */}
@@ -722,7 +728,10 @@ export default function MioDevCanvas() {
                       return (
                         <div
                           key={pt.id}
-                          onClick={() => setAnomalyIdx(idx)}
+                          onClick={() => {
+                            playTactileSound('dpad');
+                            setAnomalyIdx(idx);
+                          }}
                           className="absolute cursor-pointer -translate-x-1/2 -translate-y-1/2 group"
                           style={{ left: `${pt.x}%`, top: `${pt.y}%` }}
                         >
