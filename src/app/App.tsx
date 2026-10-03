@@ -70,13 +70,13 @@ interface LandingPageContentProps {
   isNewLanding: boolean;
 }
 
-const LandingPageContent: React.FC<LandingPageContentProps> = ({ isNewLanding }) => {
+const LandingPageContent: React.FC = () => {
   const mainRef = useRef<HTMLElement>(null);
   useLandingPetNarrative(true);
 
   return (
     <main ref={mainRef} className="relative z-10">
-      {isNewLanding ? <HeroStageDOM /> : <HeroDOM />}
+      <HeroStageDOM />
       <PoderCorporativoDOM />
       {/* Full-Bleed Edge-to-Edge Ribbon & Dither Case Study */}
       <FullBleedCaseStudyDOM />
@@ -225,7 +225,7 @@ export const App: React.FC = () => {
     }
 
     // Default: Landing Page
-    return <LandingPageContent isNewLanding={isNewLanding} />;
+    return <LandingPageContent />;
   };
 
   const appShell = (

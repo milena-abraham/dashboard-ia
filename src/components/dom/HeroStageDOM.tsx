@@ -168,23 +168,6 @@ export const HeroStageDOM: React.FC = () => {
                 Ver Metodología en 3 Pasos
               </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  playMioDevSound('toggle');
-                  window.history.pushState({}, '', '/');
-                  window.dispatchEvent(new PopStateEvent('popstate'));
-                }}
-                className={`group px-5 py-3 rounded-full text-xs font-mono font-semibold tracking-wider uppercase transition-all duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] cursor-pointer inline-flex items-center gap-2 border ${
-                  isDark
-                    ? 'bg-white/[0.06] hover:bg-white/[0.12] text-zinc-300 hover:text-white border-white/10 hover:border-white/20'
-                    : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700 hover:text-zinc-950 border-zinc-200 shadow-sm'
-                }`}
-                title="Volver al Landing Original (Dither Torus)"
-              >
-                <span className="transition-transform group-hover:-translate-x-1">←</span>
-                <span>Landing Original</span>
-              </button>
             </div>
           </div>
 

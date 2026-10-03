@@ -80,8 +80,19 @@ export const MioFloatingCompanion: React.FC = () => {
   const [isBubbleOpen, setIsBubbleOpen] = useState(true);
   const [isMinimized, setIsMinimized] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const [scrolledPastHero, setScrolledPastHero] = useState(false);
   const bubbleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const prevMoodRef = useRef(storePetMood);
+
+  // Hide companion while in the Hero section so MIO on stage is the single focus
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolledPastHero(window.scrollY > 420);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const showBubbleTemporarily = (duration = 5000) => {
     setIsBubbleOpen(true);
@@ -148,6 +159,11 @@ export const MioFloatingCompanion: React.FC = () => {
 
   const currentDialogue = MOOD_DIALOGUES[mood] || MOOD_DIALOGUES['reposo'];
   const activeMessage = currentDialogue.messages[messageIndex % currentDialogue.messages.length];
+
+  // Do not render floating companion in the hero to keep hero stage focused
+  if (!scrolledPastHero) {
+    return null;
+  }
 
   if (isMinimized) {
     return (
