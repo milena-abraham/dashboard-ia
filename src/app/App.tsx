@@ -6,7 +6,6 @@ import { HeroStageDOM } from '@/components/dom/HeroStageDOM';
 import { PoderCorporativoDOM } from '@/components/dom/PoderCorporativoDOM';
 import { FullBleedCaseStudyDOM } from '@/components/dom/FullBleedCaseStudyDOM';
 import { ComoFuncionaDOM } from '@/components/dom/ComoFuncionaDOM';
-import { DashboardShowcasePinDOM } from '@/components/dom/DashboardShowcasePinDOM';
 import { DitherFigureTransitionDOM } from '@/components/dom/DitherFigureTransitionDOM';
 import { QuienesSomosDOM } from '@/components/dom/QuienesSomosDOM';
 import { CtaBannerDOM } from '@/components/dom/CtaBannerDOM';
@@ -83,8 +82,6 @@ const LandingPageContent: React.FC<LandingPageContentProps> = ({ isNewLanding })
       <FullBleedCaseStudyDOM />
       {/* Step-by-Step Architecture */}
       <ComoFuncionaDOM />
-      {/* GSAP Pinned Dashboard Showcase: Live AutoML engine telemetry */}
-      <DashboardShowcasePinDOM />
       {/* Edge-to-Edge 3D Dither Geometric Topology Section */}
       <DitherFigureTransitionDOM />
       <QuienesSomosDOM />

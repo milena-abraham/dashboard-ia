@@ -11,8 +11,8 @@ const SECTION_MOODS: SectionMoodMapping[] = [
   { selector: '#hero', mood: 'reposo' },
   { selector: '#capacidades', mood: 'trabajando' },
   { selector: '#casos-estudio', mood: 'trabajando' },
-  { selector: '#como-funciona', mood: 'anomalia' },
-  { selector: '#showcase', mood: 'anomalia' },
+  { selector: '#como-funciona', mood: 'trabajando' },
+  { selector: '#dither-figure', mood: 'anomalia' },
   { selector: '#quienes-somos', mood: 'celebrando' },
   { selector: '#cta', mood: 'celebrando' },
 ];
