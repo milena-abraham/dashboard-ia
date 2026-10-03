@@ -11,7 +11,7 @@ import {
   Cpu,
   Sliders,
   Check,
-  Sparkles,
+  Activity,
   ArrowRight,
 } from 'lucide-react';
 
@@ -216,24 +216,26 @@ export const ComoFuncionaDOM: React.FC = () => {
                     key={phase.num}
                     type="button"
                     onClick={() => handleStepJump(phase.index)}
-                    className={`w-full text-left p-4 sm:p-5 rounded-2xl border transition-all duration-300 cursor-pointer flex items-center justify-between group ${
+                    className={`w-full text-left p-4 sm:p-5 rounded-none border-2 transition-all duration-150 cursor-pointer flex items-center justify-between group ${
                       isSelected
                         ? isDark
-                          ? 'bg-zinc-900 border-[#7647eb]/80 shadow-lg shadow-[#7647eb]/15 ring-1 ring-[#7647eb]/40'
-                          : 'bg-white border-[#7647eb]/60 shadow-md ring-1 ring-[#7647eb]/30'
+                          ? 'bg-zinc-900 border-[#bdf559] shadow-[4px_4px_0_#bdf559] text-white'
+                          : 'bg-white border-zinc-950 shadow-[4px_4px_0_#000] text-zinc-950'
                         : isDark
-                        ? 'bg-zinc-950/40 border-white/[0.06] hover:border-white/20 text-zinc-400'
-                        : 'bg-zinc-50/70 border-zinc-200/80 hover:border-zinc-300 text-zinc-600'
+                        ? 'bg-zinc-950/40 border-white/[0.1] hover:border-white/30 text-zinc-400'
+                        : 'bg-zinc-50 border-zinc-200 hover:border-zinc-400 text-zinc-600'
                     }`}
                   >
                     <div className="flex items-center gap-3.5">
                       <div
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center font-mono text-xs font-bold transition-colors ${
+                        className={`w-8 h-8 rounded-none border flex items-center justify-center font-mono text-xs font-bold transition-colors ${
                           isSelected
-                            ? 'bg-[#7647eb] text-white'
+                            ? isDark
+                              ? 'bg-[#bdf559] text-zinc-950 border-[#bdf559]'
+                              : 'bg-zinc-950 text-white border-zinc-950'
                             : isDark
-                            ? 'bg-white/10 text-zinc-400 group-hover:text-white'
-                            : 'bg-zinc-200/80 text-zinc-700 group-hover:text-zinc-950'
+                            ? 'bg-white/5 border-white/10 text-zinc-400 group-hover:text-white'
+                            : 'bg-zinc-200/80 border-zinc-300 text-zinc-700 group-hover:text-zinc-950'
                         }`}
                       >
                         {phase.num}
@@ -270,9 +272,9 @@ export const ComoFuncionaDOM: React.FC = () => {
             </div>
 
             {/* Active Step Bullets Breakdown */}
-            <div className={`p-5 rounded-2xl border space-y-2.5 backdrop-blur-sm ${
+            <div className={`p-5 rounded-none border-2 space-y-2.5 ${
               isDark
-                ? 'bg-zinc-900/50 border-white/[0.06]'
+                ? 'bg-zinc-900/60 border-white/[0.1]'
                 : 'bg-zinc-50 border-zinc-200'
             }`}>
               <div className={`text-xs font-mono font-bold uppercase tracking-wider mb-1 ${
@@ -284,8 +286,8 @@ export const ComoFuncionaDOM: React.FC = () => {
                 <div key={i} className={`flex items-start gap-2.5 text-xs leading-normal ${
                   isDark ? 'text-zinc-300' : 'text-zinc-700'
                 }`}>
-                  <span className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 bg-[#7647eb]/15 text-[#7647eb] dark:text-[#a78bfa]">
-                    <Check className="w-2.5 h-2.5 stroke-[2.5]" />
+                  <span className="font-mono text-xs font-bold text-[#7647eb] dark:text-[#bdf559] select-none shrink-0 mt-0.5">
+                    [+]
                   </span>
                   <span>{bullet}</span>
                 </div>
@@ -315,40 +317,39 @@ export const ComoFuncionaDOM: React.FC = () => {
             {/* -------------------------------------------------------------- */}
             <div
               id="stack-card-0"
-              className={`relative lg:sticky lg:top-36 xl:top-40 z-10 rounded-3xl p-6 sm:p-8 lg:p-10 border transition-all duration-300 backdrop-blur-xl ${
+              className={`relative lg:sticky lg:top-36 xl:top-40 z-10 rounded-none p-6 sm:p-8 lg:p-10 border-2 transition-all duration-300 shadow-[6px_6px_0px_#000] dark:shadow-[6px_6px_0px_#bdf559] ${
                 isDark
-                  ? 'bg-[#0f0e1a] border-white/[0.1] shadow-2xl'
-                  : 'bg-white border-zinc-200 shadow-xl'
+                  ? 'bg-[#0f0e1a] border-white/20'
+                  : 'bg-white border-zinc-950'
               }`}
-              style={{
-                boxShadow: isDark
-                  ? '0 25px 60px -15px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.08)'
-                  : '0 20px 45px -10px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,1)',
-              }}
             >
               {/* Card Header */}
-              <div className={`flex items-center justify-between pb-4 border-b mb-6 ${
-                isDark ? 'border-white/[0.08]' : 'border-zinc-200'
+              <div className={`flex items-center justify-between pb-4 border-b-2 mb-6 ${
+                isDark ? 'border-white/10' : 'border-zinc-950/10'
               }`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#7647eb]/10 text-[#7647eb] dark:text-[#a78bfa] flex items-center justify-center">
+                  <div className={`w-10 h-10 rounded-none border flex items-center justify-center ${
+                    isDark
+                      ? 'border-white/20 bg-white/5 text-[#a78bfa]'
+                      : 'border-zinc-950/20 bg-zinc-100 text-[#7647eb]'
+                  }`}>
                     <FileSpreadsheet className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-xs font-mono font-bold text-[#7647eb] dark:text-[#a78bfa] block">
+                    <span className="text-xs font-mono font-bold text-[#7647eb] dark:text-[#bdf559] block tracking-wider">
                       FASE 01 // HIGIENE ESTADÍSTICA
                     </span>
-                    <h3 className={`text-xl sm:text-2xl font-bold ${
+                    <h3 className={`text-xl sm:text-2xl font-bold tracking-tight ${
                       isDark ? 'text-white' : 'text-zinc-950'
                     }`}>
                       Carga directa de .xlsx o .csv
                     </h3>
                   </div>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-mono font-bold border ${
+                <span className={`px-2.5 py-1 rounded-none text-xs font-mono font-bold border-2 ${
                   isDark
-                    ? 'bg-white/10 text-[#bdf559] border-white/15'
-                    : 'bg-zinc-100 text-zinc-900 border-zinc-200 shadow-sm'
+                    ? 'bg-black text-[#bdf559] border-[#bdf559]/50'
+                    : 'bg-zinc-100 text-zinc-950 border-zinc-950 shadow-[2px_2px_0px_#000]'
                 }`}>
                   &lt; 15s SYNC
                 </span>
@@ -360,10 +361,10 @@ export const ComoFuncionaDOM: React.FC = () => {
                   playMioDevSound('select');
                   window.dispatchEvent(new CustomEvent('mio:open-consent-modal'));
                 }}
-                className={`rounded-2xl p-4 sm:p-5 border border-dashed mb-6 cursor-pointer group transition-all ${
+                className={`rounded-none p-4 sm:p-5 border-2 border-dashed mb-6 cursor-pointer group transition-all ${
                   isDark
-                    ? 'border-white/15 bg-white/[0.02] hover:border-[#bdf559]/50 hover:bg-white/[0.04]'
-                    : 'border-zinc-300 bg-zinc-50 hover:border-[#7647eb]/50 hover:bg-white'
+                    ? 'border-white/20 bg-white/[0.02] hover:border-[#bdf559] hover:bg-white/[0.04]'
+                    : 'border-zinc-400 bg-zinc-50 hover:border-zinc-950 hover:bg-white'
                 }`}
                 title="Hacé click para cargar tu propia planilla"
                 role="button"
@@ -371,7 +372,7 @@ export const ComoFuncionaDOM: React.FC = () => {
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-mono font-bold text-xs group-hover:scale-105 transition-transform">
+                    <div className="w-9 h-9 rounded-none border border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-mono font-bold text-xs group-hover:scale-105 transition-transform">
                       XLSX
                     </div>
                     <div>
@@ -387,7 +388,7 @@ export const ComoFuncionaDOM: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md">
+                  <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-none border border-emerald-500/30">
                     <Check className="w-3.5 h-3.5" />
                     <span>NORMALIZADO</span>
                   </div>
@@ -395,19 +396,19 @@ export const ComoFuncionaDOM: React.FC = () => {
               </div>
 
               {/* Micro Data Table Preview with Isolation Forest Flags */}
-              <div className={`rounded-2xl overflow-hidden border mb-6 ${
-                isDark ? 'border-white/[0.08]' : 'border-zinc-200'
+              <div className={`rounded-none overflow-hidden border-2 mb-6 ${
+                isDark ? 'border-white/20' : 'border-zinc-950'
               }`}>
-                <div className={`px-4 py-2 border-b flex items-center justify-between text-xs font-mono ${
+                <div className={`px-4 py-2 border-b-2 flex items-center justify-between text-xs font-mono ${
                   isDark
-                    ? 'bg-white/[0.04] border-white/[0.06] text-zinc-400'
-                    : 'bg-zinc-100 border-zinc-200 text-zinc-700 font-semibold'
+                    ? 'bg-white/[0.04] border-white/20 text-zinc-400'
+                    : 'bg-zinc-100 border-zinc-950 text-zinc-800 font-bold'
                 }`}>
                   <span>PREVIEW DE FILAS (MUESTRA 3/14,200)</span>
-                  <span className="text-[#7647eb] dark:text-[#a78bfa] font-bold">ISOLATION FOREST: 2 OUTLIERS</span>
+                  <span className="text-[#7647eb] dark:text-[#bdf559] font-bold">ISOLATION FOREST: 2 OUTLIERS</span>
                 </div>
-                <div className={`divide-y font-mono text-xs ${
-                  isDark ? 'divide-white/[0.04]' : 'divide-zinc-200'
+                <div className={`divide-y-2 font-mono text-xs ${
+                  isDark ? 'divide-white/10' : 'divide-zinc-200'
                 }`}>
                   <div className={`p-3 flex items-center justify-between ${
                     isDark ? 'bg-transparent' : 'bg-white'
@@ -417,14 +418,14 @@ export const ComoFuncionaDOM: React.FC = () => {
                     <span className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold">NOMINAL (0.2σ)</span>
                   </div>
                   <div className={`p-3 flex items-center justify-between ${
-                    isDark ? 'bg-rose-500/[0.06]' : 'bg-rose-50'
+                    isDark ? 'bg-rose-500/[0.08]' : 'bg-rose-50'
                   }`}>
                     <span className={isDark ? 'text-zinc-300' : 'text-zinc-800'}>2026-03-15 // SKU-8802</span>
                     <span className={`font-bold ${isDark ? 'text-rose-400' : 'text-rose-700'}`}>$340,000 USD</span>
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-none ${
                       isDark
-                        ? 'bg-rose-500/20 text-rose-300'
-                        : 'bg-rose-100 text-rose-700 border border-rose-200'
+                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                        : 'bg-rose-100 text-rose-700 border border-rose-300'
                     }`}>
                       OUTLIER AISLADO (5.4σ)
                     </span>
@@ -441,9 +442,9 @@ export const ComoFuncionaDOM: React.FC = () => {
 
               {/* Bottom Feature Badges */}
               <div className="grid grid-cols-3 gap-3 text-center">
-                <div className={`p-3 rounded-xl border ${
+                <div className={`p-3 rounded-none border-2 ${
                   isDark
-                    ? 'bg-white/[0.02] border-white/[0.06]'
+                    ? 'bg-white/[0.02] border-white/10'
                     : 'bg-zinc-50 border-zinc-200'
                 }`}>
                   <div className={`text-base font-bold font-mono ${
@@ -451,35 +452,35 @@ export const ComoFuncionaDOM: React.FC = () => {
                   }`}>
                     0 nulos
                   </div>
-                  <div className={`text-[11px] font-normal ${
+                  <div className={`text-[11px] font-mono ${
                     isDark ? 'text-zinc-400' : 'text-zinc-600'
                   }`}>
                     Imputación prob.
                   </div>
                 </div>
-                <div className={`p-3 rounded-xl border ${
+                <div className={`p-3 rounded-none border-2 ${
                   isDark
-                    ? 'bg-white/[0.02] border-white/[0.06]'
+                    ? 'bg-white/[0.02] border-white/10'
                     : 'bg-zinc-50 border-zinc-200'
                 }`}>
                   <div className="text-base font-bold font-mono text-emerald-700 dark:text-[#bdf559]">
                     100%
                   </div>
-                  <div className={`text-[11px] font-normal ${
+                  <div className={`text-[11px] font-mono ${
                     isDark ? 'text-zinc-400' : 'text-zinc-600'
                   }`}>
                     Fechas tipificadas
                   </div>
                 </div>
-                <div className={`p-3 rounded-xl border ${
+                <div className={`p-3 rounded-none border-2 ${
                   isDark
-                    ? 'bg-white/[0.02] border-white/[0.06]'
+                    ? 'bg-white/[0.02] border-white/10'
                     : 'bg-zinc-50 border-zinc-200'
                 }`}>
                   <div className="text-base font-bold font-mono text-[#7647eb] dark:text-[#a78bfa]">
                     3.5σ
                   </div>
-                  <div className={`text-[11px] font-normal ${
+                  <div className={`text-[11px] font-mono ${
                     isDark ? 'text-zinc-400' : 'text-zinc-600'
                   }`}>
                     Filtro de ruido
@@ -493,50 +494,53 @@ export const ComoFuncionaDOM: React.FC = () => {
             {/* -------------------------------------------------------------- */}
             <div
               id="stack-card-1"
-              className={`relative lg:sticky lg:top-44 xl:top-48 z-20 rounded-3xl p-6 sm:p-8 lg:p-10 border transition-all duration-300 backdrop-blur-xl ${
+              className={`relative lg:sticky lg:top-44 xl:top-48 z-20 rounded-none p-6 sm:p-8 lg:p-10 border-2 transition-all duration-300 shadow-[6px_6px_0px_#000] dark:shadow-[6px_6px_0px_#bdf559] ${
                 isDark
-                  ? 'bg-[#111020] border-white/[0.1] shadow-2xl'
-                  : 'bg-white border-zinc-200 shadow-xl'
+                  ? 'bg-[#111020] border-white/20'
+                  : 'bg-white border-zinc-950'
               }`}
-              style={{
-                boxShadow: isDark
-                  ? '0 25px 60px -15px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.08)'
-                  : '0 20px 45px -10px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,1)',
-              }}
             >
               {/* Card Header */}
-              <div className={`flex items-center justify-between pb-4 border-b mb-6 ${
-                isDark ? 'border-white/[0.08]' : 'border-zinc-200'
+              <div className={`flex items-center justify-between pb-4 border-b-2 mb-6 ${
+                isDark ? 'border-white/10' : 'border-zinc-950/10'
               }`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-[#7647eb] dark:text-[#a78bfa] flex items-center justify-center">
+                  <div className={`w-10 h-10 rounded-none border flex items-center justify-center ${
+                    isDark
+                      ? 'border-white/20 bg-white/5 text-[#a78bfa]'
+                      : 'border-zinc-950/20 bg-zinc-100 text-[#7647eb]'
+                  }`}>
                     <Cpu className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-xs font-mono font-bold text-[#7647eb] dark:text-[#a78bfa] block">
+                    <span className="text-xs font-mono font-bold text-[#7647eb] dark:text-[#bdf559] block tracking-wider">
                       FASE 02 // TORNEO AUTOML
                     </span>
-                    <h3 className={`text-xl sm:text-2xl font-bold ${
+                    <h3 className={`text-xl sm:text-2xl font-bold tracking-tight ${
                       isDark ? 'text-white' : 'text-zinc-950'
                     }`}>
                       Competencia multimodelo
                     </h3>
                   </div>
                 </div>
-                <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-[#7647eb] text-white shadow-sm">
+                <span className={`px-2.5 py-1 rounded-none text-xs font-mono font-bold border-2 ${
+                  isDark
+                    ? 'bg-black text-[#bdf559] border-[#bdf559]/50'
+                    : 'bg-[#7647eb] text-white border-zinc-950 shadow-[2px_2px_0px_#000]'
+                }`}>
                   R²: 0.984 ÓPTIMO
                 </span>
               </div>
 
               {/* Leaderboard Multi-Model CV Display */}
               <div className="space-y-3 mb-6">
-                <div className={`p-3.5 rounded-xl border flex items-center justify-between ${
+                <div className={`p-3.5 rounded-none border-2 flex items-center justify-between ${
                   isDark
-                    ? 'border-emerald-500/30 bg-emerald-500/[0.06]'
-                    : 'border-emerald-300 bg-emerald-50/70'
+                    ? 'border-emerald-500/40 bg-emerald-500/[0.08]'
+                    : 'border-emerald-500 bg-emerald-50/70 shadow-[2px_2px_0px_#000]'
                 }`}>
                   <div className="flex items-center gap-2.5">
-                    <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <Activity className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     <div>
                       <div className={`text-xs font-mono font-bold ${
                         isDark ? 'text-white' : 'text-zinc-950'
@@ -562,9 +566,9 @@ export const ComoFuncionaDOM: React.FC = () => {
                   </div>
                 </div>
 
-                <div className={`p-3.5 rounded-xl border flex items-center justify-between ${
+                <div className={`p-3.5 rounded-none border-2 flex items-center justify-between ${
                   isDark
-                    ? 'border-white/[0.06] bg-white/[0.01]'
+                    ? 'border-white/10 bg-white/[0.01]'
                     : 'border-zinc-200 bg-zinc-50'
                 }`}>
                   <div>
@@ -593,9 +597,9 @@ export const ComoFuncionaDOM: React.FC = () => {
                   </div>
                 </div>
 
-                <div className={`p-3.5 rounded-xl border flex items-center justify-between ${
+                <div className={`p-3.5 rounded-none border-2 flex items-center justify-between ${
                   isDark
-                    ? 'border-white/[0.06] bg-white/[0.01]'
+                    ? 'border-white/10 bg-white/[0.01]'
                     : 'border-zinc-200 bg-zinc-50'
                 }`}>
                   <div>
@@ -626,13 +630,13 @@ export const ComoFuncionaDOM: React.FC = () => {
               </div>
 
               {/* Curve Telemetry Footer: Always crisp dark console bar */}
-              <div className="p-4 rounded-2xl bg-zinc-950 text-white flex items-center justify-between border border-zinc-800 shadow-md">
+              <div className="p-4 rounded-none bg-zinc-950 text-white flex items-center justify-between border-2 border-zinc-800 shadow-[3px_3px_0px_#000]">
                 <div>
-                  <div className="text-[10px] font-mono text-zinc-400">PROYECCIÓN CALIBRADA P95</div>
+                  <div className="text-[10px] font-mono text-zinc-400 tracking-wider">PROYECCIÓN CALIBRADA P95</div>
                   <div className="text-2xl font-mono font-bold text-[#bdf559] mt-0.5">$104,800 USD</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-[10px] font-mono text-zinc-400">BANDA DE CONFIANZA 95%</div>
+                  <div className="text-[10px] font-mono text-zinc-400 tracking-wider">BANDA DE CONFIANZA 95%</div>
                   <div className="text-xs font-mono text-zinc-200">[$98,400 — $111,200]</div>
                 </div>
               </div>
@@ -643,49 +647,48 @@ export const ComoFuncionaDOM: React.FC = () => {
             {/* -------------------------------------------------------------- */}
             <div
               id="stack-card-2"
-              className={`relative lg:sticky lg:top-52 xl:top-56 z-30 rounded-3xl p-6 sm:p-8 lg:p-10 border transition-all duration-300 backdrop-blur-xl ${
+              className={`relative lg:sticky lg:top-52 xl:top-56 z-30 rounded-none p-6 sm:p-8 lg:p-10 border-2 transition-all duration-300 shadow-[6px_6px_0px_#000] dark:shadow-[6px_6px_0px_#bdf559] ${
                 isDark
-                  ? 'bg-[#131224] border-white/[0.1] shadow-2xl'
-                  : 'bg-white border-zinc-200 shadow-xl'
+                  ? 'bg-[#131224] border-white/20'
+                  : 'bg-white border-zinc-950'
               }`}
-              style={{
-                boxShadow: isDark
-                  ? '0 25px 60px -15px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.08)'
-                  : '0 20px 45px -10px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,1)',
-              }}
             >
               {/* Card Header */}
-              <div className={`flex items-center justify-between pb-4 border-b mb-6 ${
-                isDark ? 'border-white/[0.08]' : 'border-zinc-200'
+              <div className={`flex items-center justify-between pb-4 border-b-2 mb-6 ${
+                isDark ? 'border-white/10' : 'border-zinc-950/10'
               }`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                  <div className={`w-10 h-10 rounded-none border flex items-center justify-center ${
+                    isDark
+                      ? 'border-white/20 bg-white/5 text-amber-400'
+                      : 'border-zinc-950/20 bg-zinc-100 text-amber-600'
+                  }`}>
                     <Sliders className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-xs font-mono font-bold text-amber-600 dark:text-amber-400 block">
+                    <span className="text-xs font-mono font-bold text-amber-600 dark:text-amber-400 block tracking-wider">
                       FASE 03 // SIMULADOR WHAT-IF & SHAP
                     </span>
-                    <h3 className={`text-xl sm:text-2xl font-bold ${
+                    <h3 className={`text-xl sm:text-2xl font-bold tracking-tight ${
                       isDark ? 'text-white' : 'text-zinc-950'
                     }`}>
                       Decisiones en lenguaje natural
                     </h3>
                   </div>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-mono font-bold border ${
+                <span className={`px-2.5 py-1 rounded-none text-xs font-mono font-bold border-2 ${
                   isDark
-                    ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                    ? 'bg-black text-amber-400 border-amber-500/50'
+                    : 'bg-amber-50 text-amber-900 border-amber-400 shadow-[2px_2px_0px_#000]'
                 }`}>
                   SHAP AUDITABLE
                 </span>
               </div>
 
               {/* Interactive What-If Slider Simulator */}
-              <div className={`p-4 sm:p-5 rounded-2xl border mb-6 space-y-4 ${
+              <div className={`p-4 sm:p-5 rounded-none border-2 mb-6 space-y-4 ${
                 isDark
-                  ? 'bg-white/[0.03] border-white/[0.06]'
+                  ? 'bg-white/[0.02] border-white/10'
                   : 'bg-zinc-50 border-zinc-200'
               }`}>
                 <div className="flex items-center justify-between text-xs font-mono">
@@ -713,9 +716,9 @@ export const ComoFuncionaDOM: React.FC = () => {
                 />
 
                 <div className="grid grid-cols-2 gap-3 pt-2">
-                  <div className={`p-3 rounded-xl border ${
+                  <div className={`p-3 rounded-none border-2 ${
                     isDark
-                      ? 'bg-zinc-900 border-white/[0.08]'
+                      ? 'bg-zinc-900 border-white/10'
                       : 'bg-white border-zinc-200 shadow-sm'
                   }`}>
                     <div className={`text-[10px] font-mono ${
@@ -729,9 +732,9 @@ export const ComoFuncionaDOM: React.FC = () => {
                       ${animatedRevenue.toLocaleString()} USD
                     </div>
                   </div>
-                  <div className={`p-3 rounded-xl border ${
+                  <div className={`p-3 rounded-none border-2 ${
                     isDark
-                      ? 'bg-zinc-900 border-white/[0.08]'
+                      ? 'bg-zinc-900 border-white/10'
                       : 'bg-white border-zinc-200 shadow-sm'
                   }`}>
                     <div className={`text-[10px] font-mono ${
@@ -748,7 +751,7 @@ export const ComoFuncionaDOM: React.FC = () => {
 
               {/* SHAP Impact Explanations */}
               <div className="space-y-2 mb-6">
-                <div className={`text-xs font-mono font-bold mb-2 ${
+                <div className={`text-xs font-mono font-bold mb-2 tracking-wider ${
                   isDark ? 'text-zinc-400' : 'text-zinc-700'
                 }`}>
                   PESO CAUSAL DE VARIABLES (SHAP VALUES)
@@ -757,20 +760,20 @@ export const ComoFuncionaDOM: React.FC = () => {
                   <span className={isDark ? 'text-zinc-300' : 'text-zinc-800'}>Precio promedio por unidad</span>
                   <span className="font-bold text-emerald-700 dark:text-[#bdf559]">+42.8%</span>
                 </div>
-                <div className={`w-full h-1.5 rounded-full overflow-hidden ${
-                  isDark ? 'bg-white/[0.08]' : 'bg-zinc-200'
+                <div className={`w-full h-2 rounded-none border overflow-hidden ${
+                  isDark ? 'border-white/10 bg-white/5' : 'border-zinc-300 bg-zinc-200'
                 }`}>
-                  <div className="h-full bg-emerald-500 rounded-full w-[85%]" />
+                  <div className="h-full bg-emerald-500 rounded-none w-[85%]" />
                 </div>
 
                 <div className="flex items-center justify-between text-xs font-mono pt-1">
                   <span className={isDark ? 'text-zinc-300' : 'text-zinc-800'}>Estacionalidad Q4 / Black Week</span>
                   <span className="font-bold text-[#7647eb] dark:text-[#a78bfa]">+31.2%</span>
                 </div>
-                <div className={`w-full h-1.5 rounded-full overflow-hidden ${
-                  isDark ? 'bg-white/[0.08]' : 'bg-zinc-200'
+                <div className={`w-full h-2 rounded-none border overflow-hidden ${
+                  isDark ? 'border-white/10 bg-white/5' : 'border-zinc-300 bg-zinc-200'
                 }`}>
-                  <div className="h-full bg-[#7647eb] rounded-full w-[62%]" />
+                  <div className="h-full bg-[#7647eb] rounded-none w-[62%]" />
                 </div>
               </div>
 
@@ -779,7 +782,11 @@ export const ComoFuncionaDOM: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => scrollTo('#hero')}
-                  className="w-full py-3.5 px-4 rounded-xl bg-zinc-950 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-medium text-xs font-mono tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                  className={`w-full py-3.5 px-4 rounded-none font-bold text-xs font-mono tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer border-2 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ${
+                    isDark
+                      ? 'bg-white hover:bg-zinc-100 text-zinc-950 border-white shadow-[4px_4px_0_#bdf559]'
+                      : 'bg-zinc-950 hover:bg-zinc-800 text-white border-zinc-950 shadow-[4px_4px_0_#000]'
+                  }`}
                 >
                   <span>CARGAR PLANILLA Y OBTENER DIAGNÓSTICO</span>
                   <ArrowRight className="w-4 h-4 text-[#bdf559] dark:text-[#7647eb]" />

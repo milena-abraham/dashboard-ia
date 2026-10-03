@@ -439,11 +439,13 @@ export function MioDevCanvas() {
                 MIO OS v2.6
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[9px] sm:text-[10px] font-mono bg-mio-violet/40 px-2 py-0.5 rounded text-violet-200 border border-mio-violet/60 font-bold">
-                {timeHorizon} {timeHorizon === '2026' ? 'PREDICTIVO' : 'HISTÓRICO'}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              <span className="text-[9px] sm:text-[10px] font-mono bg-[#7647eb]/30 px-2 py-0.5 rounded-none text-violet-200 border border-[#7647eb]/60 font-bold whitespace-nowrap inline-flex items-center gap-1">
+                <span>{timeHorizon}</span>
+                <span className="text-zinc-400">//</span>
+                <span>{timeHorizon === '2026' ? 'PREDICTIVO' : 'HISTÓRICO'}</span>
               </span>
-              <span className="text-[10px] sm:text-xs font-mono bg-white/10 px-2.5 py-0.5 rounded text-gray-200 font-bold tracking-wider">
+              <span className="text-[9px] sm:text-[10px] font-mono bg-white/10 px-2 py-0.5 rounded-none text-gray-200 border border-white/20 font-bold tracking-wider whitespace-nowrap">
                 {currentMode.tag}
               </span>
             </div>

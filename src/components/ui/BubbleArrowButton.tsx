@@ -23,27 +23,27 @@ export const BubbleArrowButton: React.FC<BubbleArrowButtonProps> = ({
   disabled,
   ...props
 }) => {
-  // Color configuration inspired by Legency Media & Apple design
+  // Neo-Brutalist Swiss styling strictly adhering to BRANDING.md & rounded-none
   const variantStyles = {
     primary: {
-      btn: 'text-zinc-950',
-      content: 'bg-[#bdf559] text-zinc-950 group-hover:bg-[#cbff6e]',
-      arrow: 'bg-zinc-950 text-[#bdf559]',
+      btn: 'bg-[#bdf559] text-zinc-950 border-zinc-950 dark:border-white shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#bdf559]',
+      content: 'bg-[#bdf559] text-zinc-950',
+      arrow: 'bg-zinc-950 text-[#bdf559] group-hover:bg-zinc-900 group-hover:text-white',
     },
     dark: {
-      btn: 'text-white',
-      content: 'bg-zinc-900 text-white border border-white/10 group-hover:bg-zinc-800',
-      arrow: 'bg-white text-zinc-950',
+      btn: 'bg-zinc-950 text-white border-white/20 shadow-[4px_4px_0_#bdf559]',
+      content: 'bg-zinc-950 text-white',
+      arrow: 'bg-white/10 text-white border-l-2 border-white/20 group-hover:bg-white group-hover:text-black',
     },
     light: {
-      btn: 'text-zinc-950',
-      content: 'bg-zinc-100 text-zinc-900 border border-zinc-200 group-hover:bg-zinc-200/80',
-      arrow: 'bg-zinc-900 text-white',
+      btn: 'bg-white text-zinc-950 border-zinc-950 shadow-[4px_4px_0_#000]',
+      content: 'bg-white text-zinc-950',
+      arrow: 'bg-zinc-100 text-zinc-950 border-l-2 border-zinc-950 group-hover:bg-zinc-200',
     },
     outline: {
-      btn: 'text-current',
-      content: 'bg-transparent border border-current/20 text-current group-hover:bg-current/[0.06]',
-      arrow: 'bg-current text-white',
+      btn: 'bg-transparent text-current border-current shadow-[4px_4px_0_#000]',
+      content: 'bg-transparent text-current',
+      arrow: 'bg-transparent text-current border-l-2 border-current',
     },
   };
 
@@ -52,22 +52,19 @@ export const BubbleArrowButton: React.FC<BubbleArrowButtonProps> = ({
       height: 'h-10',
       fontSize: 'text-xs',
       px: 'px-4',
-      arrowSize: 'w-10 h-10',
-      shift: 'group-hover:translate-x-0 -translate-x-10',
+      arrowSize: 'w-10 h-full',
     },
     md: {
       height: 'h-12',
-      fontSize: 'text-sm',
-      px: 'px-6',
-      arrowSize: 'w-12 h-12',
-      shift: 'group-hover:translate-x-0 -translate-x-12',
+      fontSize: 'text-xs sm:text-sm',
+      px: 'px-5',
+      arrowSize: 'w-11 sm:w-12 h-full',
     },
     lg: {
-      height: 'h-14',
-      fontSize: 'text-base',
-      px: 'px-7',
-      arrowSize: 'w-14 h-14',
-      shift: 'group-hover:translate-x-0 -translate-x-14',
+      height: 'h-13 sm:h-14',
+      fontSize: 'text-xs sm:text-sm',
+      px: 'px-6',
+      arrowSize: 'w-12 sm:w-14 h-full',
     },
   };
 
@@ -79,10 +76,10 @@ export const BubbleArrowButton: React.FC<BubbleArrowButtonProps> = ({
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="w-4 h-4 transition-transform duration-500 ease-out group-hover:rotate-45"
+      strokeWidth="2.2"
+      strokeLinecap="square"
+      strokeLinejoin="miter"
+      className="w-4 h-4 transition-transform duration-200 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
     >
       <polyline points="7 17 17 7" />
       <polyline points="7 7 17 7 17 17" />
@@ -92,42 +89,29 @@ export const BubbleArrowButton: React.FC<BubbleArrowButtonProps> = ({
   const inner = (
     <span
       className={cn(
-        'group relative inline-flex items-center overflow-hidden rounded-full font-medium transition-transform duration-300 active:scale-[0.98] select-none cursor-pointer',
+        'group relative inline-flex items-center overflow-hidden rounded-none border-2 font-mono font-bold tracking-wider select-none cursor-pointer transition-all duration-100 ease-out active:translate-x-[2px] active:translate-y-[2px] active:shadow-none',
         s.height,
         v.btn,
         disabled && 'opacity-50 pointer-events-none',
         className
       )}
     >
-      {/* Expanding Leading Arrow Bubble */}
+      {/* Button Content */}
       <span
         className={cn(
-          'flex items-center justify-center rounded-full shrink-0 transition-all duration-500 ease-[cubic-bezier(0.625,0.05,0,1)] scale-0 group-hover:scale-100 z-10',
-          s.arrowSize,
-          v.arrow
-        )}
-        aria-hidden="true"
-      >
-        {arrowSvg}
-      </span>
-
-      {/* Button Content Capsule with Smooth Horizontal Shift */}
-      <span
-        className={cn(
-          'flex items-center justify-center rounded-full h-full font-medium tracking-tight whitespace-nowrap transition-transform duration-500 ease-[cubic-bezier(0.625,0.05,0,1)]',
+          'flex items-center justify-center h-full whitespace-nowrap uppercase',
           s.px,
           s.fontSize,
-          s.shift,
           v.content
         )}
       >
         <span>{children}</span>
       </span>
 
-      {/* Trailing Arrow Bubble that shrinks/recedes on hover */}
+      {/* Trailing Square Arrow Block */}
       <span
         className={cn(
-          'absolute right-0 flex items-center justify-center rounded-full shrink-0 transition-all duration-500 ease-[cubic-bezier(0.625,0.05,0,1)] scale-100 group-hover:scale-0 z-0',
+          'flex items-center justify-center shrink-0 border-l-2 border-inherit transition-colors duration-200',
           s.arrowSize,
           v.arrow
         )}

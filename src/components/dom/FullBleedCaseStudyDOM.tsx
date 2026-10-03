@@ -161,7 +161,7 @@ export const FullBleedCaseStudyDOM: React.FC = () => {
                       {[...Array(6)].map((_, i) => (
                         <div
                           key={i}
-                          className={`w-2 h-2 rounded-sm transition-all duration-500 ${
+                          className={`w-2 h-2 rounded-none transition-all duration-500 ${
                             i <= pixelDissolveStep ? 'bg-[#bdf559]' : 'bg-white/20'
                           }`}
                         />
@@ -173,19 +173,19 @@ export const FullBleedCaseStudyDOM: React.FC = () => {
 
                 {/* Metrics Triple Ticker */}
                 <div className="grid grid-cols-3 gap-3 pt-2">
-                  <div className="p-3 rounded-lg border border-white/10 bg-white/[0.02]">
+                  <div className="p-3 rounded-none border-2 border-white/20 bg-white/[0.02]">
                     <div className="text-[10px] font-mono text-zinc-400 uppercase">RMSE</div>
                     <div className="text-lg font-bold font-mono text-[#bdf559]">
                       <AnimatedCounter value={6.8} decimals={1} suffix="%" />
                     </div>
                   </div>
-                  <div className="p-3 rounded-lg border border-white/10 bg-white/[0.02]">
+                  <div className="p-3 rounded-none border-2 border-white/20 bg-white/[0.02]">
                     <div className="text-[10px] font-mono text-zinc-400 uppercase">Outliers</div>
                     <div className="text-lg font-bold font-mono text-white">
                       <AnimatedCounter value={1280} prefix="+" />
                     </div>
                   </div>
-                  <div className="p-3 rounded-lg border border-white/10 bg-white/[0.02]">
+                  <div className="p-3 rounded-none border-2 border-white/20 bg-white/[0.02]">
                     <div className="text-[10px] font-mono text-zinc-400 uppercase">Confianza</div>
                     <div className="text-lg font-bold font-mono text-[#a78bfa]">
                       <AnimatedCounter value={98.4} decimals={1} suffix="%" />

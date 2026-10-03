@@ -51,17 +51,17 @@ export const DitherFigureTransitionDOM: React.FC = () => {
       {/* 2. Integrated Horizontal Architectural Datum Panel */}
       <div className="relative z-10 w-full max-w-[1520px] mx-auto px-6 sm:px-10 lg:px-16 py-8 sm:py-10">
         
-        {/* 3-Column Integrated Pipeline Datum with protective backing for 100% typography legibility */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-black/15 border border-black/20 rounded-2xl overflow-hidden bg-[#bdf559]/92 backdrop-blur-md shadow-md">
+        {/* 3-Column Integrated Pipeline Datum with strict Swiss Metrology housing */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x-2 divide-black border-2 border-black rounded-none overflow-hidden bg-[#bdf559] shadow-[6px_6px_0px_#000]">
           
           {/* Column 1: Entrada & Problema Resuelto */}
           <div className="lg:col-span-4 p-6 sm:p-8 flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-[10px] font-mono tracking-widest px-2.5 py-0.5 rounded border uppercase bg-black/10 border-black/20 text-zinc-950 font-semibold">
+                <span className="text-[10px] font-mono tracking-widest px-2.5 py-0.5 rounded-none border-2 uppercase bg-black/10 border-black/40 text-zinc-950 font-bold">
                   01 // ENTRADA DE DATOS
                 </span>
-                <span className="w-2 h-2 rounded-full bg-black animate-pulse" />
+                <span className="w-2 h-2 rounded-none bg-black animate-pulse" />
               </div>
 
               <h3 className="text-xl sm:text-2xl font-bold tracking-tight mb-2 text-zinc-950">
@@ -73,19 +73,19 @@ export const DitherFigureTransitionDOM: React.FC = () => {
               </p>
             </div>
 
-            <div className="pt-3 border-t border-black/15 flex items-center justify-between text-xs font-mono text-zinc-900">
+            <div className="pt-3 border-t-2 border-black/20 flex items-center justify-between text-xs font-mono text-zinc-900">
               <span>Tiempo de ingesta:</span>
               <strong className="text-black font-bold font-mono">&lt; 15 segundos</strong>
             </div>
           </div>
 
           {/* Column 2: El Núcleo - 3D Dither Torus (Algorithmic Loop) */}
-          <div className="lg:col-span-4 p-5 sm:p-7 flex flex-col justify-between items-center relative overflow-hidden bg-black/[0.02]">
+          <div className="lg:col-span-4 p-5 sm:p-7 flex flex-col justify-between items-center relative overflow-hidden bg-black/[0.04]">
             <div className="w-full flex items-center justify-between px-1 mb-2 z-10">
-              <span className="text-[10px] font-mono tracking-widest uppercase text-zinc-900 font-semibold">
+              <span className="text-[10px] font-mono tracking-widest uppercase text-zinc-900 font-bold">
                 02 // TOPOLOGÍA TORUS (AUTOML)
               </span>
-              <span className="text-[10px] font-mono font-bold text-black bg-black/10 px-2 py-0.5 rounded border border-black/15">
+              <span className="text-[10px] font-mono font-bold text-black bg-black/10 px-2 py-0.5 rounded-none border border-black/30">
                 LOSS: 0.0014
               </span>
             </div>
@@ -110,10 +110,10 @@ export const DitherFigureTransitionDOM: React.FC = () => {
           <div className="lg:col-span-4 p-6 sm:p-8 flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-[10px] font-mono tracking-widest px-2.5 py-0.5 rounded border uppercase bg-black/10 border-black/20 text-zinc-950 font-semibold">
+                <span className="text-[10px] font-mono tracking-widest px-2.5 py-0.5 rounded-none border-2 uppercase bg-black/10 border-black/40 text-zinc-950 font-bold">
                   03 // SALIDA & DECISIÓN
                 </span>
-                <span className="w-2 h-2 rounded-full bg-black" />
+                <span className="w-2 h-2 rounded-none bg-black" />
               </div>
 
               <h3 className="text-xl sm:text-2xl font-bold tracking-tight mb-2 text-zinc-950">

@@ -181,11 +181,7 @@ export const NavbarDOM: React.FC = () => {
               className="flex items-center gap-3 group cursor-pointer focus:outline-none shrink-0"
             >
               <div
-                className={`w-8 h-8 flex items-center justify-center font-mono font-bold text-sm rounded-lg transition-transform group-hover:scale-105 ${
-                  isDark
-                    ? 'bg-gradient-to-br from-[#7647eb] to-[#5b24c6] text-white shadow-[0_0_15px_rgba(118,71,235,0.4)]'
-                    : 'bg-zinc-950 text-white'
-                }`}
+                className="w-8 h-8 flex items-center justify-center font-mono font-black text-sm rounded-none border-2 border-zinc-950 dark:border-white bg-zinc-950 text-[#bdf559] shadow-[2px_2px_0px_#000] dark:shadow-[2px_2px_0px_#bdf559] transition-transform group-hover:scale-105"
               >
                 M
               </div>
@@ -197,7 +193,7 @@ export const NavbarDOM: React.FC = () => {
                 >
                   MIO
                 </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#bdf559]" />
+                <span className="w-1.5 h-1.5 rounded-none bg-[#bdf559] animate-pulse" />
               </div>
             </button>
 
@@ -237,53 +233,49 @@ export const NavbarDOM: React.FC = () => {
           {/* Core Action Suite: Admin + Mis Proyectos + Ingresar + Theme Switch + CTA */}
           <div className="flex items-center gap-2 sm:gap-3.5">
             
-            {/* Admin Badge Button (Exclusive for founders/admins) */}
+            {/* Unified Founder System Terminal (Exclusive for founders/admins) */}
             {isAuthorized && (
-              <button
-                type="button"
-                onClick={() => navigateTo('/admin')}
-                className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold transition-all border cursor-pointer ${
-                  isDark
-                    ? 'bg-[#bdf559]/10 text-[#bdf559] border-[#bdf559]/30 hover:bg-[#bdf559]/20'
-                    : 'bg-[#bdf559]/20 text-zinc-950 border-[#bdf559] hover:bg-[#bdf559]/30 shadow-sm'
-                }`}
-                title="Panel Administrativo y Telemetría FastAPI"
-              >
-                <Activity className="w-3.5 h-3.5" />
-                <span>Admin</span>
-              </button>
-            )}
-
-            {/* Test-Pet Sandbox Button (Exclusive for founders) */}
-            {isAuthorized && (
-              <button
-                type="button"
-                onClick={() => navigateTo('/test-pet')}
-                className={`hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold transition-all border cursor-pointer ${
-                  isDark
-                    ? 'bg-[#7647eb]/20 text-[#a78bfa] border-[#7647eb]/40 hover:bg-[#7647eb]/30'
-                    : 'bg-[#7647eb]/10 text-[#602cd1] border-[#7647eb]/30 hover:bg-[#7647eb]/20 shadow-sm'
-                }`}
-                title="Laboratorio MIO-PET (2D & 3D)"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-[#bdf559] animate-pulse" />
-                <span>TEST-PET</span>
-              </button>
+              <div className={`hidden lg:inline-flex items-center gap-2 px-2.5 py-1 text-[11px] font-mono font-bold border-2 select-none ${
+                isDark
+                  ? 'border-white/20 bg-white/5 text-zinc-300'
+                  : 'border-zinc-950 bg-zinc-100 text-zinc-950 shadow-[2px_2px_0px_#000]'
+              }`}>
+                <span className="w-1.5 h-1.5 rounded-none bg-[#bdf559] animate-pulse" />
+                <span className="tracking-wider">SYS.DEV</span>
+                <span className="text-zinc-400 dark:text-zinc-600">|</span>
+                <button
+                  type="button"
+                  onClick={() => navigateTo('/admin')}
+                  className="hover:text-[#7647eb] dark:hover:text-[#bdf559] transition-colors cursor-pointer"
+                  title="Telemetría FastAPI y Admin"
+                >
+                  ADM
+                </button>
+                <span className="text-zinc-400 dark:text-zinc-600">/</span>
+                <button
+                  type="button"
+                  onClick={() => navigateTo('/test-pet')}
+                  className="hover:text-[#7647eb] dark:hover:text-[#bdf559] transition-colors cursor-pointer"
+                  title="Laboratorio MIO-PET"
+                >
+                  PET
+                </button>
+              </div>
             )}
 
             {/* Mis Proyectos Button */}
             <button
               type="button"
               onClick={() => navigateTo('/projects')}
-              className={`hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border cursor-pointer ${
+              className={`hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-mono font-bold transition-all border-2 cursor-pointer ${
                 isDark
-                  ? 'border-white/10 text-zinc-300 hover:text-white hover:bg-white/[0.06]'
-                  : 'border-zinc-200 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100 shadow-sm'
+                  ? 'border-white/20 text-zinc-300 hover:text-white hover:bg-white/[0.06] hover:border-white/40'
+                  : 'border-zinc-950 text-zinc-950 bg-white hover:bg-zinc-100 shadow-[2px_2px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none'
               }`}
               title="Ver análisis y proyectos guardados"
             >
-              <Layers className="w-3.5 h-3.5 text-[#7647eb] dark:text-[#a78bfa]" />
-              <span>Mis Proyectos</span>
+              <Layers className="w-3.5 h-3.5 text-[#7647eb] dark:text-[#bdf559]" />
+              <span>PROYECTOS</span>
             </button>
 
             {/* User Account / Ingresar Button */}
@@ -295,35 +287,35 @@ export const NavbarDOM: React.FC = () => {
                     playMioDevSound('tick');
                     setUserMenuOpen(!userMenuOpen);
                   }}
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border cursor-pointer select-none ${
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-none text-xs font-mono font-bold transition-all border-2 cursor-pointer select-none ${
                     isDark
-                      ? 'border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]'
-                      : 'border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-100 shadow-sm'
+                      ? 'border-white/20 bg-white/[0.04] text-white hover:bg-white/[0.08]'
+                      : 'border-zinc-950 bg-white text-zinc-950 hover:bg-zinc-100 shadow-[2px_2px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none'
                   }`}
                   title={`Usuario: ${effectiveName}`}
                 >
-                  <div className="w-5 h-5 rounded-full bg-[#7647eb] text-white flex items-center justify-center text-[10px] font-bold font-mono shrink-0 shadow-sm">
+                  <div className="w-4 h-4 rounded-none bg-[#7647eb] text-white flex items-center justify-center text-[10px] font-bold font-mono shrink-0">
                     {userInitial}
                   </div>
-                  <span className="max-w-[110px] truncate font-medium">{effectiveName}</span>
+                  <span className="max-w-[110px] truncate">{effectiveName}</span>
                   <ChevronDown className={`w-3 h-3 text-zinc-400 transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 <AnimatePresence>
                   {userMenuOpen && (
                     <motion.div
-                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                      initial={{ opacity: 0, y: 6, scale: 0.98 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 6, scale: 0.96 }}
-                      transition={{ duration: 0.15 }}
-                      className={`absolute right-0 mt-2 w-56 rounded-2xl p-2 shadow-2xl border backdrop-blur-2xl z-50 ${
+                      exit={{ opacity: 0, y: 4, scale: 0.98 }}
+                      transition={{ duration: 0.12 }}
+                      className={`absolute right-0 mt-2 w-56 rounded-none p-2 border-2 shadow-[4px_4px_0px_#000] dark:shadow-[4px_4px_0px_#bdf559] z-50 ${
                         isDark
-                          ? 'bg-[#0e0c19]/95 border-white/10 text-white shadow-black/80'
-                          : 'bg-white/95 border-zinc-200 text-zinc-900 shadow-zinc-950/10'
+                          ? 'bg-[#0e0c19] border-white/20 text-white'
+                          : 'bg-white border-zinc-950 text-zinc-900'
                       }`}
                     >
-                      <div className="px-3 py-2 border-b border-black/[0.06] dark:border-white/[0.08] mb-1">
-                        <div className="text-xs font-bold truncate text-zinc-950 dark:text-white">{effectiveName}</div>
+                      <div className="px-3 py-2 border-b-2 border-black/[0.08] dark:border-white/[0.08] mb-1">
+                        <div className="text-xs font-bold truncate text-zinc-950 dark:text-white font-mono">{effectiveName}</div>
                         <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate font-mono">
                           {effectiveEmail}
                         </div>
@@ -335,11 +327,11 @@ export const NavbarDOM: React.FC = () => {
                           setUserMenuOpen(false);
                           navigateTo('/dashboard');
                         }}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-none text-xs font-mono font-medium transition-colors cursor-pointer ${
                           isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-zinc-100'
                         }`}
                       >
-                        <Activity className="w-3.5 h-3.5 text-[#7647eb]" />
+                        <Activity className="w-3.5 h-3.5 text-[#7647eb] dark:text-[#bdf559]" />
                         <span>Workspace AutoML</span>
                       </button>
 
@@ -349,7 +341,7 @@ export const NavbarDOM: React.FC = () => {
                           setUserMenuOpen(false);
                           navigateTo('/projects');
                         }}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-none text-xs font-mono font-medium transition-colors cursor-pointer ${
                           isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-zinc-100'
                         }`}
                       >
@@ -357,12 +349,12 @@ export const NavbarDOM: React.FC = () => {
                         <span>Mis Proyectos</span>
                       </button>
 
-                      <div className="my-1 border-t border-black/[0.06] dark:border-white/[0.08]" />
+                      <div className="my-1 border-t-2 border-black/[0.08] dark:border-white/[0.08]" />
 
                       <button
                         type="button"
                         onClick={handleSignOut}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-none text-xs font-mono font-medium text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
                       >
                         <LogOut className="w-3.5 h-3.5" />
                         <span>Cerrar Sesión</span>
@@ -375,14 +367,14 @@ export const NavbarDOM: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleOpenWorkspace('login')}
-                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all border cursor-pointer ${
+                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-none text-xs font-mono font-bold transition-all border-2 cursor-pointer ${
                   isDark
-                    ? 'border-white/10 text-white hover:bg-white/[0.08]'
-                    : 'border-zinc-300 text-zinc-900 hover:bg-zinc-100 shadow-sm'
+                    ? 'border-white/20 text-white hover:bg-white/[0.08] hover:border-white/40'
+                    : 'border-zinc-950 text-zinc-950 bg-white hover:bg-zinc-100 shadow-[2px_2px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none'
                 }`}
               >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>Ingresar</span>
+                <LogIn className="w-3.5 h-3.5 text-[#7647eb] dark:text-[#bdf559]" />
+                <span>INGRESAR</span>
               </button>
             )}
 
@@ -393,37 +385,37 @@ export const NavbarDOM: React.FC = () => {
 
             {/* Segmented Light / Dark Switch Button */}
             <div
-              className={`hidden lg:flex items-center p-1 rounded-full border transition-colors ${
+              className={`hidden lg:flex items-center p-0.5 rounded-none border-2 transition-colors ${
                 isDark
-                  ? 'bg-white/[0.05] border-white/10'
-                  : 'bg-black/[0.04] border-black/10'
+                  ? 'bg-white/[0.05] border-white/20'
+                  : 'bg-zinc-100 border-zinc-950 shadow-[2px_2px_0px_#000]'
               }`}
             >
               <button
                 type="button"
                 onClick={() => setTheme('light')}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-none text-xs font-mono font-bold transition-all cursor-pointer ${
                   !isDark
-                    ? 'bg-white text-zinc-950 shadow-sm font-semibold'
+                    ? 'bg-white text-zinc-950 shadow-[1px_1px_0px_#000]'
                     : 'text-zinc-400 hover:text-white'
                 }`}
                 aria-label="Activar modo claro"
               >
-                <Sun className="w-3.5 h-3.5 text-amber-500" />
-                <span className="hidden xl:inline">Claro</span>
+                <Sun className="w-3 h-3 text-amber-500" />
+                <span className="hidden xl:inline text-[10px]">CLARO</span>
               </button>
               <button
                 type="button"
                 onClick={() => setTheme('dark')}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-none text-xs font-mono font-bold transition-all cursor-pointer ${
                   isDark
-                    ? 'bg-zinc-800 text-white shadow-sm font-semibold'
+                    ? 'bg-zinc-800 text-white shadow-sm'
                     : 'text-zinc-600 hover:text-zinc-950'
                 }`}
                 aria-label="Activar modo oscuro"
               >
-                <Moon className="w-3.5 h-3.5 text-[#bdf559]" />
-                <span className="hidden xl:inline">Oscuro</span>
+                <Moon className="w-3 h-3 text-[#bdf559]" />
+                <span className="hidden xl:inline text-[10px]">OSCURO</span>
               </button>
             </div>
 
@@ -445,26 +437,26 @@ export const NavbarDOM: React.FC = () => {
                 playMioDevSound('tick');
                 setMobileMenuOpen(!mobileMenuOpen);
               }}
-              className={`xl:hidden w-10 h-10 rounded-xl border flex items-center justify-center transition-all duration-200 active:scale-[0.95] cursor-pointer ${
+              className={`xl:hidden w-10 h-10 rounded-none border-2 flex items-center justify-center transition-all duration-100 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer ${
                 isDark
-                  ? 'border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]'
-                  : 'border-black/10 bg-black/[0.04] text-zinc-950 hover:bg-black/[0.08]'
+                  ? 'border-white bg-[#07070a] text-white shadow-[2px_2px_0px_#bdf559]'
+                  : 'border-zinc-950 bg-white text-zinc-950 shadow-[2px_2px_0px_#000]'
               }`}
               aria-label="Alternar menú de navegación"
             >
               <div className="w-5 h-4 relative flex items-center justify-center">
                 <span
-                  className={`absolute h-0.5 w-4.5 bg-current rounded-full transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] ${
+                  className={`absolute h-0.5 w-4.5 bg-current rounded-none transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] ${
                     mobileMenuOpen ? 'rotate-45 translate-y-0' : '-translate-y-1.5'
                   }`}
                 />
                 <span
-                  className={`absolute h-0.5 w-4.5 bg-current rounded-full transition-all duration-200 ${
+                  className={`absolute h-0.5 w-4.5 bg-current rounded-none transition-all duration-200 ${
                     mobileMenuOpen ? 'opacity-0 scale-x-0' : 'opacity-100 scale-x-100'
                   }`}
                 />
                 <span
-                  className={`absolute h-0.5 w-4.5 bg-current rounded-full transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] ${
+                  className={`absolute h-0.5 w-4.5 bg-current rounded-none transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] ${
                     mobileMenuOpen ? '-rotate-45 translate-y-0' : 'translate-y-1.5'
                   }`}
                 />

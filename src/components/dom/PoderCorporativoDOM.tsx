@@ -5,7 +5,7 @@ import { BubbleArrowButton } from '@/components/ui/BubbleArrowButton';
 import { SectionPlate } from '@/components/ui/SectionPlate';
 import { FlipText } from '@/components/ui/FlipText';
 import { gsap } from '@/lib/gsap';
-import { Check, Cpu, Sliders, MessageSquare, FileSpreadsheet } from 'lucide-react';
+import { Cpu, Sliders, MessageSquare, FileSpreadsheet, ArrowRight } from 'lucide-react';
 
 interface CapabilityTier {
   id: string;
@@ -21,14 +21,14 @@ interface CapabilityTier {
 const CAPABILITY_TIERS: CapabilityTier[] = [
   {
     id: 'ingesta',
-    tag: 'PILAR 01',
+    tag: 'MÓDULO 01 // HIGIENE',
     title: 'Ingesta de Datos & Detección de Anomalías',
-    subtitle: 'Carga tus archivos sin preparar y detectá desvíos críticos antes de tus cierres.',
+    subtitle: 'Cargá tus archivos sin preparar y aislá desvíos críticos antes de tus cierres.',
     features: [
-      'Algoritmo Isolation Forest para detectar outliers estadísticos sin configuración manual',
+      'Algoritmo Isolation Forest para aislar outliers estadísticos sin configuración manual',
       'Normalización automática de fechas, formatos numéricos y monedas dispersas',
       'Imputación probabilística de celdas vacías y eliminación de duplicados',
-      'Alertas tempranas de quiebres estructurales en series de datos o demanda',
+      'Alertas tempranas de quiebres estructurales en series de demanda',
     ],
     forWho: 'Para equipos que pierden horas semanales cruzando y limpiando archivos.',
     metrics: { label: 'Ingesta autónoma', value: 'Sin preparar' },
@@ -36,7 +36,7 @@ const CAPABILITY_TIERS: CapabilityTier[] = [
   },
   {
     id: 'automl',
-    tag: 'PILAR 02',
+    tag: 'MÓDULO 02 // AUTOML',
     title: 'Motor AutoML Competitivo para Series de Tiempo',
     subtitle: 'Competencia multimodelo entre Prophet, ARIMA y Boosting con selección matemática.',
     features: [
@@ -51,7 +51,7 @@ const CAPABILITY_TIERS: CapabilityTier[] = [
   },
   {
     id: 'explicabilidad',
-    tag: 'PILAR 03',
+    tag: 'MÓDULO 03 // EXPLICABILIDAD',
     title: 'Explicabilidad Causal & Escenarios What-If',
     subtitle: 'Comprensión exacta de qué variables mueven la aguja y simulación en vivo.',
     features: [
@@ -66,7 +66,7 @@ const CAPABILITY_TIERS: CapabilityTier[] = [
   },
   {
     id: 'copiloto',
-    tag: 'PILAR 04',
+    tag: 'MÓDULO 04 // COPILOTO',
     title: 'Copiloto Ejecutivo en Lenguaje Natural',
     subtitle: 'Preguntale a tus planillas, descubrí insights y generá reportes en segundos.',
     features: [
@@ -152,12 +152,12 @@ export const PoderCorporativoDOM: React.FC = () => {
               isDark ? 'text-zinc-400' : 'text-zinc-600'
             }`}
           >
-            Cuatro pilares diseñados para resolver desde la carga de tus archivos sin preparar hasta la simulación de escenarios sin requerir programadores ni científicos de datos.
+            Arquitectura de inferencia de punta a punta: desde la ingesta cruda de planillas hasta la simulación interactiva de escenarios y explicabilidad matemática causal.
           </p>
         </div>
 
-        {/* 2x2 Desktop Grid — monolithic panel, gap-px dividers */}
-        <div ref={cardsGridRef} className="grid grid-cols-1 md:grid-cols-2 gap-px bg-zinc-200 dark:bg-white/[0.08] border border-zinc-200 dark:border-white/[0.08]">
+        {/* 2x2 Desktop Grid — monolithic panel with hard shadow */}
+        <div ref={cardsGridRef} className="grid grid-cols-1 md:grid-cols-2 gap-px bg-zinc-950 dark:bg-white/20 border-2 border-zinc-950 dark:border-white/20 shadow-[6px_6px_0px_#000] dark:shadow-[6px_6px_0px_#bdf559]">
           {CAPABILITY_TIERS.map((tier) => {
             const isActive = activeTierId === tier.id;
             const Icon = tier.icon;
@@ -165,11 +165,11 @@ export const PoderCorporativoDOM: React.FC = () => {
               <article
                 key={tier.id}
                 onClick={() => setActiveTierId(tier.id)}
-                className={`p-8 sm:p-10 border-l-[3px] transition-all duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col justify-between cursor-pointer ${
+                className={`p-8 sm:p-10 border-l-[3px] rounded-none transition-all duration-150 flex flex-col justify-between cursor-pointer ${
                   isDark
                     ? isActive
-                      ? 'bg-zinc-900/80 border-l-[#7647eb]'
-                      : 'bg-[#0e0c19] border-l-transparent hover:bg-zinc-900/40 hover:border-l-[#7647eb]/40'
+                      ? 'bg-zinc-900/90 border-l-[#bdf559]'
+                      : 'bg-[#0e0c19] border-l-transparent hover:bg-zinc-900/50 hover:border-l-[#bdf559]/40'
                     : isActive
                     ? 'bg-zinc-50 border-l-[#7647eb]'
                     : 'bg-white border-l-transparent hover:bg-zinc-50/80 hover:border-l-[#7647eb]/50'
@@ -179,10 +179,10 @@ export const PoderCorporativoDOM: React.FC = () => {
                   {/* Card Header Row */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-md bg-[#7647eb]/10 text-[#7647eb] dark:text-[#a78bfa] flex items-center justify-center shrink-0">
+                      <div className="w-9 h-9 rounded-none border border-zinc-950/20 dark:border-white/20 bg-[#7647eb]/10 text-[#7647eb] dark:text-[#bdf559] flex items-center justify-center shrink-0">
                         <Icon className="w-5 h-5" />
                       </div>
-                      <span className="text-xs font-mono font-bold tracking-wider text-[#7647eb] dark:text-[#a78bfa]">
+                      <span className="text-xs font-mono font-bold tracking-wider text-[#7647eb] dark:text-[#bdf559]">
                         {tier.tag}
                       </span>
                     </div>
@@ -207,12 +207,12 @@ export const PoderCorporativoDOM: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* Feature Checklist */}
-                  <div className={`space-y-2.5 pt-4 border-t ${isDark ? 'border-white/[0.06]' : 'border-zinc-200'}`}>
+                  {/* Feature Checklist with Monospace Indicators */}
+                  <div className={`space-y-2.5 pt-4 border-t-2 ${isDark ? 'border-white/[0.08]' : 'border-zinc-200'}`}>
                     {tier.features.map((feat, i) => (
-                      <div key={i} className={`flex items-start gap-2.5 text-xs sm:text-sm ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>
-                        <span className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 bg-[#7647eb]/15 text-[#7647eb] dark:text-[#a78bfa]">
-                          <Check className="w-2.5 h-2.5 stroke-[2.5]" />
+                      <div key={i} className={`flex items-start gap-2.5 text-xs sm:text-sm font-mono ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>
+                        <span className="font-mono text-xs font-bold text-[#7647eb] dark:text-[#bdf559] select-none shrink-0 mt-0.5">
+                          [+]
                         </span>
                         <span>{feat}</span>
                       </div>
@@ -220,18 +220,23 @@ export const PoderCorporativoDOM: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Card Footer: Audience & Action */}
-                <div className={`mt-8 pt-6 border-t flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${isDark ? 'border-white/[0.06]' : 'border-zinc-200'}`}>
-                  <p className={`text-xs font-normal max-w-xs leading-normal ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                {/* Card Footer: Audience & Distinct Action */}
+                <div className={`mt-8 pt-6 border-t-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${isDark ? 'border-white/[0.08]' : 'border-zinc-200'}`}>
+                  <p className={`text-xs font-mono max-w-xs leading-normal ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
                     {tier.forWho}
                   </p>
-                  <BubbleArrowButton
-                    size="sm"
-                    variant={isDark ? 'dark' : 'light'}
+                  <button
+                    type="button"
                     onClick={() => scrollTo('#como-funciona')}
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-none text-xs font-mono font-bold tracking-wider border-2 transition-all cursor-pointer select-none active:translate-x-[1px] active:translate-y-[1px] active:shadow-none ${
+                      isDark
+                        ? 'border-white/20 text-[#bdf559] hover:border-[#bdf559] hover:bg-white/5'
+                        : 'border-zinc-950 text-zinc-950 hover:bg-zinc-100 shadow-[2px_2px_0px_#000]'
+                    }`}
                   >
-                    Ver en Acción
-                  </BubbleArrowButton>
+                    <span>DIAGNÓSTICO</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </article>
             );

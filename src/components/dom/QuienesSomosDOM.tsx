@@ -61,10 +61,10 @@ export const QuienesSomosDOM: React.FC = () => {
               isDark ? 'text-white' : 'text-zinc-950'
             }`}
           >
-            <FlipText>Rigor científico aplicado a la</FlipText>
+            <FlipText>Ingeniería estadística sin</FlipText>
             <br />
-            <span className="text-[#7647eb] dark:text-[#a78bfa] inline-block">
-              <FlipText delayOffset={0.25}>toma de decisiones.</FlipText>
+            <span className="text-[#7647eb] dark:text-[#bdf559] inline-block">
+              <FlipText delayOffset={0.25}>filtros corporativos.</FlipText>
             </span>
           </h2>
           <p
@@ -81,10 +81,10 @@ export const QuienesSomosDOM: React.FC = () => {
           {TEAM.map((member) => (
             <article
               key={member.name}
-              className={`p-8 sm:p-12 rounded-none border-2 transition-all duration-300 flex flex-col justify-between ${
+              className={`p-8 sm:p-12 rounded-none border-2 transition-all duration-150 ease-out flex flex-col justify-between hover:-translate-x-1 hover:-translate-y-1 ${
                 isDark
-                  ? 'bg-[#0e0c19] border-white/20 shadow-[6px_6px_0_#111111]'
-                  : 'bg-white border-black shadow-[6px_6px_0_#7647eb]'
+                  ? 'bg-[#0e0c19] border-white/20 shadow-[6px_6px_0px_#bdf559] hover:shadow-[9px_9px_0px_#bdf559]'
+                  : 'bg-white border-zinc-950 shadow-[6px_6px_0px_#000] hover:shadow-[9px_9px_0px_#000]'
               }`}
             >
               <div className="space-y-5">
@@ -105,10 +105,10 @@ export const QuienesSomosDOM: React.FC = () => {
                       href={member.linkedin}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`p-2.5 rounded-none border border-black dark:border-white/20 transition-all ${
+                      className={`p-2.5 rounded-none border-2 border-zinc-950 dark:border-white/20 transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${
                         isDark
-                          ? 'text-zinc-400 hover:text-black hover:bg-[#bdf559]'
-                          : 'text-zinc-700 hover:text-white hover:bg-[#7647eb] bg-zinc-50'
+                          ? 'text-zinc-300 hover:text-black hover:bg-[#bdf559] hover:border-[#bdf559]'
+                          : 'text-zinc-800 hover:text-white hover:bg-[#7647eb] hover:border-[#7647eb] bg-zinc-50 shadow-[2px_2px_0px_#000]'
                       }`}
                       aria-label={`LinkedIn de ${member.name}`}
                     >
@@ -118,10 +118,10 @@ export const QuienesSomosDOM: React.FC = () => {
                       href={member.github}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`p-2.5 rounded-none border border-black dark:border-white/20 transition-all ${
+                      className={`p-2.5 rounded-none border-2 border-zinc-950 dark:border-white/20 transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${
                         isDark
-                          ? 'text-zinc-400 hover:text-black hover:bg-[#bdf559]'
-                          : 'text-zinc-700 hover:text-white hover:bg-[#7647eb] bg-zinc-50'
+                          ? 'text-zinc-300 hover:text-black hover:bg-[#bdf559] hover:border-[#bdf559]'
+                          : 'text-zinc-800 hover:text-white hover:bg-[#7647eb] hover:border-[#7647eb] bg-zinc-50 shadow-[2px_2px_0px_#000]'
                       }`}
                       aria-label={`GitHub de ${member.name}`}
                     >

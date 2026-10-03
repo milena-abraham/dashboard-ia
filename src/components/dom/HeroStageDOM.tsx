@@ -159,13 +159,13 @@ export const HeroStageDOM: React.FC = () => {
               <button
                 type="button"
                 onClick={() => scrollTo('#como-funciona')}
-                className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] cursor-pointer ${
+                className={`px-6 py-3 rounded-none text-xs font-mono font-bold tracking-wider transition-all duration-100 ease-out active:translate-x-[2px] active:translate-y-[2px] active:shadow-none border-2 cursor-pointer ${
                   isDark
-                    ? 'text-zinc-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/10'
-                    : 'text-zinc-800 hover:text-zinc-950 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 shadow-sm'
+                    ? 'text-zinc-200 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border-white/20 shadow-[2px_2px_0px_#ffffff]'
+                    : 'text-zinc-950 hover:text-zinc-950 bg-zinc-100 hover:bg-zinc-200 border-zinc-950 shadow-[2px_2px_0px_#000]'
                 }`}
               >
-                Ver Metodología en 3 Pasos
+                VER METODOLOGÍA [01–03]
               </button>
 
             </div>
@@ -180,50 +180,50 @@ export const HeroStageDOM: React.FC = () => {
               <MioDevCanvas />
             </div>
 
-            {/* MIO Espécimen 01 — live 3D companion standing on a dither pad, in front of the console.
-                Canvas is pointer-events:none, so it never blocks the device controls underneath. */}
+            {/* MIO Espécimen 01 — live 3D companion standing on a dither pad alongside the console.
+                Clickable: triggers celebration and shockwave */}
             <MioHeroStage
-              className="absolute z-20 pointer-events-none left-0 -bottom-8 sm:-left-8 sm:-bottom-10 lg:-left-48 lg:-bottom-14 w-[240px] h-[240px] sm:w-[320px] sm:h-[320px] lg:w-[380px] lg:h-[380px]"
+              className="absolute z-20 pointer-events-auto cursor-pointer -left-4 -bottom-6 sm:-left-6 sm:-bottom-8 lg:-left-24 xl:-left-28 lg:-bottom-8 w-[200px] h-[200px] sm:w-[260px] sm:h-[260px] lg:w-[300px] lg:h-[300px] xl:w-[340px] xl:h-[340px]"
             />
           </div>
         </div>
 
-        {/* BOTTOM PROOF & TRACK RECORD BAR with Live Telemetry Counters */}
-        <div ref={statsRef} className="mt-14 sm:mt-20 w-full border-t border-b border-zinc-300 dark:border-white/10 py-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-left">
-            <div className="space-y-1">
+        {/* BOTTOM PROOF & TRACK RECORD BAR: Monolithic Swiss Grid per BRANDING.md §2.1 */}
+        <div ref={statsRef} className="mt-14 sm:mt-20 w-full border-2 border-zinc-950 dark:border-white/20 bg-zinc-950/20 dark:bg-white/10 shadow-[4px_4px_0_#000] dark:shadow-[4px_4px_0_#bdf559]">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-px text-left">
+            <div className="space-y-1 bg-[#fbfbfd] dark:bg-[#090812] p-5 sm:p-6">
               <div className={`text-3xl sm:text-4xl font-bold tracking-tight font-mono ${isDark ? 'text-white' : 'text-zinc-950'}`}>
                 &lt; <AnimatedCounter value={60} suffix="s" />
               </div>
-              <p className={`text-xs sm:text-sm font-normal leading-snug ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                De planilla cruda a pronósticos ejecutivos y bandas de confianza.
+              <p className={`text-xs sm:text-sm font-mono leading-snug ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                De planilla cruda a pronósticos ejecutivos y bandas P95.
               </p>
             </div>
 
-            <div className="space-y-1">
-              <div className="text-3xl sm:text-4xl font-bold tracking-tight font-mono text-[#7647eb] dark:text-[#a78bfa]">
+            <div className="space-y-1 bg-[#fbfbfd] dark:bg-[#090812] p-5 sm:p-6">
+              <div className="text-3xl sm:text-4xl font-bold tracking-tight font-mono text-[#7647eb] dark:text-[#bdf559]">
                 <AnimatedCounter value={0.984} decimals={3} suffix=" R²" />
               </div>
-              <p className={`text-xs sm:text-sm font-normal leading-snug ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                Validación cruzada multimodelo y explicabilidad SHAP sin sesgos.
+              <p className={`text-xs sm:text-sm font-mono leading-snug ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                Benchmark medido en series con estacionalidad compleja.
               </p>
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1 bg-[#fbfbfd] dark:bg-[#090812] p-5 sm:p-6">
               <div className={`text-3xl sm:text-4xl font-bold tracking-tight font-mono ${isDark ? 'text-white' : 'text-zinc-950'}`}>
-                <AnimatedCounter value={100} suffix="%" />
+                100% SHAP
               </div>
-              <p className={`text-xs sm:text-sm font-normal leading-snug ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                Imputa nulos, tipifica columnas y elimina outliers automáticamente.
+              <p className={`text-xs sm:text-sm font-mono leading-snug ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                Auditabilidad causal de cada variable sin cajas negras.
               </p>
             </div>
 
-            <div className="space-y-1">
-              <div className={`text-3xl sm:text-4xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-zinc-950'}`}>
+            <div className="space-y-1 bg-[#fbfbfd] dark:bg-[#090812] p-5 sm:p-6">
+              <div className={`text-3xl sm:text-4xl font-bold tracking-tight font-mono ${isDark ? 'text-white' : 'text-zinc-950'}`}>
                 Zero Code
               </div>
-              <p className={`text-xs sm:text-sm font-normal leading-snug ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                Consultas en lenguaje natural sin depender de equipos de BI.
+              <p className={`text-xs sm:text-sm font-mono leading-snug ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                Consultas en lenguaje natural con copiloto Gemini integrado.
               </p>
             </div>
           </div>
