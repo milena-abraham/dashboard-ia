@@ -5,6 +5,7 @@ import { PixelateRevealCanvas } from '@/components/canvas/PixelateRevealCanvas';
 import { ArrowUpRight, Database, Layers } from 'lucide-react';
 import { FlipText } from '@/components/ui/FlipText';
 import { playMioDevSound } from '@/lib/sound';
+import { SectionPlate } from '@/components/ui/SectionPlate';
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 import { AuditDrawerDOM } from '@/components/dom/AuditDrawerDOM';
 
@@ -72,10 +73,11 @@ export const FullBleedCaseStudyDOM: React.FC = () => {
           <div className="relative z-10 max-w-[1520px] mx-auto">
             {/* Top Eyebrow & Category */}
             <div className="flex items-center justify-between border-b border-white/10 pb-5 mb-8">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono tracking-tight border border-[#7647eb]/40 bg-[#7647eb]/15 text-[#a78bfa]">
-                <span className="w-2 h-2 rounded-full bg-[#bdf559] animate-pulse" />
-                <span>CASO DE ESTUDIO // AUDITORÍA CORPORATIVA</span>
-              </div>
+              <SectionPlate
+                index="03/06"
+                label="CASO DE ESTUDIO // AUDITORÍA CORPORATIVA"
+                tag="RETAIL ENTERPRISE"
+              />
               <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-zinc-400">
                 <Layers className="w-3.5 h-3.5 text-[#bdf559]" />
                 <span>RETAIL ENTERPRISE • 14,200 SKUS</span>
@@ -119,7 +121,7 @@ export const FullBleedCaseStudyDOM: React.FC = () => {
                       playMioDevSound('select');
                       setIsDrawerOpen(true);
                     }}
-                    className="inline-flex items-center gap-3 px-6 py-3.5 rounded-full bg-[#bdf559] text-black font-semibold text-xs font-mono tracking-wider uppercase hover:bg-[#c8ff6a] transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-[0_0_20px_rgba(189,245,89,0.3)]"
+                    className="inline-flex items-center gap-3 px-6 py-3.5 rounded-none bg-[#bdf559] text-black font-semibold text-xs font-mono tracking-wider uppercase border-2 border-black shadow-[4px_4px_0_#111111] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0_#111111] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer"
                   >
                     <span>Auditar las 1,280 anomalías</span>
                     <ArrowUpRight className="w-4 h-4" />
@@ -148,7 +150,7 @@ export const FullBleedCaseStudyDOM: React.FC = () => {
                 />
 
                 {/* Bottom Telemetry Bar */}
-                <div className="flex items-center justify-between text-xs font-mono py-2.5 px-3 border border-white/10 bg-black/40 rounded-xl">
+                <div className="flex items-center justify-between text-xs font-mono py-2.5 px-3 border border-white/10 bg-black/40 rounded-none">
                   <div className="flex items-center gap-2 text-zinc-400">
                     <Database className="w-3.5 h-3.5 text-[#a78bfa]" />
                     <span>DATASET: AUDIT_RETAIL_14K.XLSX</span>

@@ -7,6 +7,7 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
+import { startGatedLoop } from '@/lib/renderGate';
 
 export type MioState = 'reposo' | 'trabajando' | 'celebrando' | 'anomalia' | 'durmiendo';
 export type MioMaterialVariant = 'violeta' | 'titanio' | 'cromo_negro';
@@ -653,11 +654,9 @@ export const Mio: React.FC<MioProps> = ({
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
 
-    // 11. Animation Render Loop
-    let animationFrameId: number;
-
-    const renderLoop = () => {
-      animationFrameId = requestAnimationFrame(renderLoop);
+    // 11. Animation Render Loop (Gated when off-screen or tab hidden)
+    const stopLoop = startGatedLoop(container, () => {
+      if (isDisposed) return;
 
       if (autoRotate && !isDragging) {
         rotY += 0.008;
@@ -671,9 +670,7 @@ export const Mio: React.FC<MioProps> = ({
       } else {
         renderer.render(scene, camera);
       }
-    };
-
-    renderLoop();
+    });
 
     const handleResize = () => {
       if (!container || isDisposed) return;
@@ -695,8 +692,8 @@ export const Mio: React.FC<MioProps> = ({
 
     return () => {
       isDisposed = true;
+      stopLoop();
       resizeObserver.disconnect();
-      cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', handleResize);
       domElement.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mousemove', onMouseMove);

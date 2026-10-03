@@ -122,7 +122,33 @@ export const LusionCanvas: React.FC<LusionCanvasProps> = ({ className = '' }) =>
       depthWrite: false,
     });
 
+    // Wave kinetics moved strictly to GPU Vertex Shader (eliminating CPU per-frame loops)
+    const waveUniforms = {
+      uTime: { value: 0 },
+      uScrollY: { value: 0 },
+    };
+
+    material.onBeforeCompile = (shader) => {
+      shader.uniforms.uTime = waveUniforms.uTime;
+      shader.uniforms.uScrollY = waveUniforms.uScrollY;
+
+      shader.vertexShader = `
+        uniform float uTime;
+        uniform float uScrollY;
+      ` + shader.vertexShader;
+
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <begin_vertex>',
+        `
+        #include <begin_vertex>
+        float wave = sin(position.x * 0.25 + uTime * 0.6 + uScrollY) * 1.8 + cos(position.y * 0.35 + uTime * 0.4) * 1.2;
+        transformed.z += wave;
+        `
+      );
+    };
+
     const particles = new THREE.Points(geometry, material);
+    particles.frustumCulled = false;
     scene.add(particles);
 
     // 4. Mouse Displacement and Wave Kinetics
@@ -154,22 +180,10 @@ export const LusionCanvas: React.FC<LusionCanvasProps> = ({ className = '' }) =>
     const stopLoop = startGatedLoop(container, () => {
       governor.measure(performance.now());
       const elapsedTime = clock.getElapsedTime();
-      const posAttr = geometry.attributes.position as THREE.BufferAttribute;
-      const posArray = posAttr.array as Float32Array;
 
-      // Gentle undulating sinusoidal wave
-      for (let i = 0; i < count; i++) {
-        const u = initialPositions[i * 3];
-        const v = initialPositions[i * 3 + 1];
-
-        // Wave formula: combination of spatial frequencies and time
-        const wave =
-          Math.sin(u * 0.25 + elapsedTime * 0.6 + scrollYOffset) * 1.8 +
-          Math.cos(v * 0.35 + elapsedTime * 0.4) * 1.2;
-
-        posArray[i * 3 + 2] = initialPositions[i * 3 + 2] + wave;
-      }
-      posAttr.needsUpdate = true;
+      // Update GPU uniforms without mutating geometry buffer attributes on CPU
+      waveUniforms.uTime.value = elapsedTime;
+      waveUniforms.uScrollY.value = scrollYOffset;
 
       // Subtle rotation response to cursor
       particles.rotation.y = elapsedTime * 0.03 + mouseX * 0.15;

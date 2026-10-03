@@ -5,6 +5,7 @@ import { BubbleArrowButton } from '@/components/ui/BubbleArrowButton';
 import { FlipText } from '@/components/ui/FlipText';
 import { ShieldCheck, FileSpreadsheet } from 'lucide-react';
 
+import { SectionPlate } from '@/components/ui/SectionPlate';
 import { BackgroundRippleEffect } from '@/components/ui/background-ripple-effect';
 
 export const CtaBannerDOM: React.FC = () => {
@@ -28,9 +29,12 @@ export const CtaBannerDOM: React.FC = () => {
           </div>
 
           <div className="max-w-4xl space-y-7 relative z-20 text-left pointer-events-auto">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-none text-xs font-mono tracking-tight border bg-white/[0.08] border-white/20 text-zinc-300">
-              <span className="w-2 h-2 rounded-full bg-[#bdf559]" />
-              <span>SIN COSTO DE INICIO • COMPATIBLE CON .XLSX Y .CSV</span>
+            <div>
+              <SectionPlate
+                index="06/06"
+                label="DESPLIEGUE INMEDIATO"
+                tag="COMPATIBLE CON .XLSX / .CSV"
+              />
             </div>
 
             <h2 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-[-0.035em] leading-[1.04] text-white">

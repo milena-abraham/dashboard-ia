@@ -3,6 +3,7 @@ import { ScrollTrigger, gsap } from '@/lib/gsap';
 import { useSmoothScroll } from '@/app/providers/SmoothScrollProvider';
 import { useMioStore } from '@/utils/useMioStore';
 import { BubbleArrowButton } from '@/components/ui/BubbleArrowButton';
+import { SectionPlate } from '@/components/ui/SectionPlate';
 import { FlipText } from '@/components/ui/FlipText';
 import { playMioDevSound } from '@/lib/sound';
 import {
@@ -161,9 +162,12 @@ export const ComoFuncionaDOM: React.FC = () => {
             
             {/* Integrated Section Eyebrow & Title inside the Sticky Column */}
             <div className="space-y-3">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-mono tracking-tight border bg-zinc-500/[0.06] border-zinc-500/15 text-zinc-700 dark:text-zinc-300">
-                <span className="w-2 h-2 rounded-full bg-[#7647eb]" />
-                <span>ARQUITECTURA DE DATOS // PIPELINE OPERATIVO</span>
+              <div>
+                <SectionPlate
+                  index="04/06"
+                  label="PIPELINE OPERATIVO"
+                  tag="3 FASES"
+                />
               </div>
               <h2
                 className={`text-2xl sm:text-4xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-bold tracking-[-0.035em] leading-[1.08] ${
@@ -181,11 +185,11 @@ export const ComoFuncionaDOM: React.FC = () => {
               </p>
             </div>
 
-            {/* Active Phase Live Pill */}
-            <div className={`flex items-center justify-between p-4 rounded-2xl border transition-colors shadow-sm backdrop-blur-md ${
+            {/* Active Phase Live Pill - Strict rounded-none with hard shadow */}
+            <div className={`flex items-center justify-between p-4 rounded-none border-2 transition-colors shadow-[4px_4px_0_#111111] dark:shadow-[4px_4px_0_#7647eb] ${
               isDark
-                ? 'bg-zinc-900/80 border-white/[0.08]'
-                : 'bg-white/90 border-zinc-200'
+                ? 'bg-[#0e0c19] border-white/20'
+                : 'bg-white border-black'
             }`}>
               <div className="flex items-center gap-2.5">
                 <span className="relative flex h-2.5 w-2.5">

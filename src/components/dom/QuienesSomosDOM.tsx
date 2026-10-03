@@ -2,6 +2,7 @@ import React from 'react';
 import { Linkedin, Github } from 'lucide-react';
 import { useMioStore } from '@/utils/useMioStore';
 import { FlipText } from '@/components/ui/FlipText';
+import { SectionPlate } from '@/components/ui/SectionPlate';
 
 interface TeamMember {
   name: string;
@@ -20,7 +21,7 @@ const TEAM: TeamMember[] = [
     credentials: 'Ciencia de Datos • Especialista en Modelado Predictivo & Algoritmos',
     bio: 'Dedicado al diseño de arquitecturas de inferencia de baja latencia y motores de AutoML autónomos para transformar planillas complejas en decisiones ejecutivas de alta fidelidad.',
     linkedin: 'https://linkedin.com',
-    github: 'https://github.com',
+    github: 'https://github.com/milena-abraham/dashboard-ia',
     tag: 'SISTEMAS & MODELADO',
   },
   {
@@ -29,7 +30,7 @@ const TEAM: TeamMember[] = [
     credentials: 'Ciencia de Datos • Especialista en Detección de Anomalías & Series Temporales',
     bio: 'Enfocada en algoritmos de detección de outliers (Isolation Forest), imputación probabilística de datos faltantes y optimización de hiperparámetros multimodelo.',
     linkedin: 'https://linkedin.com',
-    github: 'https://github.com',
+    github: 'https://github.com/milena-abraham/dashboard-ia',
     tag: 'DATA SCIENCE & AUTOML',
   },
 ];
@@ -48,9 +49,12 @@ export const QuienesSomosDOM: React.FC = () => {
         
         {/* Editorial Header */}
         <div className="max-w-3xl mb-16 sm:mb-20">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-mono tracking-tight mb-4 border bg-zinc-500/[0.06] border-zinc-500/15 text-zinc-700 dark:text-zinc-300">
-            <span className="w-2 h-2 rounded-full bg-[#bdf559]" />
-            <span>ORIGEN & EQUIPO FUNDADOR</span>
+          <div className="mb-4">
+            <SectionPlate
+              index="05/06"
+              label="ORIGEN & EQUIPO FUNDADOR"
+              tag="EQUIPO"
+            />
           </div>
           <h2
             className={`text-3xl sm:text-5xl lg:text-6xl font-bold tracking-[-0.035em] leading-[1.05] ${
@@ -68,25 +72,25 @@ export const QuienesSomosDOM: React.FC = () => {
               isDark ? 'text-zinc-400' : 'text-zinc-600'
             }`}
           >
-            Creado con 💚 en Argentina por estudiantes y desarrolladores de Ciencia de Datos. Desarrollamos MIO para que ninguna organización vuelva a tomar decisiones a ciegas esperando semanas por un reporte de BI.
+            Desarrollado en Rosario, Santa Fe, Argentina por estudiantes e investigadores en Ciencia de Datos. Creamos MIO para que ninguna organización vuelva a tomar decisiones a ciegas esperando semanas por un reporte de BI.
           </p>
         </div>
 
-        {/* 2-Column Desktop Grid for Co-Founders */}
+        {/* 2-Column Desktop Grid for Co-Founders - Strict rounded-none with hard offset shadow */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
           {TEAM.map((member) => (
             <article
               key={member.name}
-              className={`p-8 sm:p-12 rounded-2xl border transition-all duration-300 flex flex-col justify-between ${
+              className={`p-8 sm:p-12 rounded-none border-2 transition-all duration-300 flex flex-col justify-between ${
                 isDark
-                  ? 'bg-zinc-950/70 border-white/[0.08] hover:border-white/20 shadow-lg'
-                  : 'bg-white/80 border-black/[0.08] hover:border-black/20 shadow-sm'
+                  ? 'bg-[#0e0c19] border-white/20 shadow-[6px_6px_0_#111111]'
+                  : 'bg-white border-black shadow-[6px_6px_0_#7647eb]'
               }`}
             >
               <div className="space-y-5">
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="text-xs font-mono font-bold tracking-wider text-[#7647eb] dark:text-[#a78bfa] block mb-1">
+                    <span className="text-xs font-mono font-bold tracking-wider text-[#7647eb] dark:text-[#bdf559] block mb-1">
                       {member.tag}
                     </span>
                     <h3 className={`text-2xl sm:text-3xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-zinc-950'}`}>
@@ -101,10 +105,10 @@ export const QuienesSomosDOM: React.FC = () => {
                       href={member.linkedin}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`p-2.5 rounded-full border transition-colors ${
+                      className={`p-2.5 rounded-none border border-black dark:border-white/20 transition-all ${
                         isDark
-                          ? 'border-white/10 text-zinc-400 hover:text-[#bdf559] hover:border-[#bdf559]'
-                          : 'border-zinc-200 text-zinc-700 hover:text-[#7647eb] hover:border-[#7647eb] bg-zinc-50'
+                          ? 'text-zinc-400 hover:text-black hover:bg-[#bdf559]'
+                          : 'text-zinc-700 hover:text-white hover:bg-[#7647eb] bg-zinc-50'
                       }`}
                       aria-label={`LinkedIn de ${member.name}`}
                     >
@@ -114,10 +118,10 @@ export const QuienesSomosDOM: React.FC = () => {
                       href={member.github}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`p-2.5 rounded-full border transition-colors ${
+                      className={`p-2.5 rounded-none border border-black dark:border-white/20 transition-all ${
                         isDark
-                          ? 'border-white/10 text-zinc-400 hover:text-[#bdf559] hover:border-[#bdf559]'
-                          : 'border-zinc-200 text-zinc-700 hover:text-[#7647eb] hover:border-[#7647eb] bg-zinc-50'
+                          ? 'text-zinc-400 hover:text-black hover:bg-[#bdf559]'
+                          : 'text-zinc-700 hover:text-white hover:bg-[#7647eb] bg-zinc-50'
                       }`}
                       aria-label={`GitHub de ${member.name}`}
                     >
@@ -147,7 +151,7 @@ export const QuienesSomosDOM: React.FC = () => {
                   : 'border-zinc-200 text-zinc-600'
               }`}>
                 <span>MIO CORE TEAM</span>
-                <span className="text-emerald-700 dark:text-[#bdf559] font-semibold">● VERIFICADO</span>
+                <span className="text-zinc-950 dark:text-[#bdf559] font-bold">● ROSARIO · AR</span>
               </div>
             </article>
           ))}

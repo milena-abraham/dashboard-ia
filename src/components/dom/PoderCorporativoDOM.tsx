@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useSmoothScroll } from '@/app/providers/SmoothScrollProvider';
 import { useMioStore } from '@/utils/useMioStore';
 import { BubbleArrowButton } from '@/components/ui/BubbleArrowButton';
+import { SectionPlate } from '@/components/ui/SectionPlate';
 import { FlipText } from '@/components/ui/FlipText';
 import { gsap } from '@/lib/gsap';
 import { Check, Cpu, Sliders, MessageSquare, FileSpreadsheet } from 'lucide-react';
@@ -128,19 +129,22 @@ export const PoderCorporativoDOM: React.FC = () => {
         
         {/* Editorial Header (Left-Aligned, Full Margin) */}
         <div className="max-w-3xl mb-16 sm:mb-20">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-mono tracking-tight mb-4 border bg-zinc-500/[0.06] border-zinc-500/15 text-zinc-700 dark:text-zinc-300">
-            <span className="w-2 h-2 rounded-full bg-[#7647eb]" />
-            <span>CAPACIDADES DEL MOTOR MIO</span>
+          <div className="mb-4">
+            <SectionPlate
+              index="02/06"
+              label="CAPACIDADES DEL MOTOR MIO"
+              tag="ARQUITECTURA"
+            />
           </div>
           <h2
             className={`text-3xl sm:text-5xl lg:text-6xl font-bold tracking-[-0.035em] leading-[1.05] ${
               isDark ? 'text-white' : 'text-zinc-950'
             }`}
           >
-            <FlipText>Inteligencia autónoma para</FlipText>
+            <FlipText>Ciencia de datos automática.</FlipText>
             <br />
             <span className="text-[#7647eb] dark:text-[#a78bfa] inline-block">
-              <FlipText delayOffset={0.25}>tu toma de decisiones.</FlipText>
+              <FlipText delayOffset={0.25}>Sin consultoras ni código.</FlipText>
             </span>
           </h2>
           <p

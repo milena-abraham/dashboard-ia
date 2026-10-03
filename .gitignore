@@ -26,6 +26,7 @@ artifacts/
 *.tsbuildinfo
 *.mov
 *.pdf
+*.patch
 /MIO*.png
 !public/MIO*.png
 
