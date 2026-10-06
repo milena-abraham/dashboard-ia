@@ -3,6 +3,10 @@ import { useSmoothScroll } from '@/app/providers/SmoothScrollProvider';
 import { useMioStore } from '@/utils/useMioStore';
 import { BubbleArrowButton } from '@/components/ui/BubbleArrowButton';
 import { FlipText } from '@/components/ui/FlipText';
+import { SectionPlate } from '@/components/ui/SectionPlate';
+import { Reveal } from '@/components/ui/Reveal';
+import { MioPet2D } from '@/components/pet/MioPet2D';
+import { DitherArt } from '@/components/ui/DitherArt';
 import { ShieldCheck, FileSpreadsheet } from 'lucide-react';
 
 export const CtaBannerDOM: React.FC = () => {
@@ -13,46 +17,68 @@ export const CtaBannerDOM: React.FC = () => {
   return (
     <section id="cta" className="py-20 sm:py-32 w-full select-none relative z-10">
       <div className="w-full max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-16">
-        <div
-          className={`p-10 sm:p-16 lg:p-24 rounded-lg border transition-all duration-300 relative overflow-hidden ${
-            isDark
-              ? 'bg-gradient-to-br from-zinc-950 via-[#0d091a] to-zinc-950 border-[#7647eb]/30 text-white'
-              : 'bg-gradient-to-br from-zinc-900 via-[#18112e] to-zinc-950 border-zinc-900 text-white'
-          }`}
-        >
-          <div className="max-w-4xl space-y-7 relative z-10 text-left">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-mono tracking-tight border bg-white/[0.08] border-white/15 text-zinc-300">
-              <span className="w-2 h-2 rounded-full bg-[#bdf559]" />
-              <span>SIN COSTO DE INICIO • COMPATIBLE CON .XLSX Y .CSV</span>
+        <Reveal from="left">
+        {/* Solid obsidian slab: clean architectural anchor */}
+        <div className="p-10 sm:p-16 lg:p-24 rounded-mio border border-white/10 bg-[#0e0d16] text-white relative overflow-hidden">
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.6]"
+            style={{ WebkitMaskImage: 'radial-gradient(ellipse at 100% 100%, #000 0%, transparent 65%)', maskImage: 'radial-gradient(ellipse at 100% 100%, #000 0%, transparent 65%)' }}
+            aria-hidden="true"
+          >
+            <DitherArt variant="texture" seed={9} tone="dark" pixelSize={4} />
+          </div>
+          {/* Rotating text ring around the specimen */}
+          <div className="relative z-10 mx-auto mt-10 h-[260px] w-[260px] lg:absolute lg:right-[-3rem] lg:top-1/2 lg:mt-0 lg:h-[520px] lg:w-[520px] lg:-translate-y-1/2" aria-hidden="true">
+            <svg viewBox="0 0 200 200" className="absolute inset-0 h-full w-full cta-ring">
+              <defs>
+                <path id="cta-circle" d="M100,100 m-84,0 a84,84 0 1,1 168,0 a84,84 0 1,1 -168,0" />
+              </defs>
+              <text fill="#bdf559" fontSize="11.5" fontFamily="JetBrains Mono, monospace" fontWeight="700" letterSpacing="3.4">
+                <textPath href="#cta-circle">SUBÍ UNA PLANILLA  •  MIRÁ QUÉ ENCUENTRA  •</textPath>
+              </text>
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <MioPet2D mood="celebrando" material="violet" size={200} animated showShadow />
             </div>
+          </div>
+
+          <div className="max-w-4xl space-y-7 relative z-10 text-left">
+            <SectionPlate index="09" label="GRATIS POR AHORA • EXCEL Y CSV" tone="lime" onDark />
 
             <h2 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-[-0.035em] leading-[1.04] text-white">
-              <FlipText>Dejá de adivinar con tus tablas.</FlipText>
+              <FlipText>Subí una planilla.</FlipText>
               <br />
               <span className="text-[#a78bfa] inline-block">
-                <FlipText delayOffset={0.25}>Empezá a predecir con certeza.</FlipText>
+                <FlipText delayOffset={0.25}>Mirá qué encuentra MIO.</FlipText>
               </span>
             </h2>
 
             <p className="text-base sm:text-lg text-zinc-300 max-w-2xl font-normal leading-relaxed">
-              Subí una planilla de prueba hoy y obtené tu diagnóstico de anomalías, calibración de modelos y pronóstico multimodelo en menos de 60 segundos.
+              Probalo con un archivo tuyo. Te mostramos qué se salió de lo normal, qué viene y por qué. Tus datos no se guardan.
             </p>
 
-            <div className="pt-2 flex flex-wrap items-center gap-4">
+            <div className="pt-2 flex flex-wrap items-center gap-5">
               <BubbleArrowButton
                 size="lg"
                 variant="primary"
-                onClick={() => scrollTo('#hero')}
+                onClick={() => {
+                  try { localStorage.removeItem('mio_active_analysis'); } catch {}
+                  window.history.pushState({}, '', '/dashboard?new=1');
+                  window.dispatchEvent(new PopStateEvent('popstate'));
+                }}
               >
-                Cargar Planilla Ahora
+                Probar con mi planilla
               </BubbleArrowButton>
-
               <button
                 type="button"
-                onClick={() => scrollTo('#como-funciona')}
-                className="px-6 py-4 rounded-full text-sm font-medium text-zinc-300 hover:text-white bg-white/[0.06] hover:bg-white/[0.1] border border-white/15 transition-colors cursor-pointer"
+                onClick={() => {
+                  try { localStorage.removeItem('mio_active_analysis'); } catch {}
+                  window.history.pushState({}, '', '/dashboard?new=1&sample=1');
+                  window.dispatchEvent(new PopStateEvent('popstate'));
+                }}
+                className="text-sm font-medium text-zinc-300 hover:text-white underline underline-offset-4 decoration-1 cursor-pointer"
               >
-                Revisar Cómo Funciona
+                o probá con datos de ejemplo
               </button>
             </div>
 
@@ -71,6 +97,7 @@ export const CtaBannerDOM: React.FC = () => {
             </div>
           </div>
         </div>
+        </Reveal>
       </div>
     </section>
   );

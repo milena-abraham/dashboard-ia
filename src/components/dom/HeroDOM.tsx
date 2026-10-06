@@ -1,21 +1,33 @@
-import React, { useRef, useEffect } from 'react';
-import { useSmoothScroll } from '@/app/providers/SmoothScrollProvider';
+import React, { lazy, Suspense, useRef, useEffect, useState } from 'react';
 import { useMioStore } from '@/utils/useMioStore';
 import { BubbleArrowButton } from '@/components/ui/BubbleArrowButton';
-import { MioDevCanvas } from '@/components/canvas/MioDevCanvas';
-import { DitherHeroStageCanvas } from '@/components/canvas/DitherHeroStageCanvas';
+const MioHeroStage = lazy(() => import('@/components/canvas/MioHeroStage').then((m) => ({ default: m.MioHeroStage })));
+import { SectionPlate } from '@/components/ui/SectionPlate';
+import { HeroLiveDemo, nudgePet } from '@/components/dom/HeroLiveDemo';
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 import { FlipText } from '@/components/ui/FlipText';
-import { gsap } from '@/lib/gsap';
+import { gsap, ScrollTrigger } from '@/lib/gsap';
+import { isBootDone, onBootDone } from '@/lib/boot';
 import { playMioDevSound } from '@/lib/sound';
 
 export const HeroDOM: React.FC = () => {
-  const { scrollTo } = useSmoothScroll();
   const theme = useMioStore((s) => s.theme);
   const isDark = theme === 'dark';
 
+  // The 3D specimen is desktop-only: phones get the type and the CTA first, no WebGL, no three.js download.
+  const [showStage, setShowStage] = useState(false);
+  useEffect(() => {
+    const wide = window.matchMedia('(min-width: 1024px)').matches;
+    if (!wide) return;
+    const idle = (window as any).requestIdleCallback as ((cb: () => void, o?: object) => number) | undefined;
+    const h = idle ? idle(() => setShowStage(true), { timeout: 600 }) : window.setTimeout(() => setShowStage(true), 150);
+    return () => {
+      if (idle) (window as any).cancelIdleCallback?.(h);
+      else clearTimeout(h);
+    };
+  }, []);
+
   const sectionRef = useRef<HTMLElement>(null);
-  const haloRef = useRef<HTMLDivElement>(null);
   const badgeRef = useRef<HTMLDivElement>(null);
   const headlineRef = useRef<HTMLHeadingElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
@@ -23,13 +35,40 @@ export const HeroDOM: React.FC = () => {
   const deviceColRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
 
+  // Kinetic type: Climate Crisis has a YEAR axis (1979 solid → 2050 melted). Scrolling out of the
+  // hero "melts" the headline, a nod to the font's own story. Only writes one CSS variable per frame.
+  useEffect(() => {
+    const hero = document.getElementById('hero');
+    const headline = headlineRef.current;
+    if (!hero || !headline) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const st = ScrollTrigger.create({
+      trigger: hero,
+      start: 'top top',
+      end: 'bottom top',
+      onUpdate: (self) => {
+        const year = Math.round(1979 + (1996 - 1979) * self.progress);
+        headline.style.setProperty('--mio-year', String(year));
+      },
+      onLeaveBack: () => headline.style.setProperty('--mio-year', '1979'),
+    });
+    return () => {
+      st.kill();
+      headline.style.removeProperty('--mio-year');
+    };
+  }, []);
+
   // GSAP ScrollTrigger Entrance & Decoupled 5-Layer Parallax
   useEffect(() => {
     if (!sectionRef.current) return;
 
+    // The entrance waits for the MIO OS boot to hand over (instant if it was skipped or already seen).
+    let offBoot: () => void = () => {};
+
     const ctx = gsap.context(() => {
       // 1. Entrance animation with staggered reveal
-      const tlEntrance = gsap.timeline({ defaults: { ease: 'power3.out' } });
+      const tlEntrance = gsap.timeline({ defaults: { ease: 'power3.out' }, paused: !isBootDone() });
+      if (!isBootDone()) offBoot = onBootDone(() => tlEntrance.play());
 
       if (badgeRef.current) {
         tlEntrance.from(badgeRef.current, { y: 20, opacity: 0, duration: 0.7 }, 0.1);
@@ -55,10 +94,6 @@ export const HeroDOM: React.FC = () => {
         },
       });
 
-      // Layer 1: Ambient volumetric depth (speed: 0.2x)
-      if (haloRef.current) {
-        tlParallax.to(haloRef.current, { y: 40, opacity: 0.4, ease: 'none' }, 0);
-      }
       // Layer 2: Eyebrow badge (speed: 0.4x)
       if (badgeRef.current) {
         tlParallax.to(badgeRef.current, { y: 50, opacity: 0.7, ease: 'none' }, 0);
@@ -90,55 +125,46 @@ export const HeroDOM: React.FC = () => {
       }
     }, sectionRef);
 
-    return () => ctx.revert();
+    return () => {
+      offBoot();
+      ctx.revert();
+    };
   }, []);
 
   return (
     <section
       ref={sectionRef}
       id="hero"
-      className="relative pt-6 sm:pt-10 lg:pt-12 pb-14 sm:pb-20 w-full select-none overflow-x-hidden flex flex-col justify-center"
+      className="relative pt-28 sm:pt-32 lg:pt-12 pb-14 sm:pb-20 w-full select-none overflow-x-hidden flex flex-col justify-center"
     >
-      {/* Layer 1: Ambient Volumetric Light Halo (Depth 0.2x) */}
-      <div
-        ref={haloRef}
-        className="pointer-events-none absolute -top-32 right-1/4 w-[600px] h-[600px] rounded-full blur-[140px] opacity-20 dark:opacity-10 transition-opacity"
-        style={{
-          background: isDark
-            ? 'radial-gradient(circle, rgba(118,71,235,0.4) 0%, rgba(189,245,89,0.15) 50%, transparent 70%)'
-            : 'radial-gradient(circle, rgba(118,71,235,0.2) 0%, rgba(189,245,89,0.12) 50%, transparent 70%)',
-        }}
-        aria-hidden="true"
-      />
-
       {/* Full Desktop Container */}
       <div className="w-full max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-16 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14 items-center">
           
           {/* LEFT COLUMN: Monumental Left-Aligned Typography (7 cols on Laptop, 6 on Ultra-Wide) */}
-          <div className="lg:col-span-7 xl:col-span-6 flex flex-col items-start text-left space-y-6 z-10">
+          <div className="lg:col-span-7 flex flex-col items-start text-left space-y-8 z-10">
             {/* Layer 2: Category Eyebrow Badge with MIO Violet & Lime (Depth 0.4x) */}
-            <div
-              ref={badgeRef}
-              className="inline-flex flex-wrap items-center gap-2 sm:gap-2.5 px-3.5 sm:px-4 py-1.5 rounded-2xl sm:rounded-full text-[11px] sm:text-xs font-mono tracking-tight transition-colors border bg-zinc-500/[0.06] border-zinc-500/15 text-zinc-700 dark:text-zinc-300 shadow-sm"
-            >
-              <span className="w-2 h-2 rounded-full bg-[#bdf559] animate-pulse shrink-0" />
-              <span>MIO // INTELLIGENT DATA OPERATIONS & AUTOML</span>
-              <span className="text-zinc-400 dark:text-zinc-600 hidden sm:inline">•</span>
-              <span className="text-[#7647eb] dark:text-[#a78bfa] font-semibold">EDICIÓN 2026</span>
+            <div ref={badgeRef} className="max-w-full">
+              <SectionPlate
+                index="01"
+                label="MIO // INTELLIGENT DATA OPERATIONS & AUTOML"
+                aside="EDICIÓN 2026"
+                tone="lime"
+                live
+              />
             </div>
 
             {/* Layer 3: Monumental Headline — Climate Crisis dominates with proper line spacing */}
             <h1
               ref={headlineRef}
-              className={`font-climate text-3xl sm:text-5xl lg:text-[2.65rem] xl:text-[3.25rem] 2xl:text-[3.75rem] leading-[1.18] sm:leading-[1.16] transition-colors ${
+              className={`font-extrabold text-[2.6rem] sm:text-6xl lg:text-[4.4rem] xl:text-[5rem] 2xl:text-[5.8rem] leading-[1.0] tracking-[-0.04em] transition-colors relative z-20 ${
                 isDark ? 'text-white' : 'text-zinc-950'
               }`}
-              style={{ fontVariationSettings: "'YEAR' 1979" }}
+              style={{ fontVariationSettings: "'YEAR' var(--mio-year, 1979)", textWrap: 'balance' }}
             >
-              <FlipText delayOffset={0}>Convertí planillas en</FlipText>{' '}
-              <span className="text-[#7647eb] dark:text-[#bdf559] inline-block">
-                <FlipText delayOffset={0.16}>decisiones.</FlipText>
+              <FlipText delayOffset={0}>Tus planillas ya saben</FlipText>{' '}
+              <span className="font-climate font-normal tracking-normal text-[0.8em] leading-[1.15] text-[#7647eb] dark:text-[#a78bfa] inline-block">
+                <FlipText delayOffset={0.16}>qué va a pasar.</FlipText>
               </span>
             </h1>
 
@@ -149,11 +175,12 @@ export const HeroDOM: React.FC = () => {
                 isDark ? 'text-zinc-400' : 'text-zinc-600'
               }`}
             >
-              Cargá tus archivos sin preparar. MIO aísla anomalías estadísticas con Isolation Forest y calibra modelos predictivos en menos de 60 segundos.
+              Subí tu Excel o CSV tal cual. MIO te muestra qué se vende, qué se salió de lo normal y qué viene, en español y sin escribir código.
             </p>
 
             {/* Action Row */}
             <div ref={actionsRef} className="pt-2 flex flex-wrap items-center gap-4">
+              <span onPointerEnter={() => nudgePet('celebrando', 1200)} className="inline-flex">
               <BubbleArrowButton
                 size="lg"
                 variant="primary"
@@ -164,78 +191,107 @@ export const HeroDOM: React.FC = () => {
                   window.dispatchEvent(new PopStateEvent('popstate'));
                 }}
               >
-                Cargar Planilla y Diagnosticar
+                Probar con mi planilla
               </BubbleArrowButton>
+              </span>
 
               <button
                 type="button"
-                onClick={() => scrollTo('#como-funciona')}
-                className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] cursor-pointer ${
-                  isDark
-                    ? 'text-zinc-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/10'
-                    : 'text-zinc-800 hover:text-zinc-950 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 shadow-sm'
+                onClick={() => {
+                  playMioDevSound('tick');
+                  try { localStorage.removeItem('mio_active_analysis'); } catch {}
+                  window.history.pushState({}, '', '/dashboard?new=1&sample=1');
+                  window.dispatchEvent(new PopStateEvent('popstate'));
+                }}
+                className={`text-sm font-medium underline underline-offset-4 decoration-1 transition-colors cursor-pointer ${
+                  isDark ? 'text-zinc-300 hover:text-white' : 'text-zinc-700 hover:text-zinc-950'
                 }`}
               >
-                Ver Metodología en 3 Pasos
+                o probá con datos de ejemplo
               </button>
             </div>
+
+            <ul
+              className={`flex flex-wrap gap-x-5 gap-y-1 font-mono text-[11px] uppercase tracking-wider ${
+                isDark ? 'text-zinc-400' : 'text-zinc-500'
+              }`}
+            >
+              <li>Sin registro</li>
+              <li>Tus datos no se guardan</li>
+              <li>Hecho en Rosario</li>
+            </ul>
+
+            <HeroLiveDemo className="lg:hidden mt-2" />
           </div>
 
-          {/* RIGHT COLUMN: The Real MIO-DEV 01 Hardware Precision Station with ASCII Filter & 3D Dither Stage */}
+          {/* RIGHT COLUMN: the live specimen, dithered. On desktop the stage is far larger than
+              its column and runs off the right edge of the page on purpose. */}
           <div
             ref={deviceColRef}
-            className="lg:col-span-5 xl:col-span-6 relative flex items-center justify-center lg:justify-end overflow-visible"
+            className="hidden lg:block lg:col-span-5 relative lg:h-[560px]"
           >
-            {/* Legency Media Inspired 3D Topological Dither Orbit behind Console */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none scale-110 sm:scale-125 z-0 opacity-50 dark:opacity-40">
-              <DitherHeroStageCanvas className="w-[420px] sm:w-[540px] h-[420px] sm:h-[540px]" />
-            </div>
-
-            <div className="w-full max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl relative z-10 flex justify-center lg:justify-end">
-              <MioDevCanvas />
-            </div>
+            <HeroLiveDemo className="absolute left-[-14%] bottom-[-6%] z-20" />
+            {showStage && (
+              <Suspense fallback={null}>
+                <MioHeroStage
+                              dither
+                              pixelSize={3}
+                              hideTag
+                              className="absolute inset-0 lg:inset-auto lg:left-[-2%] lg:top-[-12%] lg:w-[56vw] lg:max-w-[980px] lg:h-[138%]"
+                            />
+              </Suspense>
+            )}
           </div>
         </div>
 
-        {/* BOTTOM PROOF & TRACK RECORD BAR with Live Telemetry Counters */}
-        <div ref={statsRef} className="mt-14 sm:mt-20 w-full border-t border-b border-zinc-300 dark:border-white/10 py-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-left">
-            <div className="space-y-1">
-              <div className={`text-3xl sm:text-4xl font-bold tracking-tight font-mono ${isDark ? 'text-white' : 'text-zinc-950'}`}>
-                &lt; <AnimatedCounter value={60} suffix="s" />
+        {/* Demo run: Nothing Tech style precision hardware terminal */}
+        <div
+          ref={statsRef}
+          className={`relative z-10 mt-14 sm:mt-20 w-full rounded-mio overflow-hidden border transition-all duration-300 ${
+            isDark
+              ? 'border-white/[0.08] bg-[#0e0d16]'
+              : 'border-zinc-200/80 bg-white'
+          }`}
+        >
+          <div
+            className={`flex flex-wrap items-center justify-between gap-x-4 px-4 sm:px-6 py-2.5 border-b font-mono text-[11px] ${
+              isDark
+                ? 'border-white/[0.06] bg-[#09080e] text-zinc-300'
+                : 'border-zinc-100 bg-zinc-50/80 text-zinc-700'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-1.5" aria-hidden="true">
+                <span className="w-2.5 h-2.5 rounded-full bg-zinc-400/40 dark:bg-zinc-700" />
+                <span className="w-2.5 h-2.5 rounded-full bg-zinc-400/40 dark:bg-zinc-700" />
+                <span className="w-2.5 h-2.5 rounded-full bg-zinc-400/40 dark:bg-zinc-700" />
               </div>
-              <p className={`text-xs sm:text-sm font-normal leading-snug ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                De planilla cruda a pronósticos ejecutivos y bandas de confianza.
-              </p>
+              <span className="font-bold uppercase tracking-wider text-xs ml-1 text-zinc-800 dark:text-zinc-200">
+                PRUEBA CON VENTAS REALES
+              </span>
             </div>
-
-            <div className="space-y-1">
-              <div className="text-3xl sm:text-4xl font-bold tracking-tight font-mono text-[#7647eb] dark:text-[#a78bfa]">
-                <AnimatedCounter value={0.984} decimals={3} suffix=" R²" />
-              </div>
-              <p className={`text-xs sm:text-sm font-normal leading-snug ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                Validación cruzada multimodelo y explicabilidad SHAP sin sesgos.
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <div className={`text-3xl sm:text-4xl font-bold tracking-tight font-mono ${isDark ? 'text-white' : 'text-zinc-950'}`}>
-                <AnimatedCounter value={100} suffix="%" />
-              </div>
-              <p className={`text-xs sm:text-sm font-normal leading-snug ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                Imputa nulos, tipifica columnas y elimina outliers automáticamente.
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <div className={`text-3xl sm:text-4xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-zinc-950'}`}>
-                Zero Code
-              </div>
-              <p className={`text-xs sm:text-sm font-normal leading-snug ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                Consultas en lenguaje natural sin depender de equipos de BI.
-              </p>
+            <div className="flex items-center gap-2 text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">
+              <span className="hidden sm:inline">138.116 ventas, 2021-2025</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#bdf559] animate-pulse" />
             </div>
           </div>
+          <dl className={`grid grid-cols-2 md:grid-cols-4 gap-px ${isDark ? 'bg-white/[0.04]' : 'bg-zinc-100'}`}>
+            {[
+              { k: 'Ventas analizadas', v: <AnimatedCounter value={138116} /> },
+              { k: 'Ventas fuera de lo normal', v: <AnimatedCounter value={108} /> },
+              { k: 'Predice hasta', v: <span>14 días</span> },
+              { k: 'Error (repetir lo de ayer: 17,0 %)', v: <span>13,5 %</span> },
+            ].map((cell) => (
+              <div key={cell.k} className={`p-5 sm:p-6 ${isDark ? 'bg-[#0e0d16]' : 'bg-white'}`}>
+                <dt className={`font-mono text-[10px] sm:text-[11px] font-bold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                  {cell.k}
+                </dt>
+                <dd className={`mt-1.5 font-mono text-2xl sm:text-3xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-zinc-950'}`}>
+                  {cell.v}
+                </dd>
+              </div>
+            ))}
+          </dl>
         </div>
 
       </div>

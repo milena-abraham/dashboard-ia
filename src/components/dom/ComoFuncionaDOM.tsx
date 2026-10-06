@@ -4,7 +4,9 @@ import { useSmoothScroll } from '@/app/providers/SmoothScrollProvider';
 import { useMioStore } from '@/utils/useMioStore';
 import { BubbleArrowButton } from '@/components/ui/BubbleArrowButton';
 import { FlipText } from '@/components/ui/FlipText';
+import { SectionPlate } from '@/components/ui/SectionPlate';
 import { playMioDevSound } from '@/lib/sound';
+import { emitGuide, type GuideCue } from '@/lib/guide';
 import {
   FileSpreadsheet,
   Cpu,
@@ -24,47 +26,54 @@ interface StepData {
   bullets: string[];
 }
 
+/** What the floating MIO guide says as each phase takes the screen. */
+const PHASE_CUES: GuideCue[] = [
+  { mood: 'anomalia', line: 'Fase 1: entra la planilla cruda. Limpio, completo los vacíos y marco los desvíos.' },
+  { mood: 'trabajando', line: 'Fase 2: los modelos compiten entre sí. Gana el que se equivoca menos.' },
+  { mood: 'celebrando', line: 'Fase 3: te explico por qué dio ese número y probás escenarios.' },
+];
+
 const PHASES: StepData[] = [
   {
     index: 0,
     num: '01',
-    tag: 'FASE DE INGESTA & HIGIENE',
-    title: 'Carga tus archivos sin preparar',
-    subtitle: 'Olvidate de limpiar filas vacías o corregir fechas a mano.',
+    tag: 'LIMPIEZA',
+    title: 'Cargá tus archivos tal como están',
+    subtitle: 'Olvidate de arreglar filas vacías o fechas a mano.',
     description:
-      'Carga tus archivos sin preparar. MIO reconoce la estructura, normaliza tipos numéricos y fechas, imputa valores faltantes y aísla anomalías estadísticas mediante Isolation Forest en menos de 15 segundos.',
+      'Subís tu Excel o CSV sin prepararlo. MIO entiende las columnas, acomoda fechas y montos, completa los vacíos y te marca las ventas que se salen de lo normal.',
     bullets: [
-      'Normalización automática de fechas, monedas y categorizaciones',
-      'Imputación probabilística de valores nulos sin sesgar la media',
-      'Aislamiento de outliers con significancia estadística (>3σ)',
+      'Acomoda formatos, monedas y fechas',
+      'Completa los datos que faltan',
+      'Marca las ventas raras y te dice por qué',
     ],
   },
   {
     index: 1,
     num: '02',
-    tag: 'FASE AUTOML & EVALUACIÓN',
-    title: 'Competencia multimodelo con validación matemática',
-    subtitle: 'El mejor algoritmo para tu negocio, elegido con rigor científico.',
+    tag: 'PREDICCIÓN',
+    title: 'Varios modelos compiten con tus datos',
+    subtitle: 'Se queda con el que menos se equivoca.',
     description:
-      'MIO entrena en paralelo familias de series temporales y machine learning (Prophet, ARIMA, XGBoost, LightGBM). Utiliza validación cruzada temporal estricta para evitar sobreajuste y selecciona el modelo con menor error cuadrático.',
+      'MIO prueba distintos modelos de predicción contra tu propio pasado: les esconde los últimos días, les pide que los adivinen y compara con lo que pasó. Gana el que menos se equivoca.',
     bullets: [
-      'Entrenamiento simultáneo de 4 arquitecturas predictivas',
-      'Cross-validation temporal rigurosa para evitar data leakage',
-      'Cálculo de bandas de incertidumbre probabilística al 80% y 95%',
+      'Prueba varios modelos a la vez',
+      'Nunca usa datos del futuro para predecir',
+      'Te muestra el margen de error, sin maquillarlo',
     ],
   },
   {
     index: 2,
     num: '03',
-    tag: 'FASE EJECUTIVA & SIMULACIÓN',
-    title: 'Decisiones en lenguaje natural y escenarios What-If',
-    subtitle: 'Explicabilidad causal total y proyecciones para tu directorio.',
+    tag: 'DECISIÓN',
+    title: 'Te explica el porqué y te deja probar escenarios',
+    subtitle: 'Qué factores pesaron y qué pasa si cambiás un dato.',
     description:
-      'Descubrí con valores SHAP exactamente qué factores impulsan tus números. Simulá variaciones de precios o costos en vivo y preguntale a tus planillas en lenguaje natural antes de tomar decisiones de inversión.',
+      'MIO te muestra qué factores movieron cada número y te deja simular cambios, por ejemplo de precio, antes de decidir. También le podés preguntar a tu planilla en castellano.',
     bullets: [
-      'Explicabilidad transparente de impacto por variable (SHAP)',
-      'Simulador interactivo de escenarios alternativos en tiempo real',
-      'Copiloto de conversación en lenguaje natural sobre tus datos',
+      'Qué factor pesó más en cada resultado',
+      'Simulador de "¿y si cambio el precio?"',
+      'Preguntas en castellano sobre tus datos',
     ],
   },
 ];
@@ -80,10 +89,13 @@ export const ComoFuncionaDOM: React.FC = () => {
   const [animatedRevenue, setAnimatedRevenue] = useState<number>(120520);
   const [animatedMargin, setAnimatedMargin] = useState<number>(27.8);
 
-  // Smooth Spring Interpolation for What-If Numbers (Emil Kowalski / Apple standard)
+  // Smooth Spring Interpolation with Price Elasticity of Demand (ε = -0.65)
   useEffect(() => {
-    const targetRevenue = Math.round(104800 * whatIfMultiplier);
-    const targetMargin = parseFloat((24.2 * whatIfMultiplier).toFixed(1));
+    const deltaP = whatIfMultiplier - 1.0;
+    const elasticity = -0.65; // Elasticidad precio-demanda estimada históricamente
+    const quantityMultiplier = 1.0 + (deltaP * elasticity);
+    const targetRevenue = Math.round(104800 * whatIfMultiplier * quantityMultiplier);
+    const targetMargin = parseFloat((24.2 + deltaP * 18.0).toFixed(1));
 
     let animId: number;
     const lerpSpring = () => {
@@ -123,9 +135,11 @@ export const ComoFuncionaDOM: React.FC = () => {
           end: 'bottom 50%',
           onEnter: () => {
             setActiveStep(idx);
+            emitGuide(PHASE_CUES[idx]);
           },
           onEnterBack: () => {
             setActiveStep(idx);
+            emitGuide(PHASE_CUES[idx]);
           },
         });
       });
@@ -161,28 +175,25 @@ export const ComoFuncionaDOM: React.FC = () => {
             
             {/* Integrated Section Eyebrow & Title inside the Sticky Column */}
             <div className="space-y-3">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-mono tracking-tight border bg-zinc-500/[0.06] border-zinc-500/15 text-zinc-700 dark:text-zinc-300">
-                <span className="w-2 h-2 rounded-full bg-[#7647eb]" />
-                <span>ARQUITECTURA DE DATOS // PIPELINE OPERATIVO</span>
-              </div>
+              <SectionPlate index="04" label="EL MÉTODO // TRES FASES" />
               <h2
                 className={`text-2xl sm:text-4xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-bold tracking-[-0.035em] leading-[1.08] ${
                   isDark ? 'text-white' : 'text-zinc-950'
                 }`}
               >
-                <FlipText>Cómo funciona MIO con tus datos.</FlipText>
+                <FlipText>De la planilla cruda a la decisión, en tres fases.</FlipText>
               </h2>
               <p
                 className={`text-sm sm:text-base font-normal leading-relaxed ${
                   isDark ? 'text-zinc-400' : 'text-zinc-600'
                 }`}
               >
-                Un flujo continuo en tres fases automatizadas: desde la ingesta de tus archivos crudos hasta la simulación ejecutiva.
+                Subís el archivo y MIO hace el resto, a la vista: limpia, prueba modelos y te explica el resultado. Los números de estas tarjetas son de demostración.
               </p>
             </div>
 
             {/* Active Phase Live Pill */}
-            <div className={`flex items-center justify-between p-4 rounded-2xl border transition-colors shadow-sm backdrop-blur-md ${
+            <div className={`flex items-center justify-between p-4 rounded-mio-sm border transition-colors ${
               isDark
                 ? 'bg-zinc-900/80 border-white/[0.08]'
                 : 'bg-white/90 border-zinc-200'
@@ -212,19 +223,19 @@ export const ComoFuncionaDOM: React.FC = () => {
                     key={phase.num}
                     type="button"
                     onClick={() => handleStepJump(phase.index)}
-                    className={`w-full text-left p-4 sm:p-5 rounded-2xl border transition-all duration-300 cursor-pointer flex items-center justify-between group ${
+                    className={`w-full text-left p-4 sm:p-5 rounded-mio-sm border transition-all duration-300 cursor-pointer flex items-center justify-between group ${
                       isSelected
                         ? isDark
-                          ? 'bg-zinc-900 border-[#7647eb]/80 shadow-lg shadow-[#7647eb]/15 ring-1 ring-[#7647eb]/40'
-                          : 'bg-white border-[#7647eb]/60 shadow-md ring-1 ring-[#7647eb]/30'
+                          ? 'bg-zinc-900 border-[#7647eb]/80 ring-1 ring-[#7647eb]/40'
+                          : 'bg-white border-[#7647eb]/60 ring-1 ring-[#7647eb]/30'
                         : isDark
-                        ? 'bg-zinc-950/40 border-white/[0.06] hover:border-white/20 text-zinc-400'
+                        ? 'bg-zinc-950/40 border-white/[0.06] hover:border-white/10 text-zinc-400'
                         : 'bg-zinc-50/70 border-zinc-200/80 hover:border-zinc-300 text-zinc-600'
                     }`}
                   >
                     <div className="flex items-center gap-3.5">
                       <div
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center font-mono text-xs font-bold transition-colors ${
+                        className={`w-8 h-8 rounded-mio-sm flex items-center justify-center font-mono text-xs font-bold transition-colors ${
                           isSelected
                             ? 'bg-[#7647eb] text-white'
                             : isDark
@@ -266,7 +277,7 @@ export const ComoFuncionaDOM: React.FC = () => {
             </div>
 
             {/* Active Step Bullets Breakdown */}
-            <div className={`p-5 rounded-2xl border space-y-2.5 backdrop-blur-sm ${
+            <div className={`p-5 rounded-mio-sm border space-y-2.5 ${
               isDark
                 ? 'bg-zinc-900/50 border-white/[0.06]'
                 : 'bg-zinc-50 border-zinc-200'
@@ -280,7 +291,7 @@ export const ComoFuncionaDOM: React.FC = () => {
                 <div key={i} className={`flex items-start gap-2.5 text-xs leading-normal ${
                   isDark ? 'text-zinc-300' : 'text-zinc-700'
                 }`}>
-                  <span className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 bg-[#7647eb]/15 text-[#7647eb] dark:text-[#a78bfa]">
+                  <span className="w-4 h-4 rounded-mio-sm flex items-center justify-center shrink-0 mt-0.5 bg-[#7647eb]/15 text-[#7647eb] dark:text-[#a78bfa]">
                     <Check className="w-2.5 h-2.5 stroke-[2.5]" />
                   </span>
                   <span>{bullet}</span>
@@ -295,7 +306,7 @@ export const ComoFuncionaDOM: React.FC = () => {
                 variant="primary"
                 onClick={() => handleStepJump(2)}
               >
-                Probar Escenario What-If
+                Probar un escenario
               </BubbleArrowButton>
             </div>
           </div>
@@ -311,10 +322,10 @@ export const ComoFuncionaDOM: React.FC = () => {
             {/* -------------------------------------------------------------- */}
             <div
               id="stack-card-0"
-              className={`relative lg:sticky lg:top-36 xl:top-40 z-10 rounded-3xl p-6 sm:p-8 lg:p-10 border transition-all duration-300 backdrop-blur-xl ${
+              className={`relative lg:sticky lg:top-36 xl:top-40 z-10 rounded-mio p-6 sm:p-8 lg:p-10 border transition-all duration-300 ${
                 isDark
-                  ? 'bg-[#0f0e1a] border-white/[0.1] shadow-2xl'
-                  : 'bg-white border-zinc-200 shadow-xl'
+                  ? 'bg-[#0e0d16] border-white/[0.08]'
+                  : 'bg-white border-zinc-200/80'
               }`}
               style={{
                 boxShadow: isDark
@@ -327,26 +338,26 @@ export const ComoFuncionaDOM: React.FC = () => {
                 isDark ? 'border-white/[0.08]' : 'border-zinc-200'
               }`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#7647eb]/10 text-[#7647eb] dark:text-[#a78bfa] flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-mio-sm bg-[#7647eb]/10 text-[#7647eb] dark:text-[#a78bfa] flex items-center justify-center">
                     <FileSpreadsheet className="w-5 h-5" />
                   </div>
                   <div>
                     <span className="text-xs font-mono font-bold text-[#7647eb] dark:text-[#a78bfa] block">
-                      FASE 01 // HIGIENE ESTADÍSTICA
+                      FASE 01 // LIMPIEZA
                     </span>
                     <h3 className={`text-xl sm:text-2xl font-bold ${
                       isDark ? 'text-white' : 'text-zinc-950'
                     }`}>
-                      Carga directa de .xlsx o .csv
+                      Subí tu Excel o CSV
                     </h3>
                   </div>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-mono font-bold border ${
+                <span className={`px-3 py-1 rounded-mio-sm text-xs font-mono font-bold border ${
                   isDark
                     ? 'bg-white/10 text-[#bdf559] border-white/15'
-                    : 'bg-zinc-100 text-zinc-900 border-zinc-200 shadow-sm'
+                    : 'bg-zinc-100 text-zinc-900 border-zinc-200'
                 }`}>
-                  &lt; 15s SYNC
+                  SIN PREPARAR
                 </span>
               </div>
 
@@ -356,7 +367,7 @@ export const ComoFuncionaDOM: React.FC = () => {
                   playMioDevSound('select');
                   window.dispatchEvent(new CustomEvent('mio:open-consent-modal'));
                 }}
-                className={`rounded-2xl p-4 sm:p-5 border border-dashed mb-6 cursor-pointer group transition-all ${
+                className={`rounded-mio-sm p-4 sm:p-5 border border-dashed mb-6 cursor-pointer group transition-all ${
                   isDark
                     ? 'border-white/15 bg-white/[0.02] hover:border-[#bdf559]/50 hover:bg-white/[0.04]'
                     : 'border-zinc-300 bg-zinc-50 hover:border-[#7647eb]/50 hover:bg-white'
@@ -367,7 +378,7 @@ export const ComoFuncionaDOM: React.FC = () => {
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-mono font-bold text-xs group-hover:scale-105 transition-transform">
+                    <div className="w-9 h-9 rounded-mio-sm bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-mono font-bold text-xs group-hover:scale-105 transition-transform">
                       XLSX
                     </div>
                     <div>
@@ -379,11 +390,11 @@ export const ComoFuncionaDOM: React.FC = () => {
                       <div className={`text-xs font-mono ${
                         isDark ? 'text-zinc-400' : 'text-zinc-600'
                       }`}>
-                        14,200 filas · 18 columnas · 1.4 MB • <span className="underline text-[#7647eb] dark:text-[#a78bfa] font-bold">Hacé click para cargar la tuya</span>
+                        14.200 filas · 18 columnas • <span className="underline text-[#7647eb] dark:text-[#a78bfa] font-bold">Cargá la tuya</span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md">
+                  <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-mio-sm">
                     <Check className="w-3.5 h-3.5" />
                     <span>NORMALIZADO</span>
                   </div>
@@ -391,7 +402,7 @@ export const ComoFuncionaDOM: React.FC = () => {
               </div>
 
               {/* Micro Data Table Preview with Isolation Forest Flags */}
-              <div className={`rounded-2xl overflow-hidden border mb-6 ${
+              <div className={`rounded-mio-sm overflow-hidden border mb-6 ${
                 isDark ? 'border-white/[0.08]' : 'border-zinc-200'
               }`}>
                 <div className={`px-4 py-2 border-b flex items-center justify-between text-xs font-mono ${
@@ -400,7 +411,7 @@ export const ComoFuncionaDOM: React.FC = () => {
                     : 'bg-zinc-100 border-zinc-200 text-zinc-700 font-semibold'
                 }`}>
                   <span>PREVIEW DE FILAS (MUESTRA 3/14,200)</span>
-                  <span className="text-[#7647eb] dark:text-[#a78bfa] font-bold">ISOLATION FOREST: 2 OUTLIERS</span>
+                  <span className="text-[#7647eb] dark:text-[#a78bfa] font-bold">MIO DETECTÓ 2 VENTAS RARAS</span>
                 </div>
                 <div className={`divide-y font-mono text-xs ${
                   isDark ? 'divide-white/[0.04]' : 'divide-zinc-200'
@@ -409,14 +420,14 @@ export const ComoFuncionaDOM: React.FC = () => {
                     isDark ? 'bg-transparent' : 'bg-white'
                   }`}>
                     <span className={isDark ? 'text-zinc-300' : 'text-zinc-700'}>2026-03-14 // SKU-4921</span>
-                    <span className={`font-bold ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>$42,800 USD</span>
+                    <span className={`font-bold ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>$42.800</span>
                     <span className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold">NOMINAL (0.2σ)</span>
                   </div>
                   <div className={`p-3 flex items-center justify-between ${
                     isDark ? 'bg-rose-500/[0.06]' : 'bg-rose-50'
                   }`}>
                     <span className={isDark ? 'text-zinc-300' : 'text-zinc-800'}>2026-03-15 // SKU-8802</span>
-                    <span className={`font-bold ${isDark ? 'text-rose-400' : 'text-rose-700'}`}>$340,000 USD</span>
+                    <span className={`font-bold ${isDark ? 'text-rose-400' : 'text-rose-700'}`}>$340.000</span>
                     <span className={`text-xs font-bold px-2 py-0.5 rounded ${
                       isDark
                         ? 'bg-rose-500/20 text-rose-300'
@@ -429,7 +440,7 @@ export const ComoFuncionaDOM: React.FC = () => {
                     isDark ? 'bg-transparent' : 'bg-white'
                   }`}>
                     <span className={isDark ? 'text-zinc-300' : 'text-zinc-700'}>2026-03-16 // SKU-1120</span>
-                    <span className={`font-bold ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>$48,100 USD</span>
+                    <span className={`font-bold ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>$48.100</span>
                     <span className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold">NOMINAL (0.1σ)</span>
                   </div>
                 </div>
@@ -437,7 +448,7 @@ export const ComoFuncionaDOM: React.FC = () => {
 
               {/* Bottom Feature Badges */}
               <div className="grid grid-cols-3 gap-3 text-center">
-                <div className={`p-3 rounded-xl border ${
+                <div className={`p-3 rounded-mio-sm border ${
                   isDark
                     ? 'bg-white/[0.02] border-white/[0.06]'
                     : 'bg-zinc-50 border-zinc-200'
@@ -453,7 +464,7 @@ export const ComoFuncionaDOM: React.FC = () => {
                     Imputación prob.
                   </div>
                 </div>
-                <div className={`p-3 rounded-xl border ${
+                <div className={`p-3 rounded-mio-sm border ${
                   isDark
                     ? 'bg-white/[0.02] border-white/[0.06]'
                     : 'bg-zinc-50 border-zinc-200'
@@ -467,7 +478,7 @@ export const ComoFuncionaDOM: React.FC = () => {
                     Fechas tipificadas
                   </div>
                 </div>
-                <div className={`p-3 rounded-xl border ${
+                <div className={`p-3 rounded-mio-sm border ${
                   isDark
                     ? 'bg-white/[0.02] border-white/[0.06]'
                     : 'bg-zinc-50 border-zinc-200'
@@ -489,10 +500,10 @@ export const ComoFuncionaDOM: React.FC = () => {
             {/* -------------------------------------------------------------- */}
             <div
               id="stack-card-1"
-              className={`relative lg:sticky lg:top-44 xl:top-48 z-20 rounded-3xl p-6 sm:p-8 lg:p-10 border transition-all duration-300 backdrop-blur-xl ${
+              className={`relative lg:sticky lg:top-44 xl:top-48 z-20 rounded-mio p-6 sm:p-8 lg:p-10 border transition-all duration-300 ${
                 isDark
-                  ? 'bg-[#111020] border-white/[0.1] shadow-2xl'
-                  : 'bg-white border-zinc-200 shadow-xl'
+                  ? 'bg-[#0e0d16] border-white/[0.08]'
+                  : 'bg-white border-zinc-200/80'
               }`}
               style={{
                 boxShadow: isDark
@@ -505,12 +516,12 @@ export const ComoFuncionaDOM: React.FC = () => {
                 isDark ? 'border-white/[0.08]' : 'border-zinc-200'
               }`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-[#7647eb] dark:text-[#a78bfa] flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-mio-sm bg-indigo-500/10 text-[#7647eb] dark:text-[#a78bfa] flex items-center justify-center">
                     <Cpu className="w-5 h-5" />
                   </div>
                   <div>
                     <span className="text-xs font-mono font-bold text-[#7647eb] dark:text-[#a78bfa] block">
-                      FASE 02 // TORNEO AUTOML
+                      FASE 02 // COMPETENCIA DE MODELOS
                     </span>
                     <h3 className={`text-xl sm:text-2xl font-bold ${
                       isDark ? 'text-white' : 'text-zinc-950'
@@ -519,14 +530,14 @@ export const ComoFuncionaDOM: React.FC = () => {
                     </h3>
                   </div>
                 </div>
-                <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-[#7647eb] text-white shadow-sm">
-                  R²: 0.984 ÓPTIMO
+                <span className="px-3 py-1 rounded-mio-sm text-xs font-mono font-bold bg-[#7647eb] text-white">
+                  MEJOR MODELO
                 </span>
               </div>
 
               {/* Leaderboard Multi-Model CV Display */}
               <div className="space-y-3 mb-6">
-                <div className={`p-3.5 rounded-xl border flex items-center justify-between ${
+                <div className={`p-3.5 rounded-mio-sm border flex items-center justify-between ${
                   isDark
                     ? 'border-emerald-500/30 bg-emerald-500/[0.06]'
                     : 'border-emerald-300 bg-emerald-50/70'
@@ -537,28 +548,28 @@ export const ComoFuncionaDOM: React.FC = () => {
                       <div className={`text-xs font-mono font-bold ${
                         isDark ? 'text-white' : 'text-zinc-950'
                       }`}>
-                        LightGBM (Gradient Boosted Trees)
+                        Modelo A · el que gana
                       </div>
                       <div className={`text-[11px] font-mono ${
                         isDark ? 'text-zinc-400' : 'text-zinc-600'
                       }`}>
-                        Validación cruzada temporal de 5 folds
+                        Probado 5 veces contra el pasado
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-sm font-mono font-bold text-emerald-700 dark:text-[#bdf559]">
-                      R² 0.984
+                      Error 13,5 %
                     </div>
                     <div className={`text-[10px] font-mono ${
                       isDark ? 'text-zinc-400' : 'text-zinc-600'
                     }`}>
-                      RMSE: 1.2k
+                      Por volumen: 13,1 %
                     </div>
                   </div>
                 </div>
 
-                <div className={`p-3.5 rounded-xl border flex items-center justify-between ${
+                <div className={`p-3.5 rounded-mio-sm border flex items-center justify-between ${
                   isDark
                     ? 'border-white/[0.06] bg-white/[0.01]'
                     : 'border-zinc-200 bg-zinc-50'
@@ -567,7 +578,7 @@ export const ComoFuncionaDOM: React.FC = () => {
                     <div className={`text-xs font-mono font-bold ${
                       isDark ? 'text-zinc-200' : 'text-zinc-900'
                     }`}>
-                      Prophet + Fourier Term Expansion
+                      Modelo B · estacionalidad
                     </div>
                     <div className={`text-[11px] font-mono ${
                       isDark ? 'text-zinc-400' : 'text-zinc-600'
@@ -579,17 +590,17 @@ export const ComoFuncionaDOM: React.FC = () => {
                     <div className={`text-sm font-mono font-bold ${
                       isDark ? 'text-zinc-300' : 'text-zinc-800'
                     }`}>
-                      R² 0.942
+                      Error 15,2 %
                     </div>
                     <div className={`text-[10px] font-mono ${
                       isDark ? 'text-zinc-400' : 'text-zinc-600'
                     }`}>
-                      RMSE: 1.8k
+                      Por volumen: 14,8 %
                     </div>
                   </div>
                 </div>
 
-                <div className={`p-3.5 rounded-xl border flex items-center justify-between ${
+                <div className={`p-3.5 rounded-mio-sm border flex items-center justify-between ${
                   isDark
                     ? 'border-white/[0.06] bg-white/[0.01]'
                     : 'border-zinc-200 bg-zinc-50'
@@ -598,37 +609,37 @@ export const ComoFuncionaDOM: React.FC = () => {
                     <div className={`text-xs font-mono font-bold ${
                       isDark ? 'text-zinc-200' : 'text-zinc-900'
                     }`}>
-                      XGBoost v2.0 Temporal Regressor
+                      Modelo C · tendencia
                     </div>
                     <div className={`text-[11px] font-mono ${
                       isDark ? 'text-zinc-400' : 'text-zinc-600'
                     }`}>
-                      Lag features + media móvil calibrada
+                      Ventas recientes + promedio móvil
                     </div>
                   </div>
                   <div className="text-right">
                     <div className={`text-sm font-mono font-bold ${
                       isDark ? 'text-zinc-300' : 'text-zinc-800'
                     }`}>
-                      R² 0.918
+                      Error 15,8 %
                     </div>
                     <div className={`text-[10px] font-mono ${
                       isDark ? 'text-zinc-400' : 'text-zinc-600'
                     }`}>
-                      RMSE: 2.1k
+                      Por volumen: 15,3 %
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Curve Telemetry Footer: Always crisp dark console bar */}
-              <div className="p-4 rounded-2xl bg-zinc-950 text-white flex items-center justify-between border border-zinc-800 shadow-md">
+              <div className="p-4 rounded-mio-sm bg-zinc-950 text-white flex items-center justify-between border border-zinc-800">
                 <div>
-                  <div className="text-[10px] font-mono text-zinc-400">PROYECCIÓN CALIBRADA P95</div>
-                  <div className="text-2xl font-mono font-bold text-[#bdf559] mt-0.5">$104,800 USD</div>
+                  <div className="text-[10px] font-mono text-zinc-400">PROYECCIÓN DEL PRÓXIMO MES</div>
+                  <div className="text-2xl font-mono font-bold text-[#bdf559] mt-0.5">$104.800</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-[10px] font-mono text-zinc-400">BANDA DE CONFIANZA 95%</div>
+                  <div className="text-[10px] font-mono text-zinc-400">MARGEN PROBABLE</div>
                   <div className="text-xs font-mono text-zinc-200">[$98,400 — $111,200]</div>
                 </div>
               </div>
@@ -639,10 +650,10 @@ export const ComoFuncionaDOM: React.FC = () => {
             {/* -------------------------------------------------------------- */}
             <div
               id="stack-card-2"
-              className={`relative lg:sticky lg:top-52 xl:top-56 z-30 rounded-3xl p-6 sm:p-8 lg:p-10 border transition-all duration-300 backdrop-blur-xl ${
+              className={`relative lg:sticky lg:top-52 xl:top-56 z-30 rounded-mio p-6 sm:p-8 lg:p-10 border transition-all duration-300 ${
                 isDark
-                  ? 'bg-[#131224] border-white/[0.1] shadow-2xl'
-                  : 'bg-white border-zinc-200 shadow-xl'
+                  ? 'bg-[#0e0d16] border-white/[0.08]'
+                  : 'bg-white border-zinc-200/80'
               }`}
               style={{
                 boxShadow: isDark
@@ -655,12 +666,12 @@ export const ComoFuncionaDOM: React.FC = () => {
                 isDark ? 'border-white/[0.08]' : 'border-zinc-200'
               }`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-mio-sm bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
                     <Sliders className="w-5 h-5" />
                   </div>
                   <div>
                     <span className="text-xs font-mono font-bold text-amber-600 dark:text-amber-400 block">
-                      FASE 03 // SIMULADOR WHAT-IF & SHAP
+                      FASE 03 // ¿Y SI CAMBIO EL PRECIO?
                     </span>
                     <h3 className={`text-xl sm:text-2xl font-bold ${
                       isDark ? 'text-white' : 'text-zinc-950'
@@ -669,24 +680,24 @@ export const ComoFuncionaDOM: React.FC = () => {
                     </h3>
                   </div>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-mono font-bold border ${
+                <span className={`px-3 py-1 rounded-mio-sm text-xs font-mono font-bold border ${
                   isDark
                     ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
                     : 'bg-amber-50 text-amber-700 border-amber-200'
                 }`}>
-                  SHAP AUDITABLE
+                  EXPLICADO
                 </span>
               </div>
 
               {/* Interactive What-If Slider Simulator */}
-              <div className={`p-4 sm:p-5 rounded-2xl border mb-6 space-y-4 ${
+              <div className={`p-4 sm:p-5 rounded-mio-sm border mb-6 space-y-4 ${
                 isDark
                   ? 'bg-white/[0.03] border-white/[0.06]'
                   : 'bg-zinc-50 border-zinc-200'
               }`}>
                 <div className="flex items-center justify-between text-xs font-mono">
                   <span className={`font-bold ${isDark ? 'text-zinc-100' : 'text-zinc-900'}`}>
-                    ESCENARIO ALTERNATIVO: PRECIO UNITARIO
+                    SENSIBILIDAD DE PRECIO (CETERIS PARIBUS)
                   </span>
                   <span className="text-[#7647eb] dark:text-[#bdf559] font-bold text-sm">
                     {Math.round((whatIfMultiplier - 1) * 100) >= 0 ? '+' : ''}
@@ -709,26 +720,26 @@ export const ComoFuncionaDOM: React.FC = () => {
                 />
 
                 <div className="grid grid-cols-2 gap-3 pt-2">
-                  <div className={`p-3 rounded-xl border ${
+                  <div className={`p-3 rounded-mio-sm border ${
                     isDark
                       ? 'bg-zinc-900 border-white/[0.08]'
-                      : 'bg-white border-zinc-200 shadow-sm'
+                      : 'bg-white border-zinc-200'
                   }`}>
                     <div className={`text-[10px] font-mono ${
                       isDark ? 'text-zinc-400' : 'text-zinc-600'
                     }`}>
-                      FACTURACIÓN SIMULADA
+                      FACTURACIÓN ESTIMADA
                     </div>
                     <div className={`text-lg font-mono font-bold ${
                       isDark ? 'text-white' : 'text-zinc-950'
                     }`}>
-                      ${animatedRevenue.toLocaleString()} USD
+                      ${animatedRevenue.toLocaleString('es-AR')}
                     </div>
                   </div>
-                  <div className={`p-3 rounded-xl border ${
+                  <div className={`p-3 rounded-mio-sm border ${
                     isDark
                       ? 'bg-zinc-900 border-white/[0.08]'
-                      : 'bg-white border-zinc-200 shadow-sm'
+                      : 'bg-white border-zinc-200'
                   }`}>
                     <div className={`text-[10px] font-mono ${
                       isDark ? 'text-zinc-400' : 'text-zinc-600'
@@ -740,6 +751,10 @@ export const ComoFuncionaDOM: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                <p className={`text-[10px] font-mono leading-tight ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                  * Simulación sobre la proyección base ($104.800). Es una estimación con tus datos históricos, no una garantía.
+                </p>
               </div>
 
               {/* SHAP Impact Explanations */}
@@ -747,26 +762,26 @@ export const ComoFuncionaDOM: React.FC = () => {
                 <div className={`text-xs font-mono font-bold mb-2 ${
                   isDark ? 'text-zinc-400' : 'text-zinc-700'
                 }`}>
-                  PESO CAUSAL DE VARIABLES (SHAP VALUES)
+                  QUÉ FACTORES PESARON MÁS
                 </div>
                 <div className="flex items-center justify-between text-xs font-mono">
                   <span className={isDark ? 'text-zinc-300' : 'text-zinc-800'}>Precio promedio por unidad</span>
                   <span className="font-bold text-emerald-700 dark:text-[#bdf559]">+42.8%</span>
                 </div>
-                <div className={`w-full h-1.5 rounded-full overflow-hidden ${
+                <div className={`w-full h-1.5 rounded-mio-sm overflow-hidden ${
                   isDark ? 'bg-white/[0.08]' : 'bg-zinc-200'
                 }`}>
-                  <div className="h-full bg-emerald-500 rounded-full w-[85%]" />
+                  <div className="h-full bg-emerald-500 rounded-mio-sm w-[85%]" />
                 </div>
 
                 <div className="flex items-center justify-between text-xs font-mono pt-1">
                   <span className={isDark ? 'text-zinc-300' : 'text-zinc-800'}>Estacionalidad Q4 / Black Week</span>
                   <span className="font-bold text-[#7647eb] dark:text-[#a78bfa]">+31.2%</span>
                 </div>
-                <div className={`w-full h-1.5 rounded-full overflow-hidden ${
+                <div className={`w-full h-1.5 rounded-mio-sm overflow-hidden ${
                   isDark ? 'bg-white/[0.08]' : 'bg-zinc-200'
                 }`}>
-                  <div className="h-full bg-[#7647eb] rounded-full w-[62%]" />
+                  <div className="h-full bg-[#7647eb] rounded-mio-sm w-[62%]" />
                 </div>
               </div>
 
@@ -775,7 +790,7 @@ export const ComoFuncionaDOM: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => scrollTo('#hero')}
-                  className="w-full py-3.5 px-4 rounded-xl bg-zinc-950 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-medium text-xs font-mono tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                  className="w-full py-3.5 px-4 rounded-mio-sm bg-zinc-950 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-medium text-xs font-mono tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>CARGAR PLANILLA Y OBTENER DIAGNÓSTICO</span>
                   <ArrowRight className="w-4 h-4 text-[#bdf559] dark:text-[#7647eb]" />

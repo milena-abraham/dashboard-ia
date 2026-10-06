@@ -1,39 +1,82 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { Suspense, lazy, useRef, useState, useEffect } from 'react';
 import { SmoothScrollProvider } from './providers/SmoothScrollProvider';
 import { NavbarDOM } from '@/components/dom/NavbarDOM';
 import { HeroDOM } from '@/components/dom/HeroDOM';
-import { PoderCorporativoDOM } from '@/components/dom/PoderCorporativoDOM';
+import { TusDatosDOM } from '@/components/dom/TusDatosDOM';
+import { ParaQuienDOM } from '@/components/dom/ParaQuienDOM';
+import { FaqDOM } from '@/components/dom/FaqDOM';
+import { SheetFrame } from '@/components/ui/SheetFrame';
+import { StickyCta } from '@/components/ui/StickyCta';
+import { ManifiestoDOM } from '@/components/dom/ManifiestoDOM';
+import { MetodoDOM } from '@/components/dom/MetodoDOM';
+import { EjemploDOM } from '@/components/dom/EjemploDOM';
+import { ProblemaDOM } from '@/components/dom/ProblemaDOM';
 import { FullBleedCaseStudyDOM } from '@/components/dom/FullBleedCaseStudyDOM';
 import { ComoFuncionaDOM } from '@/components/dom/ComoFuncionaDOM';
-import { DitherFigureTransitionDOM } from '@/components/dom/DitherFigureTransitionDOM';
 import { QuienesSomosDOM } from '@/components/dom/QuienesSomosDOM';
 import { CtaBannerDOM } from '@/components/dom/CtaBannerDOM';
 import { FooterDOM } from '@/components/dom/FooterDOM';
+import { SectionRail } from '@/components/ui/SectionRail';
+import { BootSequence } from '@/components/ui/BootSequence';
+import { PixelDivider } from '@/components/ui/PixelDivider';
 import { AnalogGrainOverlay } from '@/components/ui/AnalogGrainOverlay';
-import { LusionCanvas } from '@/components/canvas/LusionCanvas';
+const LusionCanvas = lazy(() => import('@/components/canvas/LusionCanvas').then((m) => ({ default: m.LusionCanvas })));
 import { useMioStore } from '@/utils/useMioStore';
 
-// Application Pages
-import { DashboardPage } from '@/pages/DashboardPage';
-import { AdminPage } from '@/pages/AdminPage';
-import { ProjectsPage } from '@/pages/ProjectsPage';
-import { LoginPage } from '@/pages/LoginPage';
-import { TestPetPage } from '@/pages/TestPetPage';
+// Application Pages — loaded on demand so the landing never pays for the dashboard
+// (charts, PDF export, markdown, lab tooling). Each page is its own chunk.
+const DashboardPage = lazy(() => import('@/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
+const AdminPage = lazy(() => import('@/pages/AdminPage').then((m) => ({ default: m.AdminPage })));
+const ProjectsPage = lazy(() => import('@/pages/ProjectsPage').then((m) => ({ default: m.ProjectsPage })));
+const LoginPage = lazy(() => import('@/pages/LoginPage').then((m) => ({ default: m.LoginPage })));
+const TestDitherPage = lazy(() => import('@/pages/TestDitherPage').then((m) => ({ default: m.TestDitherPage })));
+const TestPetPage = lazy(() => import('@/pages/TestPetPage').then((m) => ({ default: m.TestPetPage })));
 
-// Legal & Compliance Pages
-import { TerminosPage } from '@/pages/TerminosPage';
-import { PrivacidadPage } from '@/pages/PrivacidadPage';
-import { CookiesPage } from '@/pages/CookiesPage';
-import { AvisoLegalPage } from '@/pages/AvisoLegalPage';
-import { DpaPage } from '@/pages/DpaPage';
-import { ArrepentimientoPage } from '@/pages/ArrepentimientoPage';
+// Legal & Compliance Pages (on demand)
+const TerminosPage = lazy(() => import('@/pages/TerminosPage').then((m) => ({ default: m.TerminosPage })));
+const PrivacidadPage = lazy(() => import('@/pages/PrivacidadPage').then((m) => ({ default: m.PrivacidadPage })));
+const CookiesPage = lazy(() => import('@/pages/CookiesPage').then((m) => ({ default: m.CookiesPage })));
+const AvisoLegalPage = lazy(() => import('@/pages/AvisoLegalPage').then((m) => ({ default: m.AvisoLegalPage })));
+const DpaPage = lazy(() => import('@/pages/DpaPage').then((m) => ({ default: m.DpaPage })));
+const ArrepentimientoPage = lazy(() =>
+  import('@/pages/ArrepentimientoPage').then((m) => ({ default: m.ArrepentimientoPage }))
+);
 
 // Compliance Components
 import { CookieBannerFloating } from '@/components/ui/CookieBannerFloating';
 import { LegalConsentModal, type LegalTab } from '@/components/ui/LegalConsentModal';
 
-// Interactive Companion Component (Option B)
-import { MioFloatingCompanion } from '@/components/pet/MioFloatingCompanion';
+// Interactive Companion Component (Option B) — fixed-position overlay (no layout impact),
+// so it can load after first paint; it brings bloom/reflector/HDR loaders with it.
+// Ambient particle field: tablets and desktops only. Phones skip WebGL (and the three.js download) entirely.
+const AmbientCanvas: React.FC<{ className?: string }> = ({ className }) => {
+  const [wide] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches);
+  if (!wide) return null;
+  return (
+    <Suspense fallback={null}>
+      <LusionCanvas className={className} />
+    </Suspense>
+  );
+};
+
+const MioFloatingCompanion = lazy(() =>
+  import('@/components/pet/MioFloatingCompanion').then((m) => ({ default: m.MioFloatingCompanion }))
+);
+
+/** Route fallback: square corners, hard border, mono telemetry text (BRANDING.md). */
+const RouteFallback: React.FC<{ isDark: boolean }> = ({ isDark }) => (
+  <div className="min-h-[60vh] flex items-center justify-center p-6" role="status" aria-live="polite">
+    <div
+      className={`px-4 py-3 border font-mono text-xs uppercase tracking-[0.14em] rounded-none ${
+        isDark ? 'bg-[#0e0c19] border-white/10 text-zinc-300' : 'bg-white border-black text-zinc-800'
+      }`}
+      style={{ boxShadow: isDark ? 'none' : '3px 3px 0 #111111' }}
+    >
+      <span className="inline-block w-1.5 h-1.5 mr-2 align-middle bg-[#bdf559] animate-pulse" />
+      Cargando módulo…
+    </div>
+  </div>
+);
 
 export const App: React.FC = () => {
   const mainRef = useRef<HTMLElement>(null);
@@ -114,7 +157,7 @@ export const App: React.FC = () => {
   );
 
   // Legal pages routes
-  const legalRoutes: Record<string, React.FC> = {
+  const legalRoutes: Record<string, React.ElementType> = {
     '/terminos': TerminosPage,
     '/privacidad': PrivacidadPage,
     '/cookies': CookiesPage,
@@ -127,13 +170,15 @@ export const App: React.FC = () => {
     const LegalPage = legalRoutes[currentPath];
     return (
       <div
-        className={`relative min-h-screen overflow-x-clip transition-colors duration-500 ${
-          isDark ? 'bg-[#07070a] text-white' : 'bg-[#fbfbfd] text-zinc-950'
+        className={`mio-sheet-bg relative min-h-screen overflow-x-clip transition-colors duration-500 ${
+          isDark ? 'bg-[#07070a] text-white' : 'bg-[#f3f3f5] text-zinc-950'
         }`}
       >
         <AnalogGrainOverlay />
         <div className="relative z-10">
-          <LegalPage />
+          <Suspense fallback={<RouteFallback isDark={isDark} />}>
+            <LegalPage />
+          </Suspense>
         </div>
         <InternalFooter />
         <CookieBannerFloating />
@@ -142,17 +187,29 @@ export const App: React.FC = () => {
     );
   }
 
+  if (currentPath === '/test-dither') {
+    return (
+      <div className={`relative min-h-screen ${isDark ? 'bg-[#07070a] text-white' : 'bg-[#f3f3f5] text-zinc-950'}`}>
+        <Suspense fallback={<RouteFallback isDark={isDark} />}>
+          <TestDitherPage />
+        </Suspense>
+      </div>
+    );
+  }
+
   // Test-Pet / MIO-PET Laboratory Endpoint
   if (currentPath === '/test-pet' || currentPath === '/mio-pet') {
     return (
       <div
-        className={`relative min-h-screen flex flex-col overflow-x-clip transition-colors duration-500 ${
-          isDark ? 'bg-[#07070a] text-white' : 'bg-[#f6f6f2] text-zinc-950'
+        className={`mio-sheet-bg relative min-h-screen flex flex-col overflow-x-clip transition-colors duration-500 ${
+          isDark ? 'bg-[#07070a] text-white' : 'bg-[#f3f3f5] text-zinc-950'
         }`}
       >
         <AnalogGrainOverlay />
         <div className="relative z-10 flex-1">
-          <TestPetPage />
+          <Suspense fallback={<RouteFallback isDark={isDark} />}>
+            <TestPetPage />
+          </Suspense>
         </div>
         <InternalFooter />
         <CookieBannerFloating />
@@ -172,17 +229,19 @@ export const App: React.FC = () => {
 
     return (
       <div
-        className={`relative min-h-screen flex flex-col overflow-x-clip transition-colors duration-500 ${
-          isDark ? 'bg-[#07070a] text-white' : 'bg-[#fbfbfd] text-zinc-950'
+        className={`mio-sheet-bg relative min-h-screen flex flex-col overflow-x-clip transition-colors duration-500 ${
+          isDark ? 'bg-[#07070a] text-white' : 'bg-[#f3f3f5] text-zinc-950'
         }`}
       >
         {/* Ambient 3D particle canvas — behind everything, non-interactive */}
-        <LusionCanvas className={`${isDark ? 'opacity-[0.32]' : 'opacity-[0.46]'} pointer-events-none`} />
+        <AmbientCanvas className={`${isDark ? 'opacity-[0.32]' : 'opacity-[0.46]'} pointer-events-none`} />
         {/* Film grain tactile overlay */}
         <AnalogGrainOverlay />
         {/* Page content */}
         <div className="relative z-10 flex-1">
-          <Page />
+          <Suspense fallback={<RouteFallback isDark={isDark} />}>
+            <Page />
+          </Suspense>
         </div>
         {/* Legal footer — always visible on internal pages */}
         <InternalFooter />
@@ -198,15 +257,15 @@ export const App: React.FC = () => {
   return (
     <SmoothScrollProvider>
       <div
-        className={`relative min-h-screen selection:bg-[#bdf559] selection:text-black overflow-x-clip transition-colors duration-500 ${
-          isDark ? 'bg-[#07070a] text-white' : 'bg-[#fbfbfd] text-zinc-950'
+        className={`mio-sheet-bg relative min-h-screen selection:bg-[#bdf559] selection:text-black overflow-x-clip transition-colors duration-500 ${
+          isDark ? 'bg-[#07070a] text-white' : 'bg-[#f3f3f5] text-zinc-950'
         }`}
       >
-        {/* Three.js 3D Specular Lusion Particles (calibrated for both dark & light modes) */}
-        <LusionCanvas />
+        {/* MIO OS boot screen: once per session, covers font + pet loading */}
+        <BootSequence />
 
-        {/* Subtle, tactile film grain for high-end organic texture */}
-        <AnalogGrainOverlay />
+        {/* The full-screen particle canvas and the grain overlay were removed from the landing:
+            two always-on full-viewport layers under a scrolling page were the main source of jank. */}
 
         {/* Global Navigation Bar with real route navigation */}
         <NavbarDOM />
@@ -214,15 +273,28 @@ export const App: React.FC = () => {
         {/* Minimalist Editorial Main Flow (Legency Media Inspired) */}
         <main ref={mainRef} className="relative z-10">
           <HeroDOM />
-          <PoderCorporativoDOM />
-          {/* Full-Bleed Edge-to-Edge Ribbon & Dither Case Study */}
+          {/* Act 2: the problem, with the old capabilities folded in as Hoy / Con MIO */}
+          <PixelDivider from="page" to="#3d1f8a" accent="#bdf559" />
+          <ManifiestoDOM />
+          <PixelDivider from="#3d1f8a" to="page" accent="#7647eb" />
+          <ProblemaDOM />
+          <EjemploDOM />
+          {/* Act 3: the method (three stacked phases) */}
+          <MetodoDOM />
+          {/* Act 4: the proof (full-bleed case study), entered and left through pixel dissolves */}
+          <PixelDivider from="page" to="#06040e" accent="#7647eb" />
           <FullBleedCaseStudyDOM />
-          <ComoFuncionaDOM />
-          {/* Edge-to-Edge 3D Dither Geometric Topology Section */}
-          <DitherFigureTransitionDOM />
+          <PixelDivider from="#06040e" to="page" accent="#bdf559" />
+          <TusDatosDOM />
+          <ParaQuienDOM />
+          <FaqDOM />
           <QuienesSomosDOM />
           <CtaBannerDOM />
         </main>
+
+        {/* Section progress rail (xl+) */}
+        <SheetFrame />
+        <StickyCta />
 
         {/* Monumental Full-Bleed Footer */}
         <FooterDOM />
@@ -231,7 +303,9 @@ export const App: React.FC = () => {
         <CookieBannerFloating />
 
         {/* MIO 3D Floating Companion (Option B) */}
-        <MioFloatingCompanion />
+        <Suspense fallback={null}>
+          <MioFloatingCompanion />
+        </Suspense>
       </div>
     </SmoothScrollProvider>
   );

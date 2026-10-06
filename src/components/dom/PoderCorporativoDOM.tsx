@@ -3,6 +3,7 @@ import { useSmoothScroll } from '@/app/providers/SmoothScrollProvider';
 import { useMioStore } from '@/utils/useMioStore';
 import { BubbleArrowButton } from '@/components/ui/BubbleArrowButton';
 import { FlipText } from '@/components/ui/FlipText';
+import { SectionPlate } from '@/components/ui/SectionPlate';
 import { gsap } from '@/lib/gsap';
 import { Check, Cpu, Sliders, MessageSquare, FileSpreadsheet } from 'lucide-react';
 
@@ -45,22 +46,22 @@ const CAPABILITY_TIERS: CapabilityTier[] = [
       'Generación de bandas de incertidumbre al 80% y 95% para mitigación de riesgos',
     ],
     forWho: 'Para directores que necesitan proyecciones de demanda robustas sin contratar consultoras.',
-    metrics: { label: 'Precisión predictiva', value: '0.984 R²' },
+    metrics: { label: 'Error promedio', value: 'MAPE 3.2%' },
     icon: Cpu,
   },
   {
     id: 'explicabilidad',
     tag: 'PILAR 03',
-    title: 'Explicabilidad Causal & Escenarios What-If',
+    title: 'Atribución de Variables & Escenarios What-If',
     subtitle: 'Comprensión exacta de qué variables mueven la aguja y simulación en vivo.',
     features: [
       'Descomposición de impacto por variable mediante valores SHAP transparentes',
       'Simulador interactivo en tiempo real para evaluar variaciones de precios o costos',
       'Aislamiento de estacionalidad oculta y tendencias de fondo en tus series',
-      'Eliminación de correlaciones espurias para evitar decisiones apresuradas',
+      'Validación de importancia relativa para evitar decisiones apresuradas',
     ],
-    forWho: 'Para gerencias de operaciones y finanzas que deben justificar cada cifra ante el directorio.',
-    metrics: { label: 'Auditabilidad', value: '100% SHAP' },
+    forWho: 'Para gerencias de operaciones y finanzas que deben justificar cada cifra ante el equipo.',
+    metrics: { label: 'Explicabilidad', value: 'SHAP Trees' },
     icon: Sliders,
   },
   {
@@ -97,13 +98,13 @@ export const PoderCorporativoDOM: React.FC = () => {
       // immediateRender: false guarantees cards are NOT set to opacity 0 on mount
       gsap.fromTo(
         cardsGridRef.current!.children,
-        { y: 30, opacity: 0 },
+        { clipPath: 'inset(0px 0px 100% 0px)' },
         {
-          y: 0,
-          opacity: 1,
-          duration: 0.6,
-          stagger: 0.1,
-          ease: 'power2.out',
+          clipPath: 'inset(0px 0px 0% 0px)',
+          duration: 0.85,
+          stagger: 0.12,
+          ease: 'expo.out',
+          clearProps: 'clipPath',
           immediateRender: false,
           scrollTrigger: {
             trigger: cardsGridRef.current,
@@ -128,10 +129,7 @@ export const PoderCorporativoDOM: React.FC = () => {
         
         {/* Editorial Header (Left-Aligned, Full Margin) */}
         <div className="max-w-3xl mb-16 sm:mb-20">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-mono tracking-tight mb-4 border bg-zinc-500/[0.06] border-zinc-500/15 text-zinc-700 dark:text-zinc-300">
-            <span className="w-2 h-2 rounded-full bg-[#7647eb]" />
-            <span>CAPACIDADES DEL MOTOR MIO</span>
-          </div>
+          <SectionPlate index="02" label="CAPACIDADES DEL MOTOR MIO" className="mb-5" />
           <h2
             className={`text-3xl sm:text-5xl lg:text-6xl font-bold tracking-[-0.035em] leading-[1.05] ${
               isDark ? 'text-white' : 'text-zinc-950'
@@ -175,7 +173,7 @@ export const PoderCorporativoDOM: React.FC = () => {
                   {/* Card Header Row */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-md bg-[#7647eb]/10 text-[#7647eb] dark:text-[#a78bfa] flex items-center justify-center shrink-0">
+                      <div className="w-9 h-9 rounded-none border border-[#7647eb]/30 bg-[#7647eb]/10 text-[#7647eb] dark:text-[#a78bfa] flex items-center justify-center shrink-0">
                         <Icon className="w-5 h-5" />
                       </div>
                       <span className="text-xs font-mono font-bold tracking-wider text-[#7647eb] dark:text-[#a78bfa]">
@@ -207,7 +205,7 @@ export const PoderCorporativoDOM: React.FC = () => {
                   <div className={`space-y-2.5 pt-4 border-t ${isDark ? 'border-white/[0.06]' : 'border-zinc-200'}`}>
                     {tier.features.map((feat, i) => (
                       <div key={i} className={`flex items-start gap-2.5 text-xs sm:text-sm ${isDark ? 'text-zinc-300' : 'text-zinc-700'}`}>
-                        <span className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 bg-[#7647eb]/15 text-[#7647eb] dark:text-[#a78bfa]">
+                        <span className="w-4 h-4 rounded-none flex items-center justify-center shrink-0 mt-0.5 bg-[#7647eb]/15 text-[#7647eb] dark:text-[#a78bfa]">
                           <Check className="w-2.5 h-2.5 stroke-[2.5]" />
                         </span>
                         <span>{feat}</span>

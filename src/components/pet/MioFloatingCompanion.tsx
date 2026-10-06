@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MioPet3D } from './MioPet3D';
 import { MioPet2D, MioPetMood, MioPetMaterial } from './MioPet2D';
 import { playMioDevSound } from '@/lib/sound';
-import { X, Sparkles, ArrowRight, Volume2, RotateCw } from 'lucide-react';
+import { X, Sparkles, ArrowRight, RotateCw } from 'lucide-react';
+import { useActiveSection } from '@/hooks/useActiveSection';
+import { SECTION_BY_ID } from '@/lib/landingSections';
+import { onGuide } from '@/lib/guide';
 
 interface PhraseData {
   title: string;
@@ -71,10 +73,39 @@ export const MioFloatingCompanion: React.FC = () => {
   const [mood, setMood] = useState<MioPetMood>('reposo');
   const [material, setMaterial] = useState<MioPetMaterial>('violet');
   const [messageIndex, setMessageIndex] = useState(0);
-  const [isBubbleOpen, setIsBubbleOpen] = useState(true);
+  const [isBubbleOpen, setIsBubbleOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const bubbleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // The hero already stages MIO Espécimen 01; hide this floating copy while the hero or footer is in view.
+  const [heroInView, setHeroInView] = useState(false);
+  const [footerInView, setFooterInView] = useState(false);
+
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return;
+    const hero = document.getElementById('hero');
+    const footer = document.querySelector('footer');
+
+    const heroObserver = hero
+      ? new IntersectionObserver(([entry]) => setHeroInView(entry.intersectionRatio > 0.2), {
+          threshold: [0, 0.2, 0.5, 1],
+        })
+      : null;
+
+    const footerObserver = footer
+      ? new IntersectionObserver(([entry]) => setFooterInView(entry.isIntersecting), {
+          threshold: [0, 0.05],
+        })
+      : null;
+
+    if (hero && heroObserver) heroObserver.observe(hero);
+    if (footer && footerObserver) footerObserver.observe(footer);
+
+    return () => {
+      heroObserver?.disconnect();
+      footerObserver?.disconnect();
+    };
+  }, []);
 
   const showBubbleTemporarily = (duration = 5000) => {
     setIsBubbleOpen(true);
@@ -84,9 +115,25 @@ export const MioFloatingCompanion: React.FC = () => {
     }, duration);
   };
 
+  // Section guide: when a new section takes over the viewport, MIO changes mood and says one line,
+  // unless the visitor played with the pet in the last 8 s or closed the bubble (then it only changes mood).
+  const activeSection = useActiveSection();
+  const [guideLine, setGuideLine] = useState<string | null>(null);
+  const manualAtRef = useRef(0);
+  const dismissedRef = useRef(false);
+
+  useEffect(() => {
+    const guide = SECTION_BY_ID[activeSection]?.guide;
+    if (!guide) return;
+    if (Date.now() - manualAtRef.current < 8000) return;
+    setMood(guide.mood);
+    setGuideLine(guide.line);
+    // The bubble no longer opens by itself on every section: it covered the content. It opens on click.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSection]);
+
   // Initial welcome bubble: shows for 5s then fades away
   useEffect(() => {
-    showBubbleTemporarily(5000);
     return () => {
       if (bubbleTimeoutRef.current) clearTimeout(bubbleTimeoutRef.current);
     };
@@ -95,6 +142,8 @@ export const MioFloatingCompanion: React.FC = () => {
   const cycleMood = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     setHasInteracted(true);
+    manualAtRef.current = Date.now();
+    setGuideLine(null);
     playMioDevSound('buttonA');
 
     const currentIndex = MOOD_SEQUENCE.indexOf(mood);
@@ -115,10 +164,25 @@ export const MioFloatingCompanion: React.FC = () => {
     showBubbleTemporarily(4000);
   };
 
+  // Cues sent by individual sections (e.g. each phase of the method) follow the same politeness rules.
+  useEffect(
+    () =>
+      onGuide((cue) => {
+        if (Date.now() - manualAtRef.current < 8000) return;
+        setMood(cue.mood);
+        setGuideLine(cue.line);
+        // The bubble no longer opens by itself on every section: it covered the content. It opens on click.
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
   const handleSelectMood = (m: MioPetMood, e: React.MouseEvent) => {
     e.stopPropagation();
     playMioDevSound('select');
     setHasInteracted(true);
+    manualAtRef.current = Date.now();
+    setGuideLine(null);
     setMood(m);
     setMessageIndex(Math.floor(Math.random() * MOOD_DIALOGUES[m].messages.length));
     showBubbleTemporarily(5500);
@@ -127,33 +191,43 @@ export const MioFloatingCompanion: React.FC = () => {
   const navigateToDashboard = (e: React.MouseEvent) => {
     e.stopPropagation();
     playMioDevSound('shockwave');
-    window.location.href = '/dashboard';
+    try { localStorage.removeItem('mio_active_analysis'); } catch {} window.location.href = '/dashboard?new=1';
   };
 
   const currentDialogue = MOOD_DIALOGUES[mood];
-  const activeMessage = currentDialogue.messages[messageIndex % currentDialogue.messages.length];
+  const activeMessage = guideLine ?? currentDialogue.messages[messageIndex % currentDialogue.messages.length];
+
+  if (heroInView || footerInView) return null;
 
   if (isMinimized) {
     return (
-      <aside aria-label="MIO Companion" className="fixed bottom-6 right-6 z-50">
+      <aside aria-label="MIO Companion" className="hidden sm:block fixed bottom-6 right-6 z-50">
         <button
+          type="button"
           onClick={() => {
             playMioDevSound('select');
             setIsMinimized(false);
             setIsBubbleOpen(true);
           }}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-[#0e0c19]/90 border border-white/20 text-white shadow-2xl backdrop-blur-xl hover:scale-105 transition-all text-xs font-mono group cursor-pointer"
+          className="flex items-center gap-2 px-3.5 py-2 rounded-mio-sm border border-white/15 bg-[#bdf559] text-black text-xs font-mono font-bold uppercase tracking-wider transition-[transform,box-shadow] duration-150 cursor-pointer"
         >
-          <span className="w-2.5 h-2.5 rounded-full bg-[#bdf559] animate-pulse" />
-          <span className="font-semibold text-zinc-200 group-hover:text-white">Despertar a MIO 3D</span>
+          <span className="w-2 h-2 bg-black animate-pulse" />
+          <span>Despertar a MIO</span>
         </button>
       </aside>
     );
   }
 
+  const onDockKey = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      cycleMood();
+    }
+  };
+
   return (
-    <aside aria-label="MIO Companion" className="fixed bottom-6 right-6 z-50 flex flex-col items-end select-none">
-      {/* Speech Bubble */}
+    <aside aria-label="MIO Companion" className="hidden sm:flex fixed bottom-6 right-6 z-50 flex-col items-end select-none">
+      {/* Speech panel: solid slab, hard offset shadow, no blur */}
       {isBubbleOpen && (
         <div
           onMouseEnter={() => {
@@ -162,141 +236,90 @@ export const MioFloatingCompanion: React.FC = () => {
           onMouseLeave={() => {
             showBubbleTemporarily(3500);
           }}
-          className="relative mb-3 w-[330px] max-w-[calc(100vw-2.5rem)] animate-in fade-in slide-in-from-bottom-3 duration-300"
+          className="relative mb-4 w-[330px] max-w-[calc(100vw-2.5rem)] animate-in fade-in slide-in-from-bottom-3 duration-300"
         >
-          <div className="relative rounded-2xl bg-[#0e0c19]/95 border border-white/15 p-4 text-white shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-2xl">
-            {/* Header: Title + Tag + Close */}
-            <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-2.5 mb-2.5">
+          <div className="relative rounded-mio bg-[#0b0914] border border-white/15 p-4 text-white">
+            <div className="flex items-center justify-between gap-2 border-b border-white/15 pb-2.5 mb-2.5">
               <div className="flex items-center gap-2">
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: currentDialogue.color, boxShadow: `0 0 8px ${currentDialogue.color}` }}
-                />
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentDialogue.color }} />
                 <h4 className="text-xs font-bold font-mono tracking-tight text-white">{currentDialogue.title}</h4>
               </div>
               <div className="flex items-center gap-1.5">
                 <button
+                  type="button"
                   onClick={cycleMaterial}
                   title="Cambiar acabado de material"
-                  className="p-1 rounded-md bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                  aria-label="Cambiar acabado de material"
+                  className="p-1 rounded-mio-sm border border-white/20 text-zinc-400 hover:text-black hover:bg-[#bdf559] hover:border-[#bdf559] transition-colors cursor-pointer"
                 >
                   <RotateCw className="w-3 h-3" />
                 </button>
                 <button
-                  onClick={() => setIsBubbleOpen(false)}
+                  type="button"
+                  onClick={() => {
+                    dismissedRef.current = true;
+                    setIsBubbleOpen(false);
+                  }}
                   title="Cerrar mensaje"
-                  className="p-1 rounded-md bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                  aria-label="Cerrar mensaje"
+                  className="p-1 rounded-mio-sm border border-white/20 text-zinc-400 hover:text-black hover:bg-[#bdf559] hover:border-[#bdf559] transition-colors cursor-pointer"
                 >
                   <X className="w-3 h-3" />
                 </button>
               </div>
             </div>
 
-            {/* Speech Content */}
-            <p className="text-xs text-zinc-200 leading-relaxed font-sans min-h-[38px]">
-              "{activeMessage}"
-            </p>
+            <p className="text-xs text-zinc-200 leading-relaxed font-sans min-h-[38px]">{activeMessage}</p>
 
-            {/* Mood selector pills */}
-            <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-1 text-[10px] font-mono">
-              <span className="text-zinc-500 uppercase tracking-wider text-[9px]">Modos:</span>
-              <div className="flex items-center gap-1">
-                {(['reposo', 'trabajando', 'celebrando', 'anomalia'] as MioPetMood[]).map((m) => (
-                  <button
-                    key={m}
-                    onClick={(e) => handleSelectMood(m, e)}
-                    className={`px-2 py-0.5 rounded-full transition-all cursor-pointer capitalize ${
-                      mood === m
-                        ? 'bg-[#7647eb] text-white font-bold shadow-sm'
-                        : 'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
-                    }`}
-                  >
-                    {m === 'trabajando' ? 'IA' : m === 'celebrando' ? 'Win' : m === 'anomalia' ? 'Spike' : 'Idl'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Action Buttons */}
             <div className="mt-3 flex items-center gap-2">
               <button
-                onClick={cycleMood}
-                className="flex-1 py-1.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[11px] font-mono font-medium transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Sparkles className="w-3 h-3 text-[#bdf559]" />
-                <span>Siguiente estado</span>
-              </button>
-              <button
+                type="button"
                 onClick={navigateToDashboard}
-                className="py-1.5 px-3 rounded-xl bg-gradient-to-r from-[#7647eb] to-[#5b2ec9] hover:brightness-110 text-white text-[11px] font-sans font-semibold transition-all flex items-center gap-1 shadow-md cursor-pointer"
+                className="flex-1 justify-center py-2 px-3 rounded-mio-sm border border-black bg-[#bdf559] text-black text-[11px] font-mono font-bold uppercase tracking-wider active:shadow-none transition-[transform,box-shadow] duration-150 flex items-center gap-1 cursor-pointer"
               >
-                <span>Dashboard</span>
+                <span>Probar mi planilla</span>
                 <ArrowRight className="w-3 h-3" />
               </button>
             </div>
 
-            {/* Bubble Tail */}
-            <div className="absolute -bottom-2 right-10 w-4 h-4 bg-[#0e0c19] border-r border-b border-white/15 rotate-45" />
+            {/* Tail: a square notch aligned above MIO's antenna */}
+            <div className="absolute -bottom-[7px] right-[62px] w-3 h-3 bg-[#0b0914] border-r border-b border-black dark:border-white/30 rotate-45" />
           </div>
         </div>
       )}
 
-      {/* 3D Pet Dock Container */}
-      <div className="relative group">
-        {/* Glowing halo ring */}
-        <div
-          className="absolute -inset-1 rounded-full blur-md opacity-40 group-hover:opacity-75 transition-opacity duration-300"
-          style={{ backgroundColor: currentDialogue.color }}
+      {/* MIO 2D standing EN LIBRE (Free-standing desktop pet without container box) */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={cycleMood}
+        onKeyDown={onDockKey}
+        title="Hacé clic en MIO para interactuar y cambiar su estado"
+        aria-label={`MIO Espécimen 01, estado ${mood}. Hacé clic para interactuar.`}
+        className="relative group cursor-pointer select-none flex flex-col items-center mr-3 sm:mr-4 transition-transform duration-200 hover:-translate-y-1 active:translate-y-0.5"
+      >
+        <MioPet2D
+          mood={mood}
+          material={material}
+          size={115}
+          animated={true}
+          showShadow={true}
+          animateOnHover={true}
         />
 
-        {/* Double-bezel Outer Container */}
-        <div
-          onClick={cycleMood}
-          title="¡Hacé clic en MIO para interactuar!"
-          className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full p-1 bg-gradient-to-br from-white/20 via-[#7647eb]/30 to-[#bdf559]/20 border border-white/25 shadow-2xl backdrop-blur-xl cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95 flex items-center justify-center"
-        >
-          {/* Inner 3D Canvas Box */}
-          <div className="w-full h-full rounded-full overflow-hidden bg-[#0d0c18] relative flex items-center justify-center">
-            {/* Ambient instant fallback so it is never an empty void */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
-              <MioPet2D mood={mood} material={material} size={80} showShadow={false} />
-            </div>
-
-            <MioPet3D
-              mood={mood}
-              material={material}
-              showFloor={false}
-              backgroundColor="transparent"
-              cameraDistance={6.2}
-              cameraTargetY={0.72}
-              cameraAzimuth={22}
-              cameraElevation={10}
-              enableBloom={false}
-              autoRotate={true}
-              interactive={true}
-              className="absolute inset-0 w-full h-full z-10"
-            />
-
-            {/* Subtle gloss highlight */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-transparent to-white/10 pointer-events-none z-20" />
-          </div>
-
-          {/* Micro status badge on the rim */}
-          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-[#0e0c19] border border-white/20 text-[9px] font-mono tracking-wider text-zinc-300 flex items-center gap-1.5 shadow-md whitespace-nowrap z-30">
-            <span
-              className="w-1.5 h-1.5 rounded-full animate-pulse"
-              style={{ backgroundColor: currentDialogue.color }}
-            />
-            <span className="uppercase text-[8px] font-semibold">{mood}</span>
-          </div>
-
-          {/* Click me hint badge (only before first interaction) */}
-          {!hasInteracted && (
-            <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-[#bdf559] text-black text-[9px] font-bold tracking-tight shadow-lg whitespace-nowrap animate-bounce">
-              ¡Tocame!
-            </div>
-          )}
+        {/* Status chip underneath MIO */}
+        <div className="mt-1 flex items-center gap-1.5 px-2 py-0.5 rounded-none border border-black dark:border-white/30 bg-[#0b0914] text-white text-[9px] font-mono font-bold tracking-wider uppercase">
+          <span className="w-1.5 h-1.5 rounded-none animate-pulse" style={{ backgroundColor: currentDialogue.color }} />
+          <span>ESP-01</span>
+          <span className="text-zinc-500">/</span>
+          <span className="text-[#bdf559]">{mood}</span>
         </div>
+
+        {!hasInteracted && (
+          <div className="mio-hint absolute -top-2 -left-2 px-2 py-0.5 rounded-none border border-black bg-[#bdf559] text-black text-[9px] font-mono font-bold uppercase tracking-wider whitespace-nowrap animate-bounce pointer-events-none">
+            ¡Tocame!
+          </div>
+        )}
       </div>
     </aside>
   );
